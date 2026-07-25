@@ -17,31 +17,18 @@
 
 This section covers advanced agentic and reasoning-based methods for kernel optimization.
 We discuss single-turn and multi-turn reinforcement learning for iterative kernel
-refinement, evolution-based approaches that search over candidate kernels, and
-inference-time scaling applied to kernel code reasoning. Together these methods form the
-agentic systems that iteratively generate, evaluate, and improve kernels with feedback from
-compilers and profilers.
-
-  Contents of this section
-  
-  #
-  
-
-
-  3.1 Single-Turn and Multi-Turn RL for Kernel Optimization
-  
-  #
-  
-
-Contrasts single-turn generation with multi-turn RL, where the agent iteratively refines
-kernels using execution and profiling feedback across multiple turns.">
+refinement, evolution-based approaches that maintain and search over populations of candidate
+kernels (including methods that search over how a kernel is decomposed into subproblems rather
+than over a monolithic artifact), and inference-time scaling applied to kernel code reasoning.
+Together these methods form the agentic systems that iteratively generate, evaluate, and improve
+kernels with feedback from compilers and profilers, all resting on the same trustworthy,
+verifiable reward built in Section 2.">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#343a40">
 <meta name="color-scheme" content="light dark"><meta property="og:url" content="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/">
   <meta property="og:site_name" content="Teaching LLMs to Write System Kernels">
   <meta property="og:title" content="Advanced Agentic Systems">
-  <meta property="og:description" content="Advanced Agentic Systems # Overview # This section covers advanced agentic and reasoning-based methods for kernel optimization. We discuss single-turn and multi-turn reinforcement learning for iterative kernel refinement, evolution-based approaches that search over candidate kernels, and inference-time scaling applied to kernel code reasoning. Together these methods form the agentic systems that iteratively generate, evaluate, and improve kernels with feedback from compilers and profilers.
-Contents of this section # 3.1 Single-Turn and Multi-Turn RL for Kernel Optimization # Contrasts single-turn generation with multi-turn RL, where the agent iteratively refines kernels using execution and profiling feedback across multiple turns.">
+  <meta property="og:description" content="Advanced Agentic Systems # Overview # This section covers advanced agentic and reasoning-based methods for kernel optimization. We discuss single-turn and multi-turn reinforcement learning for iterative kernel refinement, evolution-based approaches that maintain and search over populations of candidate kernels (including methods that search over how a kernel is decomposed into subproblems rather than over a monolithic artifact), and inference-time scaling applied to kernel code reasoning. Together these methods form the agentic systems that iteratively generate, evaluate, and improve kernels with feedback from compilers and profilers, all resting on the same trustworthy, verifiable reward built in Section 2.">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="website">
 <title>Advanced Agentic Systems | Teaching LLMs to Write System Kernels</title>
@@ -50,7 +37,7 @@ Contents of this section # 3.1 Single-Turn and Multi-Turn RL for Kernel Optimiza
 <link rel="canonical" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/">
 <link rel="stylesheet" href="/llm_kernel_writing/book.min.27cffe658670f57112663ed746a421db277c2dd6549965c27f9ad0103cccd990.css" integrity="sha256-J8/&#43;ZYZw9XESZj7XRqQh2yd8LdZUmWXCf5rQEDzM2ZA=" crossorigin="anonymous">
   <script defer src="/llm_kernel_writing/fuse.min.js"></script>
-  <script defer src="/llm_kernel_writing/en.search.min.18bfc85b5cb2087da294896b5edd2baeb4171666afd32fe8a642990be1fa8c55.js" integrity="sha256-GL/IW1yyCH2ilIlrXt0rrrQXFmav0y/opkKZC&#43;H6jFU=" crossorigin="anonymous"></script>
+  <script defer src="/llm_kernel_writing/en.search.min.0f639ea7ce45e36fcd7a402610b93ec7d7d10eadd6d874dcf2342aa16820c0c7.js" integrity="sha256-D2Oep85F42/NekAmELk&#43;x9fRDq3W2HTc8jQqoWggwMc=" crossorigin="anonymous"></script>
 <link rel="alternate" type="application/rss+xml" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/index.xml" title="Teaching LLMs to Write System Kernels" />
 <!--
 Made with Book Theme
@@ -525,10 +512,12 @@ https://github.com/alex-shpak/hugo-book
 </h2>
 <p>This section covers advanced agentic and reasoning-based methods for kernel optimization.
 We discuss single-turn and multi-turn reinforcement learning for iterative kernel
-refinement, evolution-based approaches that search over candidate kernels, and
-inference-time scaling applied to kernel code reasoning. Together these methods form the
-agentic systems that iteratively generate, evaluate, and improve kernels with feedback from
-compilers and profilers.</p>
+refinement, evolution-based approaches that maintain and search over populations of candidate
+kernels (including methods that search over how a kernel is decomposed into subproblems rather
+than over a monolithic artifact), and inference-time scaling applied to kernel code reasoning.
+Together these methods form the agentic systems that iteratively generate, evaluate, and improve
+kernels with feedback from compilers and profilers, all resting on the same trustworthy,
+verifiable reward built in Section 2.</p>
 <h2 id="contents-of-this-section">
   <strong>Contents of this section</strong>
   
@@ -550,15 +539,18 @@ kernels using execution and profiling feedback across multiple turns.</p>
   
 </h3>
 <p>Explores evolutionary and search-based methods that maintain and improve populations of
-candidate kernels over successive iterations.</p>
+candidate kernels over successive iterations, including approaches that search over the modular
+decomposition itself for kernels that are more token-efficient, transferable, and reliably
+verifiable.</p>
 <h3 id="33-inference-time-scaling-for-kernel-code-reasoning">
   <a href="/llm_kernel_writing/docs/section-3/subsection-3/">3.3 Inference-Time Scaling for Kernel Code Reasoning</a>
   
   <a class="anchor" href="#33-inference-time-scaling-for-kernel-code-reasoning">#</a>
   
 </h3>
-<p>Applies inference-time compute scaling to kernel code reasoning — reasoning traces,
-sampling, and search that improve generated kernels at test time.</p>
+<p>Applies inference-time compute scaling to kernel code reasoning across three axes (width,
+depth, and structured search) plus reasoning length, and argues that a trustworthy verifier
+is what lets extra compute buy real speedups rather than reward hacking.</p>
 </article>
  
       

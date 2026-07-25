@@ -11,30 +11,13 @@
 
 
 
-
-
-  
-
-
-[Placeholder content for subsection 3.2 Evolution-Based Approaches for Iterative Kernel Refinement.]
-
-
-
-  References
-  
-  #
-  
-
-
-[Placeholder reference.]
-">
+Section 3.1 developed multi-turn RL, where a single policy refines one kernel across turns, each conditioned on the last turn&rsquo;s feedback. Evolution-based approaches take a complementary stance. Instead of one improving trajectory, they maintain a population of candidate kernels and improve the population over generations, selecting good candidates, mutating and recombining them, evaluating the offspring, and letting the fittest survive. The two views are not opposed: a refinement trajectory is a population of size one, and most kernel-evolution systems use an LLM (often the same post-trained models of Section 2) as the engine that proposes each mutation. What evolution adds is a search wrapped around generation. That search is also the setting for the two ideas this section builds toward: searching not only over kernel code but over how the problem is decomposed into subproblems, and then using that decomposition to make correctness checking more reliable.">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#343a40">
 <meta name="color-scheme" content="light dark"><meta property="og:url" content="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-2/">
   <meta property="og:site_name" content="Teaching LLMs to Write System Kernels">
   <meta property="og:title" content="3.2 Evolution-Based Approaches for Iterative Kernel Refinement">
-  <meta property="og:description" content="Evolution-Based Approaches for Iterative Kernel Refinement # [Placeholder content for subsection 3.2 Evolution-Based Approaches for Iterative Kernel Refinement.]
-References # [Placeholder reference.]">
+  <meta property="og:description" content="Evolution-Based Approaches for Iterative Kernel Refinement # Section 3.1 developed multi-turn RL, where a single policy refines one kernel across turns, each conditioned on the last turn’s feedback. Evolution-based approaches take a complementary stance. Instead of one improving trajectory, they maintain a population of candidate kernels and improve the population over generations, selecting good candidates, mutating and recombining them, evaluating the offspring, and letting the fittest survive. The two views are not opposed: a refinement trajectory is a population of size one, and most kernel-evolution systems use an LLM (often the same post-trained models of Section 2) as the engine that proposes each mutation. What evolution adds is a search wrapped around generation. That search is also the setting for the two ideas this section builds toward: searching not only over kernel code but over how the problem is decomposed into subproblems, and then using that decomposition to make correctness checking more reliable.">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="website">
 <title>3.2 Evolution-Based Approaches for Iterative Kernel Refinement | Teaching LLMs to Write System Kernels</title>
@@ -43,7 +26,7 @@ References # [Placeholder reference.]">
 <link rel="canonical" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-2/">
 <link rel="stylesheet" href="/llm_kernel_writing/book.min.27cffe658670f57112663ed746a421db277c2dd6549965c27f9ad0103cccd990.css" integrity="sha256-J8/&#43;ZYZw9XESZj7XRqQh2yd8LdZUmWXCf5rQEDzM2ZA=" crossorigin="anonymous">
   <script defer src="/llm_kernel_writing/fuse.min.js"></script>
-  <script defer src="/llm_kernel_writing/en.search.min.18bfc85b5cb2087da294896b5edd2baeb4171666afd32fe8a642990be1fa8c55.js" integrity="sha256-GL/IW1yyCH2ilIlrXt0rrrQXFmav0y/opkKZC&#43;H6jFU=" crossorigin="anonymous"></script>
+  <script defer src="/llm_kernel_writing/en.search.min.0f639ea7ce45e36fcd7a402610b93ec7d7d10eadd6d874dcf2342aa16820c0c7.js" integrity="sha256-D2Oep85F42/NekAmELk&#43;x9fRDq3W2HTc8jQqoWggwMc=" crossorigin="anonymous"></script>
 <link rel="alternate" type="application/rss+xml" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-2/index.xml" title="Teaching LLMs to Write System Kernels" />
 <!--
 Made with Book Theme
@@ -484,6 +467,10 @@ https://github.com/alex-shpak/hugo-book
   
 <nav id="TableOfContents">
   <ul>
+    <li><a href="#the-evolutionary-loop">The evolutionary loop</a></li>
+    <li><a href="#search-based-systems-for-kernels">Search-based systems for kernels</a></li>
+    <li><a href="#searching-over-the-decomposition-not-just-the-code">Searching over the decomposition, not just the code</a></li>
+    <li><a href="#takeaways">Takeaways</a></li>
     <li><a href="#references">References</a></li>
   </ul>
 </nav>
@@ -504,10 +491,136 @@ https://github.com/alex-shpak/hugo-book
   
 </h1>
 
+
+<p>Section 3.1 developed multi-turn RL, where a <em>single</em> policy refines <em>one</em> kernel across turns, each conditioned on the last turn&rsquo;s feedback. Evolution-based approaches take a complementary stance. Instead of one improving trajectory, they maintain a <strong>population</strong> of candidate kernels and improve the population over generations, selecting good candidates, mutating and recombining them, evaluating the offspring, and letting the fittest survive. The two views are not opposed: a refinement trajectory is a population of size one, and most kernel-evolution systems use an LLM (often the same post-trained models of Section 2) as the engine that proposes each mutation. What evolution adds is a <em>search</em> wrapped around generation. That search is also the setting for the two ideas this section builds toward: searching not only over kernel code but over <em>how the problem is decomposed</em> into subproblems, and then using that decomposition to make correctness checking more reliable.</p>
+<p>This subsection first abstracts the common evolutionary loop and its two canonical instances, then surveys the kernel-specific systems built on it, and finally turns to a recurring theme in the more recent systems: widening the search from kernel <em>code</em> to the problem&rsquo;s <em>decomposition</em>. We use <a href="https://arxiv.org/abs/2607.20501">MKEvolve</a> [1] as the worked example of that idea.</p>
+<h2 id="the-evolutionary-loop">
+  The evolutionary loop
+  
+  <a class="anchor" href="#the-evolutionary-loop">#</a>
+  
+</h2>
+<p>Every LLM-driven evolutionary system, whatever the domain, instantiates the same five-part loop over a population 
+<span>
+  \( P_t \)
+  </span>
+
+ of candidate programs:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>   ┌──────────────────────────────────────────────────────────────────┐
+</span></span><span style="display:flex;"><span>   │                         population  P_t                          │
+</span></span><span style="display:flex;"><span>   │            (candidate kernels + their fitness scores)            │
+</span></span><span style="display:flex;"><span>   └───────────────┬────────────────────────────────────▲─────────────┘
+</span></span><span style="display:flex;"><span>                   │                                    │
+</span></span><span style="display:flex;"><span>       ① select parents / inspirations          ⑤ survival: keep fittest
+</span></span><span style="display:flex;"><span>                   │                                    │
+</span></span><span style="display:flex;"><span>                   ▼                                    │
+</span></span><span style="display:flex;"><span>       ② vary:  LLM proposes offspring    ──▶    ③ evaluate: compile,
+</span></span><span style="display:flex;"><span>          (mutation / crossover / agent)            check, time       ──▶  ④ fitness
+</span></span></code></pre></div><ol>
+<li><strong>Selection.</strong> Choose which population members seed the next round (the fittest, a diverse sample, or both).</li>
+<li><strong>Variation.</strong> An LLM turns the selected parents into new candidates, by editing one (mutation) or combining several (crossover). This is where the language model does its work.</li>
+<li><strong>Evaluation.</strong> Run each candidate: compile, check correctness against a reference, and time it.</li>
+<li><strong>Fitness.</strong> Collapse the evaluation into a scalar. For kernels this is almost universally <em>correctness-gated speedup</em>: 
+<span>
+  \( F(y) = \mathrm{speedup}(y) \)
+  </span>
+
+ if 
+<span>
+  \( y \)
+  </span>
+
+ is correct, and 
+<span>
+  \( F(y) = 0 \)
+  </span>
+
+ otherwise, so an incorrect kernel is worthless no matter how fast. This is exactly the compile-correct-fast reward of Section 2.2 and the anti-cheating discipline of Section 2.3, reused as a selection signal rather than a policy gradient.</li>
+<li><strong>Survival.</strong> Register the offspring back into the population and decide who stays, closing the loop.</li>
+</ol>
+<p>The design freedom lives in steps 1, 2, and 5: <em>how</em> parents are chosen, <em>what</em> the variation operator is, and <em>how</em> the population is structured. The two canonical systems below share this loop but sit at opposite ends of one axis: how much work counts as a <em>single mutation</em>, and correspondingly where the search intelligence lives. AlphaEvolve puts it in the <em>framework</em> wrapped around a simple LLM call; Avo puts it in the <em>operator</em>, which is itself an agent.</p>
+<p><strong>AlphaEvolve</strong> [2] is the reference LLM-evolution system, and the ancestor most kernel systems cite. Four choices instantiate the loop above:</p>
+<ul>
+<li><strong>Population (a program database).</strong> It keeps every program ever evaluated alongside its scores. To build each prompt it draws one <strong>parent</strong> (the program to improve) plus a few <strong>inspiration</strong> programs (other high-scoring or notably different attempts, shown to the model as extra ideas to draw on).</li>
+<li><strong>Retention (MAP-Elites + island model).</strong> Two rules govern what the database keeps, both to stop the search from collapsing onto a single lineage too early (balancing <em>exploitation</em>, refining the current best, against <em>exploration</em>, trying genuinely different directions). <em>MAP-Elites</em> buckets programs by descriptive features (such as code length or which strategy they use) and keeps the best one <em>per bucket</em>, yielding an archive of diverse champions rather than near-copies of the leader. The <em>island model</em> splits that archive into sub-populations that evolve independently, with occasional migration of a strong program between them, so different islands explore different regions.</li>
+<li><strong>Variation (targeted diffs).</strong> An ensemble of Gemini models (a fast, high-volume model plus an occasional higher-quality one) proposes edits emitted as <code>SEARCH</code>/<code>REPLACE</code> <strong>diff blocks</strong> applied to regions marked by <code>EVOLVE-BLOCK</code> comments, so the model mutates a small, targeted span rather than rewriting the whole program.</li>
+<li><strong>Evaluation (metric cascade).</strong> A user-supplied <code>evaluate()</code> function returns a dictionary of scalar metrics, optionally through a cascade of increasingly hard test cases that cheaply kills weak candidates before expensive evaluation.</li>
+</ul>
+<p>This machinery produced concrete, verified discoveries: an algorithm to multiply two 
+<span>
+  \( 4\times 4 \)
+  </span>
+
+ complex matrices in <strong>48 scalar multiplications</strong> (the first improvement over Strassen&rsquo;s rank-49 scheme in this setting in 56 years), an average <strong>23% speedup</strong> on the Pallas kernels used to train Gemini, and a <strong>32% speedup</strong> of a FlashAttention kernel optimized at the XLA IR level [2]. The lesson for kernels is that evolutionary search with an executable evaluator in the loop outperforms single-shot generation on real accelerator code.</p>
+<p>In these terms, AlphaEvolve&rsquo;s variation operator is 
+<span>
+  \( \mathrm{Vary}(P_t) = \mathrm{Generate}(\mathrm{Sample}(P_t)) \)
+  </span>
+
+: the framework samples the parent and inspirations, and the LLM is called <em>once</em> to return a single diff. All the search logic (population, MAP-Elites, islands) sits in the framework around that one call.</p>
+<p><strong>Avo</strong> [3] sits at the other end. It makes the operator itself an autonomous agent, 
+<span>
+  \( \mathrm{Vary}(P_t) = \mathrm{Agent}(P_t, K, f) \)
+  </span>
+
+, so producing <em>one</em> offspring is now a whole agentic loop rather than a single call: within that step the agent inspects prior implementations, consults a domain knowledge base 
+<span>
+  \( K \)
+  </span>
+
+ (CUDA guides, PTX ISA docs, hardware specs), reads profiling feedback 
+<span>
+  \( f \)
+  </span>
+
+, and runs its own edit-evaluate-diagnose cycle (many LLM calls and tool uses) until it commits a satisfactory candidate. Because the operator now carries the intelligence, Avo can strip the population machinery back to a single lineage on purpose, which isolates and demonstrates that making the operator agentic is what drives the gains. Run this way on attention kernels for NVIDIA B200 GPUs, Avo discovered kernels beating FlashAttention-4 by <strong>5.0% to 10.5%</strong> on causal attention and transferred a multi-head attention solution to grouped-query attention in about <strong>30 minutes</strong> of additional autonomous search, over a 7-day run that committed 40 kernel versions out of more than 500 explored directions [3]. So the two systems answer the same question, <em>where should the cleverness go</em>, in opposite ways: AlphaEvolve keeps a simple operator and a rich population manager, while Avo keeps a minimal population and a clever, agentic operator.</p>
+<h2 id="search-based-systems-for-kernels">
+  Search-based systems for kernels
+  
+  <a class="anchor" href="#search-based-systems-for-kernels">#</a>
+  
+</h2>
+<p>Between these poles sit the kernel-specific systems, which mostly use <strong>beam search</strong>, <strong>tree search</strong>, or a full <strong>evolutionary</strong> loop, with an LLM as the variation operator and correctness-gated speedup as fitness. These three are not different <em>kinds</em> of thing: they are the same population loop with two knobs set differently, <em>what the variation operator does</em> (mutate one parent, or also recombine several) and <em>how selection prunes</em> (strict top-
+<span>
+  \( B \)
+  </span>
+
+, adaptive with an exploration bonus, or diversity-preserving). This is exactly why KernelEvolve [7] below can express all three as one selection-policy choice 
+<span>
+  \( \pi_{\mathrm{sel}} \)
+  </span>
+
+ over a shared substrate.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>  BEAM SEARCH (keep top-B)          TREE SEARCH (adaptive, +explore)     EVOLUTIONARY (crossover + diversity)
+</span></span><span style="display:flex;"><span>  ───────────────────────          ────────────────────────────────     ────────────────────────────────────
+</span></span><span style="display:flex;"><span>        [seed]                            [seed]                               [ ● ● ● ● ● ]  diverse population
+</span></span><span style="display:flex;"><span>       /  |  \                           /      \                              (kept spread out via
+</span></span><span style="display:flex;"><span>     m1  m2  m3   ← mutate each        best    2nd-best                         MAP-Elites niches / islands)
+</span></span><span style="display:flex;"><span>      |   |   |                        /  \       \        ← expand the             │        │
+</span></span><span style="display:flex;"><span>    ▓▓▓  ░░░  ▓▓▓  ← score, keep      n1  n2      n3          most promising    parent_A  parent_B
+</span></span><span style="display:flex;"><span>    top-B, drop the rest              /            (UCT: value + explore            └───┬────┘
+</span></span><span style="display:flex;"><span>        │                            n4             bonus, revisit ancestors)           │  ⊗ crossover (n-ary)
+</span></span><span style="display:flex;"><span>   [ ▓▓▓ ▓▓▓ ]  next frontier        │                                                  ▼
+</span></span><span style="display:flex;"><span>   (B near-best; no diversity,     budget flows to good                       child + mutate → evaluate
+</span></span><span style="display:flex;"><span>    unary: one parent → child)     subtrees, not a fixed frontier            (stochastic survival keeps
+</span></span><span style="display:flex;"><span>                                    (unary: one node at a time)                diverse elites, not just top-B)
+</span></span></code></pre></div><p>Reading left to right, each strategy relaxes a constraint of the one before it: beam search is strict top-
+<span>
+  \( B \)
+  </span>
+
+ elitism with a unary (mutation-only) operator; tree search keeps the unary operator but replaces the fixed frontier with an adaptive selection policy that spends budget on promising subtrees and adds an explicit exploration term (so it avoids beam&rsquo;s tendency to fill up with near-copies of one idea); an evolutionary loop adds the two features neither has, an <em>n-ary</em> operator that can <strong>recombine</strong> several parents (crossover), and <em>diversity-preserving, stochastic</em> selection (MAP-Elites niches or islands, as in AlphaEvolve) instead of pure top-
+<span>
+  \( B \)
+  </span>
+
+.</p>
+<p>The most common form of tree search here is <strong>Monte Carlo Tree Search (MCTS)</strong>, the algorithm behind game-playing systems such as AlphaGo. Rather than expanding a fixed frontier, it repeats a four-step cycle: <em>select</em> a path down the existing tree to an under-explored node, <em>expand</em> it with a new candidate (here, a mutated kernel), <em>evaluate</em> that candidate (compile, check, time it for its fitness), and <em>backpropagate</em> the score up to every ancestor, updating their value estimates and visit counts. Which child to descend into at each step is decided by <strong>UCT (Upper Confidence bounds applied to Trees)</strong>, a rule that scores every child and picks the largest:</p>
+
 <link rel="stylesheet" href="/llm_kernel_writing/katex/katex.min.css" />
 <script defer src="/llm_kernel_writing/katex/katex.min.js"></script>
 
-  <script defer src="/llm_kernel_writing/katex/auto-render.min.js" onload="renderMathInElement(document.body, {
+<script defer src="/llm_kernel_writing/katex/auto-render.min.js" onload="renderMathInElement(document.body, {
   &#34;delimiters&#34;: [
     {&#34;left&#34;: &#34;$$&#34;, &#34;right&#34;: &#34;$$&#34;, &#34;display&#34;: true},
     {&#34;left&#34;: &#34;$&#34;, &#34;right&#34;: &#34;$&#34;, &#34;display&#34;: false},
@@ -517,10 +630,150 @@ https://github.com/alex-shpak/hugo-book
 }
 );"></script>
 
+<span>\[ \mathrm{UCT}(\text{child}) = \underbrace{\bar{v}}_{\text{exploit}} + \; c\,\underbrace{\sqrt{\tfrac{\ln N_{\text{parent}}}{n_{\text{child}}}}}_{\text{explore}}, \]</span>
+<p>where 
+<span>
+  \( \bar{v} \)
+  </span>
 
-<p>[Placeholder content for subsection 3.2 Evolution-Based Approaches for Iterative Kernel Refinement.]</p>
+ is the child&rsquo;s mean backpropagated score (favoring it is <em>exploitation</em>: go where kernels already look fast), and the second term is an <em>exploration</em> bonus that grows when a child has been visited few times (
+<span>
+  \( n_{\text{child}} \)
+  </span>
 
+ small relative to the parent&rsquo;s visit count 
+<span>
+  \( N_{\text{parent}} \)
+  </span>
 
+), so under-tried candidates keep getting a chance; the constant 
+<span>
+  \( c \)
+  </span>
+
+ sets the balance. This is the &ldquo;value + exploration bonus&rdquo; in the diagram, and it is the concrete mechanism by which a promising-but-under-tried kernel can outrank a well-tried leader, preventing the search from tunnel-visioning onto one branch.</p>
+<table>
+  <thead>
+      <tr>
+          <th>Strategy</th>
+          <th>Variation operator</th>
+          <th>Selection / pruning</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><strong>Beam search</strong></td>
+          <td>mutation only (one parent → child)</td>
+          <td>strict top-
+<span>
+  \( B \)
+  </span>
+
+, no diversity</td>
+      </tr>
+      <tr>
+          <td><strong>Tree search</strong> (MCTS/UCT)</td>
+          <td>mutation only</td>
+          <td>adaptive node choice, value + exploration bonus</td>
+      </tr>
+      <tr>
+          <td><strong>Evolutionary</strong></td>
+          <td>mutation <em>and</em> crossover (n-ary)</td>
+          <td>diversity-preserving + stochastic (MAP-Elites, islands)</td>
+      </tr>
+  </tbody>
+</table>
+<p>This axis is <em>orthogonal</em> to the AlphaEvolve-vs-Avo one above: that concerned what happens <em>inside</em> one operator call (a single LLM call versus a whole agent loop), whereas this concerns how many parents the operator takes and how the population is pruned around it. Any choice on one axis composes with any choice on the other. The systems below differ in target hardware, in the <em>structure</em> imposed on the search, and in what memory persists across rounds.</p>
+<ul>
+<li>
+<p><strong>Autocomp</strong> [4] optimizes low-level tensor-accelerator code with a beam search (width 
+<span>
+  \( B = 6 \)
+  </span>
+
+) driven by a two-phase prompt: a <em>planning</em> phase where the LLM selects exactly one transformation from a concise, editable <strong>optimization menu</strong> (loop tiling, reordering, double buffering, and so on), then a <em>code</em> phase that applies it. Diversity comes from <em>menu dropout</em> (each menu item is randomly withheld with 70% probability) and from LLM ensembling. It reports <strong>5.6x</strong> over the Gemmini vendor library, <strong>1.9x</strong> over expert hand-tuned code on AWS Trainium, and <strong>3.8x</strong> over an ML cost model on an NVIDIA L40S, and it explicitly <em>rejects</em> crossover (candidate merging) as ill-suited to loop-nest accelerator code, a useful counterpoint to genetic-style recombination [4]. Its plan-then-code split also foreshadows the planning/coding decomposition that TritonRL rewards asymmetrically (Section 2.3).</p>
+</li>
+<li>
+<p><strong>AccelOpt</strong> [5] adds a self-improving <strong>optimization memory</strong> to a beam search over Trainium NKI kernels. A planner, an executor, and a summarizer cooperate: the summarizer distills each round&rsquo;s slow-to-fast rewrites (including <em>negative</em> examples) into a bounded queue of reusable strategies that conditions the planner in later rounds. This lifted average throughput from <strong>49% to 61%</strong> of hardware peak on Trainium 1 and <strong>45% to 59%</strong> on Trainium 2, and, notably, open-source models with search-plus-memory <em>matched</em> Claude Sonnet 4 quality at roughly <strong>26x lower cost</strong> [5], a concrete argument that structured search can substitute for raw model strength.</p>
+</li>
+<li>
+<p><strong>Astra</strong> [6] decomposes optimization by <em>role</em> rather than by code region: separate testing, profiling, planning, and coding agents share a trajectory log over 5 refinement rounds. On production CUDA kernels extracted from the SGLang serving framework it reached <strong>1.32x</strong> average speedup, versus <strong>1.08x</strong> for an otherwise identical single monolithic agent, showing that role decomposition alone buys accuracy (the monolith even regressed to a slowdown on one kernel when unrepresentative test inputs biased its profiling) [6].</p>
+</li>
+<li>
+<p><strong>KernelEvolve</strong> [7], deployed at Meta, formalizes the whole family as graph-based tree search defined by a tuple 
+<span>
+  \( (F, \pi_{\mathrm{sel}}, O, \tau) \)
+  </span>
+
+: a fitness 
+<span>
+  \( F(v) = t_{\text{pytorch}}/t_{\text{triton}} \)
+  </span>
+
+ (with 
+<span>
+  \( F = 0 \)
+  </span>
+
+ for kernels that fail compilation or correctness), a selection policy 
+<span>
+  \( \pi_{\mathrm{sel}} \)
+  </span>
+
+ instantiable as greedy, MCTS with UCT, or evolutionary crossover/mutation, a single <em>universal</em> operator 
+<span>
+  \( O \)
+  </span>
+
+ steered by retrieval-augmented prompt synthesis (so one context-adaptive operator replaces fixed draft/debug/improve operators, enabling knowledge injection for proprietary accelerators absent from the training corpus), and a termination rule 
+<span>
+  \( \tau \)
+  </span>
+
+.</p>
+<p>This 
+<span>
+  \( (F, \pi_{\mathrm{sel}}, O, \tau) \)
+  </span>
+
+ view is a useful lens on the whole family: every system fixes a fitness and a correctness gate, then chooses a selection policy and a variation operator. The next idea changes the <em>object</em> the search operates on.</p>
+</li>
+</ul>
+<h2 id="searching-over-the-decomposition-not-just-the-code">
+  Searching over the decomposition, not just the code
+  
+  <a class="anchor" href="#searching-over-the-decomposition-not-just-the-code">#</a>
+  
+</h2>
+<p>The systems above, and most LLM kernel generators, treat the kernel as a <strong>single monolithic artifact</strong> optimized end-to-end. This has two costs. First, it is <em>inefficient</em>: repeatedly re-optimizing an entire kernel wastes improvement effort and tokens, because most useful changes are <em>local</em> and touch only a small part of the computation. Second, monolithic kernels are <em>opaque</em>: a single end-to-end correctness or speedup number cannot say <em>which part</em> is wrong or slow, which makes the result hard for both engineers and LLMs to debug, reuse, or adapt.</p>
+<p>The response is to <strong>decompose</strong> the problem: split the model into subproblems, solve each as its own subkernel, and compose the results into an end-to-end implementation. <strong>KernelFalcon</strong> [14] established this recipe for LLM kernel generation, fusing a PyTorch model into a typed JSON compute-graph of subgraphs, generating each subkernel with a pool of parallel workers under execution-based verification, and stitching the verified pieces back together with the LLM. <strong>MKEvolve</strong> [1] builds directly on that decompose-generate-compose lineage but makes two changes: it treats the decomposition itself as a first-class object that is <em>evolved</em> rather than fixed once, and it makes composition and verification <em>programmatic</em> rather than model-driven. A kernel is represented not as one file but as a <em>codebase</em>: a set of files, each implementing a subproblem derived from the original PyTorch module, plus a single top-level module that orchestrates the subkernels into a functionally identical implementation. The search then runs at <em>two</em> levels at once: over the subkernel implementations, and over the decomposition topology (how many subproblems there are and where the boundaries fall). Three choices instantiate the loop above:</p>
+<ul>
+<li><strong>Two-level search.</strong> An inner beam search optimizes each subkernel (reward = speedup over <code>torch.compile</code>, incorrect kernels get 0), while every few iterations an outer step reshapes the topology, splitting a failing subproblem in two or fusing subproblems into a larger one, and the LLM budget is steered toward the slow or incorrect pieces rather than spread evenly.</li>
+<li><strong>Programmatic composition.</strong> Verified subkernels are plugged into the end-to-end kernel by a <em>deterministic</em> orchestrator, not stitched by the model, so the composed program is correct-by-construction from its parts. This is what makes subkernels <em>swappable</em> (adapt to a related model by replacing one subkernel) and failures <em>traceable</em> (a wrong output localizes to a specific subkernel). Subkernels are held to the anti-cheating and strict-correctness standard of Section 2.3, reusing the TritonRL cheating detector [8] and the KernelBench evaluation pipeline [9].</li>
+<li><strong>Reliable verification.</strong> Decomposition also makes correctness checking easier. Correctness is decided by comparing the output against a reference within a tolerance, and a single end-to-end tolerance must be both loose enough not to reject correct kernels and tight enough to catch bugs. In low precision (BF16, FP16) no such value may exist, because a correct low-precision kernel&rsquo;s own rounding error can be <em>larger</em> than the error a real bug introduces: if a correct kernel deviates by up to 
+<span>
+  \( 10^{-2} \)
+  </span>
+
+ while a subtle bug perturbs the output by only 
+<span>
+  \( 10^{-3} \)
+  </span>
+
+, any tolerance loose enough to admit the correct kernel also admits the buggy one. Checking each <em>sub-operator&rsquo;s</em> intermediate tensor against its own calibrated tolerance sidesteps this: the bug is caught at the stage where it occurs, before a later operator can dampen its error into the end-to-end noise floor, which is why decomposed checking catches subtle BF16 bugs (unsafe softmax, off-by-one masks) that the end-to-end check misses [1]. That per-operator bounds compose into an end-to-end guarantee follows from classical smoothness and rounding-error analysis [10, 11, 12].</li>
+</ul>
+<p>The lesson mirrors AlphaEvolve and Avo: evolutionary search with an executable evaluator beats single-shot generation, and here searching over the <em>decomposition</em> rather than a monolithic artifact yields kernels that are more token-efficient, interpretable, and transferable. The two changes over KernelFalcon are exactly the axes above: KernelFalcon stitches subkernels with LLM-driven composition validated by LLM-generated tests and halts at the first correct subkernel, whereas MKEvolve composes programmatically, verifies with a strict non-LLM pipeline (the TritonRL cheating detector [8] and KernelBench harness [9]), and keeps <em>evolving</em> the topology instead of stopping at first-correct [1]. On KernelBench L2/L3 (Claude Opus 4.5 and GPT-OSS 120B), MKEvolve improves both correctness and speedup over parallel-sampling and beam-search baselines while using <strong>15% to 35% fewer LLM tokens</strong>, and it reaches <strong>10.7x</strong> to <strong>44.3x</strong> speedups over <code>torch.compile</code> on FlashInfer-Bench inference kernels [1, 13].</p>
+<h2 id="takeaways">
+  Takeaways
+  
+  <a class="anchor" href="#takeaways">#</a>
+  
+</h2>
+<ul>
+<li>Evolution wraps a <strong>search</strong> around LLM kernel generation: a population, a variation operator (a diff, an agent loop, or a plan-then-code step), and a <strong>correctness-gated speedup</strong> fitness that reuses the reward and anti-cheating machinery of Section 2. Beam and tree search, with persistent memory (AccelOpt) or a universal RAG-steered operator (KernelEvolve), are the common instances.</li>
+<li>The variation operator can be as small as a targeted diff (AlphaEvolve) or as large as an autonomous refinement agent (Avo); the trade-off is diversity and control versus per-mutation cost.</li>
+<li>A recurring recent theme is to widen the search from kernel <em>code</em> to the <strong>decomposition itself</strong> (subproblem topology plus subkernel implementations), which MKEvolve illustrates: a modular codebase is more token-efficient, interpretable, transferable, and reliably <em>verifiable</em> (via per-operator calibrated tolerances) than a monolithic kernel, provided <strong>composition and verification stay programmatic</strong> rather than model-driven.</li>
+</ul>
 <h2 id="references">
   References
   
@@ -528,7 +781,20 @@ https://github.com/alex-shpak/hugo-book
   
 </h2>
 <ol>
-<li>[Placeholder reference.]</li>
+<li>J. Yoo, R. Saha, S. Zhu, T. Yu, W. Tang, and Y. Park. <em>MKEvolve: A Modular Multi-Agent Framework for Kernel Code Generation.</em> arXiv:2607.20501, 2026 (ICML 2026 Workshop on Compositional Learning). <a href="https://arxiv.org/abs/2607.20501">arxiv.org/abs/2607.20501</a></li>
+<li>A. Novikov, N. Vũ, M. Eisenberger, E. Dupont, et al. <em>AlphaEvolve: A Coding Agent for Scientific and Algorithmic Discovery.</em> arXiv:2506.13131, 2025. <a href="https://arxiv.org/abs/2506.13131">arxiv.org/abs/2506.13131</a></li>
+<li>T. Chen, Z. Ye, B. Xu, T. Liu, A. Hassani, T. Chen, R. Krashinsky, M.-Y. Liu, V. Grover, L. Ceze, and H. Shi, et al. <em>Avo: Agentic Variation Operators for Autonomous Evolutionary Search.</em> arXiv:2603.24517, 2026. <a href="https://arxiv.org/abs/2603.24517">arxiv.org/abs/2603.24517</a></li>
+<li>C. Hong, S. Bhatia, A. Cheung, and Y. S. Shao. <em>Autocomp: A Powerful and Portable Code Optimizer for Tensor Accelerators.</em> arXiv:2505.18574, 2025. <a href="https://arxiv.org/abs/2505.18574">arxiv.org/abs/2505.18574</a></li>
+<li>G. Zhang, S. Zhu, A. Wei, Z. Song, A. Nie, Z. Jia, N. Vijaykumar, Y. Wang, and K. Olukotun. <em>AccelOpt: A Self-Improving LLM Agentic System for AI Accelerator Kernel Optimization.</em> arXiv:2511.15915, 2025. <a href="https://arxiv.org/abs/2511.15915">arxiv.org/abs/2511.15915</a></li>
+<li>A. Wei, T. Sun, Y. Seenichamy, H. Song, A. Ouyang, A. Mirhoseini, K. Wang, and A. Aiken. <em>Astra: A Multi-Agent System for GPU Kernel Performance Optimization.</em> arXiv:2509.07506, 2025. <a href="https://arxiv.org/abs/2509.07506">arxiv.org/abs/2509.07506</a></li>
+<li>G. Liao, H. Qin, Y. Wang, A. Golden, M. Kuchnik, et al. <em>KernelEvolve: Scaling Agentic Kernel Coding for Heterogeneous AI Accelerators at Meta.</em> arXiv:2512.23236, 2026. <a href="https://arxiv.org/abs/2512.23236">arxiv.org/abs/2512.23236</a></li>
+<li>J. Woo, S. Zhu, A. Nie, Z. Jia, Y. Wang, and Y. Park. <em>TritonRL: Training LLMs to Think and Code Triton Without Cheating.</em> arXiv:2510.17891, 2025. <a href="https://arxiv.org/abs/2510.17891">arxiv.org/abs/2510.17891</a></li>
+<li>A. Ouyang, S. Guo, S. Arora, A. L. Zhang, W. Hu, C. Ré, and A. Mirhoseini. <em>KernelBench: Can LLMs Write Efficient GPU Kernels?</em> ICML 2025. <a href="https://openreview.net/forum?id=yeoN1iQT1x">openreview.net/forum?id=yeoN1iQT1x</a></li>
+<li>H. Kim, G. Papamakarios, and A. Mnih. <em>The Lipschitz Constant of Self-Attention.</em> arXiv:2006.04710, 2021. <a href="https://arxiv.org/abs/2006.04710">arxiv.org/abs/2006.04710</a></li>
+<li>V. Castin, P. Ablin, and G. Peyré. <em>How Smooth Is Attention?</em> arXiv:2312.14820, 2024. <a href="https://arxiv.org/abs/2312.14820">arxiv.org/abs/2312.14820</a></li>
+<li>N. J. Higham and T. Mary. <em>Sharper Probabilistic Backward Error Analysis for Basic Linear Algebra Kernels with Random Data.</em> SIAM Journal on Scientific Computing, 42(5):A3427-A3446, 2020. <a href="https://doi.org/10.1137/20M1314355">doi.org/10.1137/20M1314355</a></li>
+<li>S. Xing, Y. Zhai, A. Jiang, Y. Dong, Y. Wu, Z. Ye, C. Ruan, Y. Huang, Y. Zhang, L. Yin, et al. <em>FlashInfer-Bench: Building the Virtuous Cycle for AI-driven LLM Systems.</em> arXiv:2601.00227, 2026. <a href="https://arxiv.org/abs/2601.00227">arxiv.org/abs/2601.00227</a></li>
+<li>L. Wang, S. Chen, B. Maher, J. Isaacson, L. Fang, W. Chi, J. Liu, A. Hammond, Z. Fisches, M. Saroufim, W. Hunt, R. Li, J. Kahn, E. El-Haraty, and A. Mathews. <em>KernelFalcon: Autonomous GPU Kernel Generation via Deep Agents.</em> PyTorch Blog, 2025. <a href="https://pytorch.org/blog/kernelfalcon-autonomous-gpu-kernel-generation-via-deep-agents/">pytorch.org/blog/kernelfalcon-autonomous-gpu-kernel-generation-via-deep-agents</a></li>
 </ol>
 </article>
  
@@ -599,6 +865,10 @@ https://github.com/alex-shpak/hugo-book
   
 <nav id="TableOfContents">
   <ul>
+    <li><a href="#the-evolutionary-loop">The evolutionary loop</a></li>
+    <li><a href="#search-based-systems-for-kernels">Search-based systems for kernels</a></li>
+    <li><a href="#searching-over-the-decomposition-not-just-the-code">Searching over the decomposition, not just the code</a></li>
+    <li><a href="#takeaways">Takeaways</a></li>
     <li><a href="#references">References</a></li>
   </ul>
 </nav>

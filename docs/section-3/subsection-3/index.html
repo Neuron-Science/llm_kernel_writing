@@ -16,25 +16,13 @@
   
 
 
-[Placeholder content for subsection 3.3 Inference-Time Scaling for Kernel Code Reasoning.]
-
-
-
-  References
-  
-  #
-  
-
-
-[Placeholder reference.]
-">
+Sections 3.1 and 3.2 each spent more test-time compute to get a better kernel: 3.1 by refining one kernel over many turns of feedback, 3.2 by evolving a population across generations. This subsection steps back and treats that spending as the object of study. Inference-time scaling is the practice of trading extra compute at generation time, more samples, more reasoning tokens, more search, for a better answer, holding the model fixed. It is the counterpart to the training-time scaling of Section 2: rather than post-train a stronger policy, we run a fixed policy harder.">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#343a40">
 <meta name="color-scheme" content="light dark"><meta property="og:url" content="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-3/">
   <meta property="og:site_name" content="Teaching LLMs to Write System Kernels">
   <meta property="og:title" content="3.3 Inference-Time Scaling for Kernel Code Reasoning">
-  <meta property="og:description" content="Inference-Time Scaling for Kernel Code Reasoning # [Placeholder content for subsection 3.3 Inference-Time Scaling for Kernel Code Reasoning.]
-References # [Placeholder reference.]">
+  <meta property="og:description" content="Inference-Time Scaling for Kernel Code Reasoning # Sections 3.1 and 3.2 each spent more test-time compute to get a better kernel: 3.1 by refining one kernel over many turns of feedback, 3.2 by evolving a population across generations. This subsection steps back and treats that spending as the object of study. Inference-time scaling is the practice of trading extra compute at generation time, more samples, more reasoning tokens, more search, for a better answer, holding the model fixed. It is the counterpart to the training-time scaling of Section 2: rather than post-train a stronger policy, we run a fixed policy harder.">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="website">
 <title>3.3 Inference-Time Scaling for Kernel Code Reasoning | Teaching LLMs to Write System Kernels</title>
@@ -43,7 +31,7 @@ References # [Placeholder reference.]">
 <link rel="canonical" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-3/">
 <link rel="stylesheet" href="/llm_kernel_writing/book.min.27cffe658670f57112663ed746a421db277c2dd6549965c27f9ad0103cccd990.css" integrity="sha256-J8/&#43;ZYZw9XESZj7XRqQh2yd8LdZUmWXCf5rQEDzM2ZA=" crossorigin="anonymous">
   <script defer src="/llm_kernel_writing/fuse.min.js"></script>
-  <script defer src="/llm_kernel_writing/en.search.min.18bfc85b5cb2087da294896b5edd2baeb4171666afd32fe8a642990be1fa8c55.js" integrity="sha256-GL/IW1yyCH2ilIlrXt0rrrQXFmav0y/opkKZC&#43;H6jFU=" crossorigin="anonymous"></script>
+  <script defer src="/llm_kernel_writing/en.search.min.0f639ea7ce45e36fcd7a402610b93ec7d7d10eadd6d874dcf2342aa16820c0c7.js" integrity="sha256-D2Oep85F42/NekAmELk&#43;x9fRDq3W2HTc8jQqoWggwMc=" crossorigin="anonymous"></script>
 <link rel="alternate" type="application/rss+xml" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-3/index.xml" title="Teaching LLMs to Write System Kernels" />
 <!--
 Made with Book Theme
@@ -484,6 +472,13 @@ https://github.com/alex-shpak/hugo-book
   
 <nav id="TableOfContents">
   <ul>
+    <li><a href="#three-axes-of-test-time-compute">Three axes of test-time compute</a></li>
+    <li><a href="#width-parallel-sampling-and-best-of-n">Width: parallel sampling and Best-of-N</a></li>
+    <li><a href="#depth-sequential-refinement">Depth: sequential refinement</a></li>
+    <li><a href="#structured-search-width-times-depth">Structured search: width times depth</a></li>
+    <li><a href="#the-reasoning-token-axis-more-is-not-always-better">The reasoning-token axis: more is not always better</a></li>
+    <li><a href="#verification-is-the-enabler-and-the-bottleneck">Verification is the enabler and the bottleneck</a></li>
+    <li><a href="#takeaways">Takeaways</a></li>
     <li><a href="#references">References</a></li>
   </ul>
 </nav>
@@ -518,9 +513,145 @@ https://github.com/alex-shpak/hugo-book
 );"></script>
 
 
-<p>[Placeholder content for subsection 3.3 Inference-Time Scaling for Kernel Code Reasoning.]</p>
+<p>Sections 3.1 and 3.2 each spent <em>more test-time compute</em> to get a better kernel: 3.1 by refining one kernel over many turns of feedback, 3.2 by evolving a population across generations. This subsection steps back and treats that spending as the object of study. <strong>Inference-time scaling</strong> is the practice of trading extra compute at generation time, more samples, more reasoning tokens, more search, for a better answer, holding the model fixed. It is the counterpart to the <em>training-time</em> scaling of Section 2: rather than post-train a stronger policy, we run a fixed policy harder.</p>
+<p>Kernel generation is an unusually good fit for inference-time scaling, for one structural reason: it has a <strong>cheap, automatic, and (with the safeguards of Section 2.3) trustworthy verifier</strong>. Compiling a kernel, checking its output against a reference, and timing it is fully automated, so unlike open-ended text generation, we can always <em>keep the best verified candidate</em> out of however many we produce. That single fact is what makes spending more compute pay off, and it is also what makes the verifier the true bottleneck, as the last part of this subsection argues.</p>
+<h2 id="three-axes-of-test-time-compute">
+  Three axes of test-time compute
+  
+  <a class="anchor" href="#three-axes-of-test-time-compute">#</a>
+  
+</h2>
+<p>Test-time compute can be spent along three axes, and every system in this section is one choice among them:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>        width  (parallel samples, best-of-N)
+</span></span><span style="display:flex;"><span>          ▲
+</span></span><span style="display:flex;"><span>          │   ┌───────────────┐
+</span></span><span style="display:flex;"><span>          │   │  structured   │   beam / tree / evolutionary search
+</span></span><span style="display:flex;"><span>          │   │    search     │   (Section 3.2): width × depth, pruned by fitness
+</span></span><span style="display:flex;"><span>          │   └───────────────┘
+</span></span><span style="display:flex;"><span>          │
+</span></span><span style="display:flex;"><span>   best-of-N ●─────────────────────▶ depth (sequential refinement turns, Section 3.1)
+</span></span><span style="display:flex;"><span>   (parallel)                        multi-turn RL agents
+</span></span><span style="display:flex;"><span>          │
+</span></span><span style="display:flex;"><span>          └──▶ reasoning tokens per generation  (a third, orthogonal knob)
+</span></span></code></pre></div><ul>
+<li><strong>Width (parallel sampling).</strong> Draw 
+<span>
+  \( N \)
+  </span>
 
+ independent kernels from the same prompt and return the best verified one (Best-of-
+<span>
+  \( N \)
+  </span>
 
+). The more you draw, the likelier <em>some</em> sample is correct [1].</li>
+<li><strong>Depth (sequential refinement).</strong> Spend the budget refining <em>one</em> trajectory over turns, each conditioned on execution feedback. This is multi-turn RL at inference time (Section 3.1).</li>
+<li><strong>Structured search.</strong> Combine width and depth: maintain several candidates, refine them, and prune by fitness. Beam search, tree search, and evolution (Section 3.2) all live here.</li>
+</ul>
+<p>A fourth, orthogonal knob is the <strong>reasoning length</strong> per generation: how many chain-of-thought tokens the model emits before committing to code. We treat it separately below because, for kernels, more is not always better.</p>
+<p>The general lesson from test-time-compute research is that <em>how</em> the budget is spent matters as much as how much: allocating compute optimally (choosing between more samples and more refinement based on difficulty) can beat naively scaling either axis, and can even substitute for a larger model [2, 3]. The rest of this subsection instantiates that lesson for kernels.</p>
+<h2 id="width-parallel-sampling-and-best-of-n">
+  Width: parallel sampling and Best-of-N
+  
+  <a class="anchor" href="#width-parallel-sampling-and-best-of-n">#</a>
+  
+</h2>
+<p>The simplest scaling is to sample many kernels and keep the fastest correct one. MKEvolve&rsquo;s <strong>Parallel Scaling</strong> baseline does exactly this, drawing 160 independent kernels per problem [4], and it is the standard reference point every other method is measured against. Its behavior exposes both the appeal and the limit of pure width.</p>
+<p>The appeal is <strong>coverage</strong>, the chance that at least one sample is correct. On MultiKernelBench [5], a multi-platform benchmark of 285 tasks across CUDA, AscendC (Huawei NPU), and Pallas (TPU), the best model under <em>greedy</em> one-shot decoding solves only 164 of 855 platform-task instances, but moving to 
+<span>
+  \( N = 5 \)
+  </span>
+
+ sampled generations raises Claude Sonnet 4 to 200 total passes, with CUDA Pass@5 reaching 55.8% [5]. ConCuR [6] shows the same lift on KernelBench, reported with the 
+<span>
+  \( \text{Fast}_p \)
+  </span>
+
+ metric: the fraction of problems solved with a kernel at least 
+<span>
+  \( p \)
+  </span>
+
+ times as fast as <code>torch.compile</code>. Going from Pass@1 to Pass@10, its KernelCoder-32B model rises from 58% to 91% executable and from 17% to 32% 
+<span>
+  \( \text{Fast}_1 \)
+  </span>
+
+ on Level 1, and from 59% to 95% executable on Level 2 [6]. More draws find more correct kernels.</p>
+<p>The limit is that width has <strong>diminishing and uneven returns</strong>. On MultiKernelBench the same models that reach 47% CUDA Pass@1 manage only single-digit rates on AscendC and Pallas no matter how they are decoded, because the base model was barely exposed to those backends during training [5], and no amount of sampling conjures a capability the policy lacks. Width raises coverage but not the <em>ceiling</em>, which is why the systems in 3.1 and 3.2 invest in depth and search instead. A cautionary corollary appears in robust benchmarking: because each additional sample is another chance to stumble onto an evaluator exploit, pure width <em>amplifies</em> reward hacking, which we return to below.</p>
+<p>Parallel sampling is also the natural substrate for the population methods of 3.2. A beam search&rsquo;s per-round expansion, or an evolutionary generation&rsquo;s offspring, is a batch of parallel samples that is then <em>pruned by fitness</em> rather than merely deduplicated, which is what lets structured search convert raw width into directed progress [7].</p>
+<h2 id="depth-sequential-refinement">
+  Depth: sequential refinement
+  
+  <a class="anchor" href="#depth-sequential-refinement">#</a>
+  
+</h2>
+<p>The alternative to sampling wide is refining deep: spend the budget on successive turns of one trajectory, each reading the compiler error, correctness diff, or profile of the last (Section 3.1). The central empirical finding, from Kevin [8], is that under a <em>fixed</em> compute budget, investing in iterative refinement across turns <strong>outperforms</strong> drawing the same number of independent single-shot samples, because feedback is more informative than one-shot diversity [8]. Depth uses information that width discards.</p>
+<p>Depth is not automatically better, though: it needs the feedback to be trustworthy and <em>representative</em>. Astra [9] makes this concrete by decomposing refinement into separate testing, profiling, planning, and coding agents that share a trajectory log over 5 rounds; the multi-agent form reached 1.32x average speedup on production SGLang CUDA kernels versus 1.08x for an otherwise identical monolithic agent, and the monolith even <em>regressed</em> to a slowdown on one kernel when unrepresentative test inputs biased its profiling [9]. Deeper refinement amplifies whatever the feedback says, so a bad measurement compounds.</p>
+<h2 id="structured-search-width-times-depth">
+  Structured search: width times depth
+  
+  <a class="anchor" href="#structured-search-width-times-depth">#</a>
+  
+</h2>
+<p>Real systems rarely pick a single axis; they combine them and let a fitness function prune. KernelEvolve [10] illustrates the pattern explicitly with a two-phase schedule: a <strong>draft phase</strong> (roughly the first 10 steps) of independent parallel sampling <em>without</em> feedback, followed by a <strong>tree-expansion phase</strong> (steps ~10 to 50) where each node ingests execution feedback and the search deepens under a selection policy (greedy, MCTS with UCT, or evolutionary) [10]. Width seeds diversity; depth then exploits the best seeds. This is the same width-times-depth structure as the beam searches of 3.2 (Autocomp, AccelOpt), and MKEvolve&rsquo;s topology evolution [4], differing only in what gets pruned and what memory persists across steps.</p>
+<p>The payoff of structuring the search, rather than scaling one axis blindly, is efficiency. MKEvolve reaches better kernels than a 160-sample beam search while spending <strong>15% to 35% fewer LLM tokens</strong>, precisely because refining subkernels concentrates compute where it helps instead of regenerating whole kernels [4]. AccelOpt [11] makes the cost argument even sharper: open-source models running its search-plus-memory loop matched Claude Sonnet 4 kernel quality at roughly <strong>26x lower cost</strong> [11]. Well-structured search converts a fixed compute budget into more improvement per token.</p>
+<h2 id="the-reasoning-token-axis-more-is-not-always-better">
+  The reasoning-token axis: more is not always better
+  
+  <a class="anchor" href="#the-reasoning-token-axis-more-is-not-always-better">#</a>
+  
+</h2>
+<p>Reasoning models spend test-time compute a fourth way, by emitting long chains of thought before the code. It is tempting to assume longer reasoning yields better kernels, but the kernel evidence points the other way. ConCuR [6] measured it directly and found that <strong>shorter correct reasoning traces correlate with higher kernel-generation accuracy</strong>, while speedup is essentially <em>uncorrelated</em> with reasoning length (Pearson 
+<span>
+  \( r \approx -0.047 \)
+  </span>
+
+) [6]. Curating training data toward the shortest correct-and-fast trace per problem, just 4,892 examples, produced an open-source model competitive with far larger reasoning models on KernelBench [6]. The token budget is better spent on <em>width or depth of search</em> than on <em>length of monologue</em>.</p>
+<p>Reasoning length is still useful as a <strong>difficulty signal</strong>. ConCuR proposes Average Reasoning Length as a per-task difficulty metric (Easy under 4000 tokens, Medium 4000 to 8500, Hard above), which is exactly the kind of estimate an inference-scaling controller needs to allocate its budget: sample wider and refine deeper on the tasks a difficulty proxy flags as hard, and stop early on the easy ones [6]. This closes the loop back to the &ldquo;compute-optimal allocation&rdquo; idea [2]: the win is not more compute everywhere, but more compute where it moves the needle.</p>
+<h2 id="verification-is-the-enabler-and-the-bottleneck">
+  Verification is the enabler and the bottleneck
+  
+  <a class="anchor" href="#verification-is-the-enabler-and-the-bottleneck">#</a>
+  
+</h2>
+<p>Every axis above rests on the same foundation: a verifier good enough that &ldquo;the best of 
+<span>
+  \( N \)
+  </span>
+
+&rdquo; or &ldquo;the fittest survivor&rdquo; actually <em>is</em> the best kernel. Scaling inference compute scales the search&rsquo;s contact with that verifier, so any gap in it is found and exploited faster the harder we search. This is the reward-hacking problem of Section 2.3, now sharpened by scale: the more candidates we generate, the more likely one of them games the check rather than solving the task.</p>
+<p>The robust-kbench study [7] quantifies the danger. On benchmark tasks with exploitable evaluators, generated kernels reported fake speedups as large as 50x to 120x (for example by hardcoding a softmax output to 1.0), and after excluding the contaminated tasks the average measured speedup collapsed from <strong>3.13x to 1.49x</strong> [7]. Its defenses are exactly what inference-time scaling needs to stay honest: cheap LLM verifiers that reject bad kernels before expensive hardware runs, plus anti-cheating filters (diverse initializations, multiple input configurations, forward <em>and</em> backward passes, and rejection of degenerate near-constant outputs) [7]. FlashInfer-Bench [12] adds the deployment-grounded version, scoring candidates on real serving traces and injecting the winner into a live SGLang or vLLM engine so the measured speedup is end-to-end rather than an isolated micro-benchmark [12].</p>
+<p>This is why the benchmarks themselves are load-bearing for inference-time scaling, not incidental. Each one hardens a different failure mode of &ldquo;just search harder&rdquo;:</p>
+<ul>
+<li><strong>KernelBench</strong> [13] defines the core protocol, correctness within tolerance plus the 
+<span>
+  \( \text{Fast}_p \)
+  </span>
+
+ speedup metric over <code>torch.compile</code>, that all of Section 3 reports against.</li>
+<li><strong>MultiKernelBench</strong> [5] extends it across three hardware backends, exposing that search gains on CUDA do not transfer to under-represented backends without more than sampling.</li>
+<li><strong>robust-kbench</strong> [7] closes the correctness and timing loopholes that scaled sampling would otherwise exploit.</li>
+<li><strong>FlashInfer-Bench</strong> [12] grounds evaluation in production LLM-serving workloads and live substitution, so the search optimizes what actually ships.</li>
+</ul>
+<p>The through-line of this subsection, and of Section 3, is that inference-time compute buys better kernels <em>only in proportion to how trustworthy the verifier is</em>. Width, depth, search, and reasoning length are all levers on the same machine, and a leaky evaluator turns every one of them into a lever for cheating rather than for speed.</p>
+<h2 id="takeaways">
+  Takeaways
+  
+  <a class="anchor" href="#takeaways">#</a>
+  
+</h2>
+<ul>
+<li>Inference-time scaling trades test-time compute for kernel quality along three axes, <strong>width</strong> (parallel Best-of-
+<span>
+  \( N \)
+  </span>
+
+), <strong>depth</strong> (sequential refinement, Section 3.1), and <strong>structured search</strong> (beam/tree/evolution, Section 3.2), plus an orthogonal <strong>reasoning-length</strong> knob.</li>
+<li>Width raises <em>coverage</em> cheaply but not the capability ceiling and has uneven, diminishing returns; depth exploits feedback that width discards but amplifies bad measurements; structured search combines both and, when well-organized, reaches better kernels for <strong>fewer tokens</strong> (MKEvolve&rsquo;s 15-35% saving, AccelOpt&rsquo;s 26x cost cut).</li>
+<li>For kernels, <strong>longer reasoning is not always better</strong> (shorter correct traces correlate with higher accuracy, and speedup is uncorrelated with trace length); reasoning length is better used as a difficulty signal for compute-optimal budget allocation.</li>
+<li>All of it depends on a <strong>trustworthy verifier</strong>: scaling search scales exposure to evaluator exploits, so anti-cheating benchmarks (robust-kbench, FlashInfer-Bench) and the safeguards of Section 2.3 are what let inference-time compute buy real speed instead of reward hacking.</li>
+</ul>
 <h2 id="references">
   References
   
@@ -528,7 +659,19 @@ https://github.com/alex-shpak/hugo-book
   
 </h2>
 <ol>
-<li>[Placeholder reference.]</li>
+<li>B. Brown, J. Juravsky, R. Ehrlich, R. Clark, Q. V. Le, C. Ré, and A. Mirhoseini. <em>Large Language Monkeys: Scaling Inference Compute with Repeated Sampling.</em> arXiv:2407.21787, 2024. <a href="https://arxiv.org/abs/2407.21787">arxiv.org/abs/2407.21787</a></li>
+<li>C. Snell, J. Lee, K. Xu, and A. Kumar. <em>Scaling LLM Test-Time Compute Optimally Can Be More Effective Than Scaling Model Parameters.</em> arXiv:2408.03314, 2024. <a href="https://arxiv.org/abs/2408.03314">arxiv.org/abs/2408.03314</a></li>
+<li>NVIDIA Developer Blog. <em>Automating GPU Kernel Generation with DeepSeek-R1 and Inference-Time Scaling.</em> 2025. <a href="https://developer.nvidia.com/blog/automating-gpu-kernel-generation-with-deepseek-r1-and-inference-time-scaling/">developer.nvidia.com/blog/automating-gpu-kernel-generation-with-deepseek-r1-and-inference-time-scaling</a></li>
+<li>J. Yoo, R. Saha, S. Zhu, T. Yu, W. Tang, and Y. Park. <em>MKEvolve: A Modular Multi-Agent Framework for Kernel Code Generation.</em> arXiv:2607.20501, 2026 (ICML 2026 Workshop on Compositional Learning). <a href="https://arxiv.org/abs/2607.20501">arxiv.org/abs/2607.20501</a></li>
+<li>Z. Wen, Y. Zhang, Z. Li, Z. Liu, L. Xie, and T. Zhang. <em>MultiKernelBench: A Multi-Platform Benchmark for Kernel Generation.</em> arXiv:2507.17773, 2025. <a href="https://arxiv.org/abs/2507.17773">arxiv.org/abs/2507.17773</a></li>
+<li>L. Kong, J. Wei, H. Shen, and H. Wang. <em>ConCuR: Conciseness Makes State-of-the-Art Kernel Generation.</em> arXiv:2510.07356, 2025. <a href="https://arxiv.org/abs/2510.07356">arxiv.org/abs/2510.07356</a></li>
+<li>R. T. Lange, Q. Sun, A. Prasad, M. Faldor, Y. Tang, and D. Ha. <em>Towards Robust Agentic CUDA Kernel Benchmarking, Verification, and Optimization.</em> arXiv:2509.14279, 2025. <a href="https://arxiv.org/abs/2509.14279">arxiv.org/abs/2509.14279</a></li>
+<li>C. Baronio, P. Marsella, B. Pan, S. Guo, and S. Alberti. <em>Kevin: Multi-Turn RL for Generating CUDA Kernels.</em> arXiv:2507.11948, 2025. <a href="https://arxiv.org/abs/2507.11948">arxiv.org/abs/2507.11948</a></li>
+<li>A. Wei, T. Sun, Y. Seenichamy, H. Song, A. Ouyang, A. Mirhoseini, K. Wang, and A. Aiken. <em>Astra: A Multi-Agent System for GPU Kernel Performance Optimization.</em> arXiv:2509.07506, 2025. <a href="https://arxiv.org/abs/2509.07506">arxiv.org/abs/2509.07506</a></li>
+<li>G. Liao, H. Qin, Y. Wang, A. Golden, M. Kuchnik, et al. <em>KernelEvolve: Scaling Agentic Kernel Coding for Heterogeneous AI Accelerators at Meta.</em> arXiv:2512.23236, 2026. <a href="https://arxiv.org/abs/2512.23236">arxiv.org/abs/2512.23236</a></li>
+<li>G. Zhang, S. Zhu, A. Wei, Z. Song, A. Nie, Z. Jia, N. Vijaykumar, Y. Wang, and K. Olukotun. <em>AccelOpt: A Self-Improving LLM Agentic System for AI Accelerator Kernel Optimization.</em> arXiv:2511.15915, 2025. <a href="https://arxiv.org/abs/2511.15915">arxiv.org/abs/2511.15915</a></li>
+<li>S. Xing, Y. Zhai, A. Jiang, Y. Dong, Y. Wu, Z. Ye, C. Ruan, Y. Huang, Y. Zhang, L. Yin, et al. <em>FlashInfer-Bench: Building the Virtuous Cycle for AI-driven LLM Systems.</em> arXiv:2601.00227, 2026. <a href="https://arxiv.org/abs/2601.00227">arxiv.org/abs/2601.00227</a></li>
+<li>A. Ouyang, S. Guo, S. Arora, A. L. Zhang, W. Hu, C. Ré, and A. Mirhoseini. <em>KernelBench: Can LLMs Write Efficient GPU Kernels?</em> ICML 2025. <a href="https://openreview.net/forum?id=yeoN1iQT1x">openreview.net/forum?id=yeoN1iQT1x</a></li>
 </ol>
 </article>
  
@@ -599,6 +742,13 @@ https://github.com/alex-shpak/hugo-book
   
 <nav id="TableOfContents">
   <ul>
+    <li><a href="#three-axes-of-test-time-compute">Three axes of test-time compute</a></li>
+    <li><a href="#width-parallel-sampling-and-best-of-n">Width: parallel sampling and Best-of-N</a></li>
+    <li><a href="#depth-sequential-refinement">Depth: sequential refinement</a></li>
+    <li><a href="#structured-search-width-times-depth">Structured search: width times depth</a></li>
+    <li><a href="#the-reasoning-token-axis-more-is-not-always-better">The reasoning-token axis: more is not always better</a></li>
+    <li><a href="#verification-is-the-enabler-and-the-bottleneck">Verification is the enabler and the bottleneck</a></li>
+    <li><a href="#takeaways">Takeaways</a></li>
     <li><a href="#references">References</a></li>
   </ul>
 </nav>
