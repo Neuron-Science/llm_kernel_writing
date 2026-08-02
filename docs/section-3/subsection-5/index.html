@@ -11,30 +11,33 @@
 
 
 
+The methods developed across this section (iterative refinement, search, and
+inference-time scaling, all anchored to a trustworthy verifier) are already
+proven effective in production kernel generation. They share one lesson: an
+agent should not be asked to write a fast kernel in one unverified step. This
+demo puts them to work on NKI for AWS Trainium, following a more useful
+sequence:
 
+give the agent an executable reference and ask it to produce a correct NKI
+kernel;
+profile that baseline, inspect both the summary and timeline, and use a
+roofline model to choose an optimization direction; and
+ask the agent to implement that optimization, then repeat the same
+correctness and profiling gates.
 
-  
-
-
-[Placeholder content for subsection 4.2 NKI Kernel Generation Using LLM Agents.]
-
-
-
-  References
-  
-  #
-  
-
-
-[Placeholder reference.]
-">
+The worked operator is a BF16 residual add followed by weighted RMSNorm over
+1024 tokens with hidden size 4096: the input activations x and a residual
+tensor a are summed elementwise, and that sum is then normalized by its
+root-mean-square across the hidden dimension and rescaled by a learned
+per-channel weight w. Writing r for the token index (r = 0, ..., 1023)
+and h for the hidden index (h = 0, ..., 4095):">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#343a40">
 <meta name="color-scheme" content="light dark"><meta property="og:url" content="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-5/">
   <meta property="og:site_name" content="Teaching LLMs to Write System Kernels">
   <meta property="og:title" content="3.5 NKI Kernel Generation Using LLM Agents">
-  <meta property="og:description" content="NKI Kernel Generation Using LLM Agents # [Placeholder content for subsection 4.2 NKI Kernel Generation Using LLM Agents.]
-References # [Placeholder reference.]">
+  <meta property="og:description" content="NKI Kernel Generation Using LLM Agents # The methods developed across this section (iterative refinement, search, and inference-time scaling, all anchored to a trustworthy verifier) are already proven effective in production kernel generation. They share one lesson: an agent should not be asked to write a fast kernel in one unverified step. This demo puts them to work on NKI for AWS Trainium, following a more useful sequence:
+give the agent an executable reference and ask it to produce a correct NKI kernel; profile that baseline, inspect both the summary and timeline, and use a roofline model to choose an optimization direction; and ask the agent to implement that optimization, then repeat the same correctness and profiling gates. The worked operator is a BF16 residual add followed by weighted RMSNorm over 1024 tokens with hidden size 4096: the input activations x and a residual tensor a are summed elementwise, and that sum is then normalized by its root-mean-square across the hidden dimension and rescaled by a learned per-channel weight w. Writing r for the token index (r = 0, ..., 1023) and h for the hidden index (h = 0, ..., 4095):">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="website">
 <title>3.5 NKI Kernel Generation Using LLM Agents | Teaching LLMs to Write System Kernels</title>
@@ -43,7 +46,7 @@ References # [Placeholder reference.]">
 <link rel="canonical" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-5/">
 <link rel="stylesheet" href="/llm_kernel_writing/book.min.27cffe658670f57112663ed746a421db277c2dd6549965c27f9ad0103cccd990.css" integrity="sha256-J8/&#43;ZYZw9XESZj7XRqQh2yd8LdZUmWXCf5rQEDzM2ZA=" crossorigin="anonymous">
   <script defer src="/llm_kernel_writing/fuse.min.js"></script>
-  <script defer src="/llm_kernel_writing/en.search.min.d304cbf8d8635f6b0465af86779f10b3ddb7f358cdee4744467c6483ba9a4ac1.js" integrity="sha256-0wTL&#43;NhjX2sEZa&#43;Gd58Qs92381jN7kdERnxkg7qaSsE=" crossorigin="anonymous"></script>
+  <script defer src="/llm_kernel_writing/en.search.min.3a794c86b11580e135f99fb5a9d05275c7fdb605ecdf816dca53de45335cf6ca.js" integrity="sha256-OnlMhrEVgOE1&#43;Z&#43;1qdBSdcf9tgXs34FtylPeRTNc9so=" crossorigin="anonymous"></script>
 <link rel="alternate" type="application/rss+xml" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-5/index.xml" title="Teaching LLMs to Write System Kernels" />
 <!--
 Made with Book Theme
@@ -448,6 +451,42 @@ https://github.com/alex-shpak/hugo-book
   
 <nav id="TableOfContents">
   <ul>
+    <li><a href="#what-you-need-to-know-about-nki">What you need to know about NKI</a></li>
+    <li><a href="#give-the-agent-the-context-it-cannot-infer">Give the agent the context it cannot infer</a>
+      <ul>
+        <li><a href="#retain-measured-optimization-experience">Retain measured optimization experience</a></li>
+      </ul>
+    </li>
+    <li><a href="#1-generate-a-kernel-from-the-reference">1. Generate a kernel from the reference</a>
+      <ul>
+        <li><a href="#make-the-device-boundary-part-of-the-contract">Make the device boundary part of the contract</a></li>
+        <li><a href="#use-an-executable-reference">Use an executable reference</a></li>
+        <li><a href="#accept-a-simple-first-kernel">Accept a simple first kernel</a></li>
+        <li><a href="#gate-on-correctness-before-profiling">Gate on correctness before profiling</a></li>
+      </ul>
+    </li>
+    <li><a href="#2-profile-the-baseline-and-choose-a-direction">2. Profile the baseline and choose a direction</a>
+      <ul>
+        <li><a href="#capture-a-repeatable-execution">Capture a repeatable execution</a></li>
+        <li><a href="#start-with-the-profile-summary">Start with the profile summary</a></li>
+        <li><a href="#put-the-fixed-operator-on-a-roofline">Put the fixed operator on a roofline</a></li>
+        <li><a href="#give-the-evidence-back-to-the-agent">Give the evidence back to the agent</a></li>
+      </ul>
+    </li>
+    <li><a href="#3-execute-and-verify-the-optimization">3. Execute and verify the optimization</a>
+      <ul>
+        <li><a href="#implement-one-profile-derived-change">Implement one profile-derived change</a></li>
+        <li><a href="#repeat-correctness-before-accepting-speed">Repeat correctness before accepting speed</a></li>
+        <li><a href="#recapture-and-compare-the-same-evidence">Recapture and compare the same evidence</a></li>
+      </ul>
+    </li>
+    <li><a href="#integrate-the-accepted-kernel">Integrate the accepted kernel</a>
+      <ul>
+        <li><a href="#pytorch-and-jax">PyTorch and JAX</a></li>
+        <li><a href="#nkipy">NKIPy</a></li>
+      </ul>
+    </li>
+    <li><a href="#the-reusable-loop">The reusable loop</a></li>
     <li><a href="#references">References</a></li>
   </ul>
 </nav>
@@ -468,10 +507,32 @@ https://github.com/alex-shpak/hugo-book
   
 </h1>
 
+
+<p>The methods developed across this section (iterative refinement, search, and
+inference-time scaling, all anchored to a trustworthy verifier) are already
+proven effective in production kernel generation. They share one lesson: an
+agent should not be asked to write a fast kernel in one unverified step. This
+demo puts them to work on NKI for AWS Trainium, following a more useful
+sequence:</p>
+<ol>
+<li>give the agent an executable reference and ask it to produce a correct NKI
+kernel;</li>
+<li>profile that baseline, inspect both the summary and timeline, and use a
+roofline model to choose an optimization direction; and</li>
+<li>ask the agent to implement that optimization, then repeat the same
+correctness and profiling gates.</li>
+</ol>
+<p>The worked operator is a BF16 residual add followed by weighted RMSNorm over
+<code>1024</code> tokens with hidden size <code>4096</code>: the input activations <code>x</code> and a residual
+tensor <code>a</code> are summed elementwise, and that sum is then normalized by its
+root-mean-square across the hidden dimension and rescaled by a learned
+per-channel weight <code>w</code>. Writing <code>r</code> for the token index (<code>r = 0, ..., 1023</code>)
+and <code>h</code> for the hidden index (<code>h = 0, ..., 4095</code>):</p>
+
 <link rel="stylesheet" href="/llm_kernel_writing/katex/katex.min.css" />
 <script defer src="/llm_kernel_writing/katex/katex.min.js"></script>
 
-  <script defer src="/llm_kernel_writing/katex/auto-render.min.js" onload="renderMathInElement(document.body, {
+<script defer src="/llm_kernel_writing/katex/auto-render.min.js" onload="renderMathInElement(document.body, {
   &#34;delimiters&#34;: [
     {&#34;left&#34;: &#34;$$&#34;, &#34;right&#34;: &#34;$$&#34;, &#34;display&#34;: true},
     {&#34;left&#34;: &#34;$&#34;, &#34;right&#34;: &#34;$&#34;, &#34;display&#34;: false},
@@ -481,10 +542,1463 @@ https://github.com/alex-shpak/hugo-book
 }
 );"></script>
 
+<span>\[ z_{r,h} = x_{r,h} + a_{r,h},
+\qquad
+y_{r,h} = \operatorname{BF16}\!\left(
+  \frac{z_{r,h}}{\sqrt{\dfrac{1}{H}\sum_{j=0}^{H-1} z_{r,j}^{2} + 10^{-6}}}\; w_h
+\right). \]</span>
+<p>The token dimension indexes the <code>R = 1024</code> rows and the hidden dimension indexes
+the <code>H = 4096</code> columns of a <code>[1024, 4096]</code> tensor; the RMS reduction runs along
+<code>h</code> independently for every row <code>r</code>. Inputs and output are BF16 while the sum,
+square, and reciprocal square root are computed in FP32, a precision split fixed
+by the executable reference below.</p>
+<p>On-chip memory places at most 128 rows on a tile&rsquo;s partition dimension (the
+layout constraint described in the next section), so the kernel cannot hold all
+<code>1024</code> token rows at once; it splits them into <code>1024 / 128 = 8</code> tiles of shape
+<code>[128, 4096]</code>, each carrying 128 token rows across the partitions and the full
+<code>4096</code>-wide hidden dimension along the free axis. It streams these tiles through
+on-chip memory one after another, loading each activation and residual tile from
+HBM, computing on it, and storing the result, so the transfers for one tile can
+overlap compute on another; the tiles are independent because the per-row RMS
+reduction never crosses tile boundaries. Eight tiles is enough work to expose
+sustained behavior: a single tile would be dominated by one-time startup and
+would exercise each engine only once, whereas streaming eight drives the DMA,
+Vector, and Scalar engines into a repeating rhythm long enough to measure their
+true throughput and, crucially, how much DMA overlaps compute (the central
+question of the profiling later in this demo). The complete source and test
+harness are in <a href="rmsnorm_agent_lab.py"><code>rmsnorm_agent_lab.py</code></a>, and the numbers
+below come from second-execution captures on a Trn2 host using one NeuronCore:
+each kernel is run once to warm up (paying one-time costs such as code load, DMA
+queue setup, and instruction and data caching) and timed on the second run, so
+the profile reflects steady-state execution rather than first-run overhead.</p>
+<h2 id="what-you-need-to-know-about-nki">
+  What you need to know about NKI
+  
+  <a class="anchor" href="#what-you-need-to-know-about-nki">#</a>
+  
+</h2>
+<p>NKI is a Python-embedded, tile-oriented language for NeuronCore [1]. A kernel
+author controls movement among three memory regions and maps work to
+specialized engines:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Resource</th>
+          <th>Role in this demo</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>HBM</td>
+          <td>Holds kernel inputs and returned outputs</td>
+      </tr>
+      <tr>
+          <td>SBUF</td>
+          <td>Holds software-managed activation, weight, and scratch tiles</td>
+      </tr>
+      <tr>
+          <td>PSUM</td>
+          <td>Holds accumulations for operations such as matrix multiplication</td>
+      </tr>
+      <tr>
+          <td>DMA engines</td>
+          <td>Move tiles between HBM and on-chip memory</td>
+      </tr>
+      <tr>
+          <td>Vector and Scalar engines</td>
+          <td>Execute reductions, tensor operations, and nonlinear operations</td>
+      </tr>
+  </tbody>
+</table>
+<p>SBUF and PSUM are partitioned. The first axis of an on-chip tile is the
+partition dimension, with at most 128 partitions; the remaining axes are free
+dimensions. This demo maps 128 token rows to the partition dimension and
+the hidden dimension to a free dimension.</p>
+<p>The standard imports are:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> nki
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> nki.language <span style="color:#66d9ef">as</span> nl
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> nki.isa <span style="color:#66d9ef">as</span> nisa
+</span></span></code></pre></div><p><code>nl</code> and <code>nisa</code> are normal aliases for <code>nki.language</code> and <code>nki.isa</code>.
+<code>nl.*</code> expresses tile operations and leaves more lowering choices to the
+compiler. <code>nisa.*</code> selects lower-level instructions when the profile shows
+that more control is useful. Both are standard NKI [1, 2].</p>
+<p>The distinction is easiest to see on the same computation. To turn a tile into
+its per-row mean of squares, <code>nl.*</code> states the intent and lets the compiler
+choose how to lower it:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>mean_square <span style="color:#f92672">=</span> nl<span style="color:#f92672">.</span>mean(nl<span style="color:#f92672">.</span>square(summed, dtype<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>float32), axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, keepdims<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span></code></pre></div><p>That is two logical passes over the tile: <code>square</code> materializes a full
+<code>[128, 4096]</code> intermediate, then <code>mean</code> reads it back to reduce along the hidden
+axis. The equivalent <code>nisa.*</code> form names one hardware instruction that squares
+and reduces in a single sweep, so the intermediate never lands in full:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>nisa<span style="color:#f92672">.</span>activation(
+</span></span><span style="display:flex;"><span>    dst<span style="color:#f92672">=</span>square_scratch, op<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>square, data<span style="color:#f92672">=</span>summed,
+</span></span><span style="display:flex;"><span>    reduce_op<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>add, reduce_res<span style="color:#f92672">=</span>sum_square,   <span style="color:#75715e"># accumulate the row sum in the same pass</span>
+</span></span><span style="display:flex;"><span>)
+</span></span></code></pre></div><p>Both produce the same row statistic. The <code>nl.*</code> version is shorter and portable;
+the <code>nisa.*</code> version trades that for explicit control over the fused reduction,
+which is exactly the kind of rewrite the profiling later in this demo motivates.
+Prefer <code>nl.*</code> by default and drop to <code>nisa.*</code> only where a measured bottleneck
+justifies it.</p>
+<h2 id="give-the-agent-the-context-it-cannot-infer">
+  Give the agent the context it cannot infer
+  
+  <a class="anchor" href="#give-the-agent-the-context-it-cannot-infer">#</a>
+  
+</h2>
+<p>A capable coding agent can inspect a repository, but it should not be expected
+to reconstruct a changing accelerator stack from pretraining. Two limits are at
+work. The agent can read whatever is already in your files, so those do not need
+explaining; but NKI, the Trainium hardware specifications, and the exact API
+signatures all evolve after any model&rsquo;s training cutoff, so the facts the agent
+memorized about them are stale or simply wrong. Supply those facts fresh instead
+of trusting recall. Give it a small context package whose authority is explicit,
+meaning every fact is tagged with the source that can be trusted and rechecked
+rather than assumed:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Context</th>
+          <th>What the agent needs</th>
+          <th>Source of truth</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Operator semantics</td>
+          <td>Reference implementation, equations, shapes, dtypes, layouts, side effects, and device boundary</td>
+          <td>Version-controlled contract and tests</td>
+      </tr>
+      <tr>
+          <td>Execution environment</td>
+          <td>Target accelerator, logical-core configuration, compile/run commands, artifact paths, and allowed resources</td>
+          <td>Harness configuration</td>
+      </tr>
+      <tr>
+          <td>Current NKI knowledge</td>
+          <td>Relevant language and ISA pages plus installed API signatures</td>
+          <td>Current documentation and installed package</td>
+      </tr>
+      <tr>
+          <td>Evaluation</td>
+          <td>Read-only oracle, adversarial cases, tolerances, warmup policy, and stopping rules</td>
+          <td>Executable harness</td>
+      </tr>
+      <tr>
+          <td>Performance evidence</td>
+          <td>Baseline source, summary JSON, roofline calculation, Perfetto trace, interval queries, and prior measurements</td>
+          <td>Retained run artifacts</td>
+      </tr>
+      <tr>
+          <td>Prior experience</td>
+          <td>Applicable successful and unsuccessful transformations, with measured outcomes</td>
+          <td>Optimization memory or a checked-in experiment log</td>
+      </tr>
+  </tbody>
+</table>
+<p>Read the third column as the discipline that keeps the package honest: every
+piece of context traces back to something version-controlled or freshly
+measured, never to the model&rsquo;s assumptions. The rows also divide by how stable
+they are. Operator semantics, execution environment, and evaluation form the
+immutable contract that fixes what &ldquo;correct&rdquo; and &ldquo;done&rdquo; mean for this task;
+current NKI knowledge is ground truth read from the installed package and its
+documentation rather than from recall; and performance evidence and prior
+experience are artifacts that do not exist until actual runs produce them.</p>
+<p>Do not paste an entire manual or raw trace into every prompt. The point is not
+to dump all of this at once but to keep the non-negotiables always visible (the
+correctness contract, the commands, and the acceptance rules) and let the agent
+retrieve an API page, compiler diagnostic, trace slice, or previous experiment
+only when it becomes relevant, so its attention stays on the task rather than on
+a wall of reference material. Context should also grow with the workflow, each
+stage adding evidence without touching the fixed contract: Stage 1 starts with
+semantics, environment, current APIs, and tests; Stage 2 adds the baseline
+profile and roofline; Stage 3 adds the current hypothesis and earlier attempts.</p>
+<h3 id="retain-measured-optimization-experience">
+  Retain measured optimization experience
+  
+  <a class="anchor" href="#retain-measured-optimization-experience">#</a>
+  
+</h3>
+<p>The last row of the table, prior experience, deserves its own treatment because
+how the agent remembers what it learned across rounds is easy to get wrong.
+AccelOpt formalizes its value [15]. Its planner proposes a transformation, its
+executor implements and measures it, and its summarizer distills code changes
+and general lessons from measured positive and negative kernel pairs into a
+bounded optimization memory (size-capped, so it cannot grow without limit) that
+conditions later rounds. Its ablation found that search with memory reached
+similar speedup in 13 rather than 16 iterations, reducing search cost by roughly
+16-17%. Section 3.2 develops the full search method; the practical lesson here
+is to preserve an evidence-backed optimization episode, not the entire
+conversation:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>context: residual RMSNorm, BF16 [1024, 4096], one NeuronCore
+</span></span><span style="display:flex;"><span>observation: compute union 190.251 us; DMA union 69.841 us
+</span></span><span style="display:flex;"><span>hypothesis: combine square and row reduction to shorten the Vector path
+</span></span><span style="display:flex;"><span>result: correct; 218.666 us -&gt; 119.547 us; HBM bytes unchanged
+</span></span><span style="display:flex;"><span>scope: useful for this instruction chain; not evidence for every reduction
+</span></span></code></pre></div><p>Each line is anchored to a measurement rather than an impression. The <code>context</code>
+identifies the problem so the episode is retrieved only when it applies; the
+<code>observation</code> records the measured bottleneck (compute time far exceeds DMA
+time, so the kernel is compute-bound); the <code>hypothesis</code> states the idea that
+followed (fuse the square and the row reduction, exactly the <code>nl</code> to <code>nisa</code>
+rewrite shown earlier); the <code>result</code> gives the measured payoff (correct output,
+<code>218.666</code> to <code>119.547 us</code>, with HBM traffic unchanged so the win came from
+compute, not data movement); and the <code>scope</code> records honest limits so a later
+round does not overgeneralize one success into a rule.</p>
+<p>Current coding agents reduce the need to build a separate memory service for
+an interactive tutorial. Claude Code enables project auto memory by default,
+and Codex can extract and inject local memories across sessions once its
+memory feature is enabled [16, 17]. Use those systems for heuristics, failed
+directions, and pointers to relevant evidence. They do not automatically
+reproduce AccelOpt&rsquo;s measurement-aware curation. Keep correctness contracts,
+commands, accepted measurements, and hardware facts in version-controlled
+files: automatic memory can be disabled, stale, or absent in another machine
+or execution environment, and it is never a replacement for remeasurement.</p>
+<p>With the primer and context package in place, the three numbered stages below
+walk through the generate, profile, and optimize sequence in turn.</p>
+<h2 id="1-generate-a-kernel-from-the-reference">
+  1. Generate a kernel from the reference
+  
+  <a class="anchor" href="#1-generate-a-kernel-from-the-reference">#</a>
+  
+</h2>
+<h3 id="make-the-device-boundary-part-of-the-contract">
+  Make the device boundary part of the contract
+  
+  <a class="anchor" href="#make-the-device-boundary-part-of-the-contract">#</a>
+  
+</h3>
+<p>The host/device boundary is a semantic requirement, not merely a placement
+preference. Unless the task explicitly permits a split implementation, every
+tensor operation that contributes to the requested output must execute inside
+the NKI kernel.</p>
+<p>The rule matters because the agent is optimizing to pass a correctness check,
+and the cheapest way to pass one is often to compute the answer on the host with
+Torch or NumPy and hand the kernel a finished tensor to copy out. Such a
+candidate is correct yet hollow: the NKI kernel does no real work, so every
+profile, roofline, and speedup measured against it is meaningless. This is the
+kernel-generation form of the reward hacking that Section 2&rsquo;s verifiable reward
+is built to prevent, and it is why the boundary belongs in the contract rather
+than left to the agent&rsquo;s discretion. The two are different kinds of decision.
+Placement choices, which engine runs an operation or which memory holds a tile,
+are the agent&rsquo;s to make in pursuit of speed; but whether a computation happens
+on the device at all decides whether the artifact is even the kernel that was
+requested, so it is a matter of correctness, not optimization. The table below
+draws the line, with the host confined to setup and judging and the device
+responsible for the entire requested operator.</p>
+<table>
+  <thead>
+      <tr>
+          <th>Host test harness</th>
+          <th>NKI kernel on the NeuronCore</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Generate test inputs</td>
+          <td>Read the declared HBM inputs</td>
+      </tr>
+      <tr>
+          <td>Compute an independent reference result</td>
+          <td>Perform the complete requested operator</td>
+      </tr>
+      <tr>
+          <td>Compile, launch, synchronize, and time</td>
+          <td>Keep intermediate tensor values in SBUF or PSUM</td>
+      </tr>
+      <tr>
+          <td>Compare outputs and reject candidates</td>
+          <td>Write the declared output to HBM</td>
+      </tr>
+      <tr>
+          <td>Capture and query profiles</td>
+          <td>Use no Torch, NumPy, or CPU fallback to produce output values</td>
+      </tr>
+  </tbody>
+</table>
+<p>For example, if the task requests a convolution with padding, bias, and an
+activation, the agent may not compute the padding, an <code>im2col</code> transform, the
+convolution, or the epilogue with Torch on the host and wrap the result in a
+nominal kernel. Those operations are device work because they are part of the
+requested operator. Host preprocessing is allowed only when the contract
+names it explicitly.</p>
+<p>This distinction should appear directly in the generation prompt:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Implement the reference as one @nki.jit kernel.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Device boundary:
+</span></span><span style="display:flex;"><span>- Every tensor operation in the reference must run inside the NKI kernel.
+</span></span><span style="display:flex;"><span>- The returned value must be produced only from the declared device inputs
+</span></span><span style="display:flex;"><span>  using NKI operations.
+</span></span><span style="display:flex;"><span>- Do not call Torch, NumPy, or CPU code to compute any part of that value.
+</span></span><span style="display:flex;"><span>- Host code may only create inputs, compute a separate oracle, compile,
+</span></span><span style="display:flex;"><span>  launch, synchronize, test, and profile.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Before writing code, restate the equations, shapes, dtypes, layouts,
+</span></span><span style="display:flex;"><span>reduction axes, side effects, and host/device boundary. Wait for confirmation.
+</span></span></code></pre></div><p>The restatement catches a misplaced operation before compilation, when it is
+cheapest to fix and before the agent has invested in a wrong structure. But a
+prompt is only advisory: it can be misread, and a plausible host wrapper can
+slip past a casual reading, so the boundary cannot rest on the prompt alone. The
+harness must still enforce it as the authoritative check: it owns the reference,
+passes the generated kernel itself to the runner, verifies that the declared
+inputs are unchanged, and rejects aliases or undeclared outputs. Prompt and
+harness are two layers guarding the same contract, the first to steer the agent
+and the second to make the rule impossible to evade.</p>
+<h3 id="use-an-executable-reference">
+  Use an executable reference
+  
+  <a class="anchor" href="#use-an-executable-reference">#</a>
+  
+</h3>
+<p>Natural language alone leaves important choices open. A phrase like &ldquo;residual
+add followed by weighted RMSNorm&rdquo; silently omits decisions that change the
+output: whether the epsilon sits inside or outside the square root, which axis
+the mean reduces over, whether the arithmetic runs in BF16 or FP32, and whether
+the weight multiplies before or after the cast back. Each is a fork the agent
+would otherwise resolve by guessing, and a plausible wrong guess still compiles
+and runs, so the ambiguity surfaces only as a numerical mismatch much later.</p>
+<p>An executable reference closes every fork at once. Because it is runnable code
+rather than prose, it is unambiguous by construction (the interpreter admits
+only one reading) and it doubles as the oracle: the same function that
+documents the operator also generates the ground-truth outputs the harness
+checks candidates against, so specification and test can never drift apart. A
+compact Torch reference fixes the residual, reduction axis, epsilon placement,
+learned weight, and intermediate precision:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">residual_rms_norm_reference</span>(x, residual, weight):
+</span></span><span style="display:flex;"><span>    z <span style="color:#f92672">=</span> x<span style="color:#f92672">.</span>float() <span style="color:#f92672">+</span> residual<span style="color:#f92672">.</span>float()
+</span></span><span style="display:flex;"><span>    inverse_rms <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>rsqrt(
+</span></span><span style="display:flex;"><span>        z<span style="color:#f92672">.</span>square()<span style="color:#f92672">.</span>mean(dim<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, keepdim<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>) <span style="color:#f92672">+</span> <span style="color:#ae81ff">1e-6</span>
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> (z <span style="color:#f92672">*</span> inverse_rms <span style="color:#f92672">*</span> weight<span style="color:#f92672">.</span>float())<span style="color:#f92672">.</span>to(torch<span style="color:#f92672">.</span>bfloat16)
+</span></span></code></pre></div><p>Equivalently, for <code>R = 1024</code> rows and hidden size <code>H = 4096</code>:</p>
 
-<p>[Placeholder content for subsection 4.2 NKI Kernel Generation Using LLM Agents.]</p>
+<span>\[ \begin{aligned}
+z_{r,h}
+  &amp;= \operatorname{FP32}(x_{r,h})
+   + \operatorname{FP32}(a_{r,h}), \\
+m_r
+  &amp;= \frac{1}{H}\sum_{j=0}^{H-1} z_{r,j}^{2}, \\
+s_r
+  &amp;= \left(m_r + 10^{-6}\right)^{-1/2}, \\
+y_{r,h}
+  &amp;= \operatorname{BF16}\left(
+       z_{r,h}s_r\operatorname{FP32}(w_h)
+     \right).
+\end{aligned} \]</span>
+<p>The executable reference does not replace the interface contract:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Property</th>
+          <th>Fixed value</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Inputs</td>
+          <td>Activations <code>x</code>, residual <code>a</code>, and weight <code>w</code></td>
+      </tr>
+      <tr>
+          <td>Output</td>
+          <td>One tensor <code>y</code>; no aliases or side effects</td>
+      </tr>
+      <tr>
+          <td>Shapes</td>
+          <td><code>x</code>, <code>a</code>, <code>y</code>: <code>[1024, 4096]</code>; <code>w</code>: <code>[4096]</code></td>
+      </tr>
+      <tr>
+          <td>Layout</td>
+          <td>Contiguous row-major HBM tensors</td>
+      </tr>
+      <tr>
+          <td>Dtypes</td>
+          <td>BF16 inputs and output; FP32 arithmetic path</td>
+      </tr>
+      <tr>
+          <td>Reduction</td>
+          <td>Hidden axis, independently for every row</td>
+      </tr>
+      <tr>
+          <td>Epsilon</td>
+          <td><code>1e-6</code>, inside the reciprocal square root</td>
+      </tr>
+  </tbody>
+</table>
+<p>The reference pins the mathematics and the interface; it does not dictate how
+the kernel reaches that result. The agent may choose tiling, buffering,
+instruction selection, and scheduling, the degrees of freedom where performance
+is actually won. It may not change the equations, public shape, layout, dtypes,
+or test thresholds, because those define the operator the caller asked for and
+the terms on which every later measurement is judged. This is the same line
+drawn in the previous subsection, now made concrete: the reference and interface
+table are the immutable contract, and everything outside them is the search
+space the agent is free to explore.</p>
+<h3 id="accept-a-simple-first-kernel">
+  Accept a simple first kernel
+  
+  <a class="anchor" href="#accept-a-simple-first-kernel">#</a>
+  
+</h3>
+<p>The first generation should favor readable NKI over speculative tuning. The
+goal of Stage 1 is a kernel that is obviously correct, not one that is fast: a
+clear baseline is the fixed reference every later optimization is measured
+against, and speculative tuning applied before any profile exists is guessing,
+optimizing a bottleneck that has not been shown to exist. A simple kernel is
+also the one whose dataflow a reviewer, or the agent itself in a later round,
+can read and trust. The agent produced this baseline:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> nki
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> nki.language <span style="color:#66d9ef">as</span> nl
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>TOKENS <span style="color:#f92672">=</span> <span style="color:#ae81ff">1024</span>
+</span></span><span style="display:flex;"><span>TILE_TOKENS <span style="color:#f92672">=</span> <span style="color:#ae81ff">128</span>
+</span></span><span style="display:flex;"><span>HIDDEN <span style="color:#f92672">=</span> <span style="color:#ae81ff">4096</span>
+</span></span><span style="display:flex;"><span>NUM_TILES <span style="color:#f92672">=</span> TOKENS <span style="color:#f92672">//</span> TILE_TOKENS
+</span></span><span style="display:flex;"><span>EPS <span style="color:#f92672">=</span> <span style="color:#ae81ff">1e-6</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@nki.jit</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">residual_rms_norm_kernel</span>(x, residual, weight):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">assert</span> x<span style="color:#f92672">.</span>shape <span style="color:#f92672">==</span> residual<span style="color:#f92672">.</span>shape <span style="color:#f92672">==</span> (TOKENS, HIDDEN)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">assert</span> x<span style="color:#f92672">.</span>dtype <span style="color:#f92672">==</span> residual<span style="color:#f92672">.</span>dtype <span style="color:#f92672">==</span> nl<span style="color:#f92672">.</span>bfloat16
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">assert</span> weight<span style="color:#f92672">.</span>shape <span style="color:#f92672">==</span> (HIDDEN,)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">assert</span> weight<span style="color:#f92672">.</span>dtype <span style="color:#f92672">==</span> nl<span style="color:#f92672">.</span>bfloat16
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    out <span style="color:#f92672">=</span> nl<span style="color:#f92672">.</span>ndarray(x<span style="color:#f92672">.</span>shape, dtype<span style="color:#f92672">=</span>x<span style="color:#f92672">.</span>dtype, buffer<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>shared_hbm)
+</span></span><span style="display:flex;"><span>    weight_row <span style="color:#f92672">=</span> nl<span style="color:#f92672">.</span>load(weight<span style="color:#f92672">.</span>reshape((<span style="color:#ae81ff">1</span>, HIDDEN)))
+</span></span><span style="display:flex;"><span>    weight_tile <span style="color:#f92672">=</span> nl<span style="color:#f92672">.</span>broadcast_to(
+</span></span><span style="display:flex;"><span>        weight_row,
+</span></span><span style="display:flex;"><span>        shape<span style="color:#f92672">=</span>(TILE_TOKENS, HIDDEN),
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> tile_idx <span style="color:#f92672">in</span> range(NUM_TILES):
+</span></span><span style="display:flex;"><span>        start <span style="color:#f92672">=</span> tile_idx <span style="color:#f92672">*</span> TILE_TOKENS
+</span></span><span style="display:flex;"><span>        stop <span style="color:#f92672">=</span> start <span style="color:#f92672">+</span> TILE_TOKENS
+</span></span><span style="display:flex;"><span>        x_tile <span style="color:#f92672">=</span> nl<span style="color:#f92672">.</span>load(x[start:stop, :])
+</span></span><span style="display:flex;"><span>        residual_tile <span style="color:#f92672">=</span> nl<span style="color:#f92672">.</span>load(residual[start:stop, :])
+</span></span><span style="display:flex;"><span>        summed <span style="color:#f92672">=</span> nl<span style="color:#f92672">.</span>add(x_tile, residual_tile, dtype<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>float32)
+</span></span><span style="display:flex;"><span>        mean_square <span style="color:#f92672">=</span> nl<span style="color:#f92672">.</span>mean(
+</span></span><span style="display:flex;"><span>            nl<span style="color:#f92672">.</span>square(summed, dtype<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>float32),
+</span></span><span style="display:flex;"><span>            axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>,
+</span></span><span style="display:flex;"><span>            dtype<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>float32,
+</span></span><span style="display:flex;"><span>            keepdims<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>,
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>        inverse_rms <span style="color:#f92672">=</span> nl<span style="color:#f92672">.</span>rsqrt(
+</span></span><span style="display:flex;"><span>            nl<span style="color:#f92672">.</span>add(mean_square, EPS, dtype<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>float32),
+</span></span><span style="display:flex;"><span>            dtype<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>float32,
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>        inverse_rms <span style="color:#f92672">=</span> nl<span style="color:#f92672">.</span>broadcast_to(
+</span></span><span style="display:flex;"><span>            inverse_rms,
+</span></span><span style="display:flex;"><span>            shape<span style="color:#f92672">=</span>(TILE_TOKENS, HIDDEN),
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>        normalized <span style="color:#f92672">=</span> nl<span style="color:#f92672">.</span>multiply(
+</span></span><span style="display:flex;"><span>            summed,
+</span></span><span style="display:flex;"><span>            inverse_rms,
+</span></span><span style="display:flex;"><span>            dtype<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>float32,
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>        y_tile <span style="color:#f92672">=</span> nl<span style="color:#f92672">.</span>multiply(normalized, weight_tile, dtype<span style="color:#f92672">=</span>x<span style="color:#f92672">.</span>dtype)
+</span></span><span style="display:flex;"><span>        nl<span style="color:#f92672">.</span>store(out[start:stop, :], value<span style="color:#f92672">=</span>y_tile)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> out
+</span></span></code></pre></div><p>The dataflow is easy to audit, which is the whole point of accepting it. Reading
+it against the memory and engine model from earlier, each line maps to a step in
+the contract:</p>
+<ul>
+<li>The assertions (<code>x.shape == ... (TOKENS, HIDDEN)</code>, <code>dtype == nl.bfloat16</code>)
+check the declared shapes and dtypes before any work, so a mismatched input
+fails loudly rather than producing a plausible wrong answer.</li>
+<li><code>out = nl.ndarray(..., buffer=nl.shared_hbm)</code> allocates the single declared
+output in HBM, and <code>weight_row = nl.load(...)</code> brings the weight on chip once,
+outside the loop, since it is reused by every tile.</li>
+<li><code>for tile_idx in range(NUM_TILES)</code> is the eight-tile stream made literal: a
+plain unrolled <code>range</code> rather than a scheduling construct, so the order of
+loads, compute, and stores is exactly what the source says.</li>
+<li>Inside the loop, <code>nl.load(x[start:stop, :])</code> and the residual load move one
+<code>[128, 4096]</code> tile from HBM into SBUF; <code>nl.add</code>, <code>nl.square</code>, <code>nl.mean</code>,
+<code>nl.rsqrt</code>, and the two <code>nl.multiply</code> calls are the reference equations in
+order, with <code>dtype=nl.float32</code> making the FP32 arithmetic path explicit; and
+<code>nl.store(out[start:stop, :], ...)</code> writes the finished tile back to HBM.</li>
+<li>The two <code>nl.broadcast_to</code> calls implement the shape expansions the math
+needs: the <code>[1, 4096]</code> weight is broadcast across the 128 partitions, and each
+<code>[128, 1]</code> per-row statistic is broadcast across the 4096-wide free dimension,
+so both line up elementwise with the tile.</li>
+</ul>
+<p>Nothing here is clever, and that is the value: every operation is on the device,
+every intermediate stays in FP32 as the contract requires, and the mapping from
+code to equations can be checked by eye. This readability is also what makes the
+Stage 2 profile actionable, since a bottleneck found in a transparent baseline
+points to a specific line to change.</p>
+<h3 id="gate-on-correctness-before-profiling">
+  Gate on correctness before profiling
+  
+  <a class="anchor" href="#gate-on-correctness-before-profiling">#</a>
+  
+</h3>
+<p>Correctness is the gate, and it comes before profiling for a reason: a speedup
+measured on a kernel that computes the wrong answer is worthless, and worse, it
+invites the agent to &ldquo;optimize&rdquo; by quietly dropping the work that made the
+kernel slow. Timing a candidate is only meaningful once that candidate is known
+to be correct, so the oracle runs first and a failure here stops the pipeline
+before any performance number is taken.</p>
+<p>The oracle also checks more than one aggregate metric, because any single number
+can be passed by an output that is wrong in a way that number cannot see:</p>
+<ul>
+<li>exact shape, dtype, layout, output count, and non-aliasing behavior;</li>
+<li>unchanged inputs and finite outputs;</li>
+<li>elementwise <code>allclose</code> with <code>atol = 2^-7</code> and <code>rtol = 1e-2</code>;</li>
+<li>maximum absolute error at most <code>2^-5</code>;</li>
+<li>mean absolute error at most <code>5e-5</code>; and</li>
+<li>cosine similarity of at least <code>0.9999</code>.</li>
+</ul>
+<p>The checks are layered so that each catches a different failure. The structural
+checks (shape, dtype, layout, output count, non-aliasing, unchanged inputs,
+finite outputs) confirm the kernel honors the interface and the device boundary
+at all, before any value is compared. Three of these are easy to overlook:
+non-aliasing means the output is its own buffer, not secretly the same memory as
+an input; unchanged inputs means <code>x</code>, <code>a</code>, and <code>w</code> hold their original values
+after the run, since the operator is a pure function; and finite outputs means
+no <code>NaN</code> or <code>Inf</code>, which a dropped epsilon or a BF16 overflow would produce and
+which would make the tolerance checks below meaningless. The elementwise <code>allclose</code> bounds the
+error at every position, so no single element may drift far even if the average
+looks fine; the mean absolute error bounds the typical drift, so many small
+biased errors cannot hide under a lenient per-element tolerance; and the cosine
+similarity guards the overall shape of the output, catching a systematic scale
+or direction error that per-element tolerances might individually admit. A
+correct kernel must pass all of them at once.</p>
+<p>These tolerances belong to this BF16 contract, not to RMSNorm in general. They
+are loose enough to admit the rounding a legitimate BF16 kernel incurs (its
+FP32-versus-BF16 accumulation order will not match the reference bit for bit)
+yet tight enough to reject a genuinely wrong result; a different dtype or
+operator would set different thresholds. The test set is likewise adversarial by
+design rather than random: it includes zeros, constants with nonuniform weights,
+alternating signs, small and large finite values, exact residual cancellation,
+and two independent random seeds [10]. Each targets a way the operator can break
+that typical random inputs would miss, such as cancellation exercising the
+residual add where <code>x</code> and <code>a</code> sum to zero, and the mix of magnitudes stressing
+the FP32 reduction, so a kernel that passes has been tried against the hard
+cases, not just the easy average.</p>
+<p>Run the baseline on an available core:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>source /opt/nki-venv/bin/activate
+</span></span><span style="display:flex;"><span>export NEURON_RT_VISIBLE_CORES<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>export NEURON_LOGICAL_NC_CONFIG<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>export NEURON_PLATFORM_TARGET_OVERRIDE<span style="color:#f92672">=</span>trn2
+</span></span><span style="display:flex;"><span>python content/docs/section-3/subsection-5/rmsnorm_agent_lab.py <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --kernel baseline
+</span></span></code></pre></div><p>The two random cases returned:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>random_seed_7    allclose=True max_abs=0.015625 mean_abs=3.506939e-07 cosine=0.9999999986
+</span></span><span style="display:flex;"><span>random_seed_2026 allclose=True max_abs=0.015625 mean_abs=3.251807e-07 cosine=0.9999999989
+</span></span></code></pre></div><p>The structured cases also passed. Only now does performance become a valid
+objective.</p>
+<h2 id="2-profile-the-baseline-and-choose-a-direction">
+  2. Profile the baseline and choose a direction
+  
+  <a class="anchor" href="#2-profile-the-baseline-and-choose-a-direction">#</a>
+  
+</h2>
+<p>A correct kernel is only the starting point; this stage decides what to make
+faster and, just as importantly, what not to bother with. The direction is
+chosen from measurement rather than intuition, and the evidence is built up in
+layers: a repeatable capture, cheap summary counters, the timeline and its
+interval queries, and finally a roofline that fixes the theoretical limit. Each
+layer answers a question the previous one cannot, and the goal throughout is to
+separate what the operator is fundamentally limited by from what this particular
+implementation is limited by, because those two answers turn out to differ.</p>
+<h3 id="capture-a-repeatable-execution">
+  Capture a repeatable execution
+  
+  <a class="anchor" href="#capture-a-repeatable-execution">#</a>
+  
+</h3>
+<p>Every number that follows is only as trustworthy as the run it came from, so the
+capture is made reproducible before anything is measured. Preserve the
+standalone executable in a fresh artifact directory:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ARTIFACTS_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span>mktemp -d /tmp/rmsnorm-nki.XXXXXX<span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>export NKI_ARTIFACTS_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span>$ARTIFACTS_DIR<span style="color:#e6db74">&#34;</span>
+</span></span><span style="display:flex;"><span>python content/docs/section-3/subsection-5/rmsnorm_agent_lab.py <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --kernel baseline
+</span></span></code></pre></div><p>Capture the second execution so the profile does not describe first-run
+effects. The first run pays one-time costs (code load, DMA queue setup, and
+instruction and data caching) that have nothing to do with steady-state
+performance; <code>--num-exec=2 --profile-nth-exec=2</code> runs the kernel twice and
+records only the second, so the trace reflects the behavior an optimization
+would actually change:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>neuron-explorer capture <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -n <span style="color:#e6db74">&#34;</span>$ARTIFACTS_DIR<span style="color:#e6db74">/kernel.neff&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -s <span style="color:#e6db74">&#34;</span>$ARTIFACTS_DIR<span style="color:#e6db74">/rmsnorm.ntff&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --num-exec<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --profile-nth-exec<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --enable-dge-notifs
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>NTFF<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span>$ARTIFACTS_DIR<span style="color:#e6db74">/rmsnorm_exec_2.ntff&#34;</span>
+</span></span></code></pre></div><p>The NEFF (Neuron Executable File Format) is the compiled executable and the NTFF
+(Neuron Trace File Format) is its captured trace. Keep them together because
+Neuron Explorer uses metadata from both [5, 6].</p>
+<h3 id="start-with-the-profile-summary">
+  Start with the profile summary
+  
+  <a class="anchor" href="#start-with-the-profile-summary">#</a>
+  
+</h3>
+<p>Begin with the cheapest view. The summary is a handful of aggregate counters
+that says how much of each resource the run consumed, which is enough to see
+where time concentrates and to feed the roofline, without yet paying the cost of
+reading a full timeline. Ask for a small set of counters before opening the
+timeline:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>neuron-explorer view <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --output-format summary-json <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -n <span style="color:#e6db74">&#34;</span>$ARTIFACTS_DIR<span style="color:#e6db74">/kernel.neff&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -s <span style="color:#e6db74">&#34;</span>$NTFF<span style="color:#e6db74">&#34;</span> &gt; <span style="color:#e6db74">&#34;</span>$ARTIFACTS_DIR<span style="color:#e6db74">/summary.json&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>jq <span style="color:#e6db74">&#39;to_entries[0].value | {
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  latency_us: (.total_exec_time * 1e6),
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  hbm_read_bytes,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  hbm_write_bytes,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  dma_transfer_us: (.dma_transfer_time * 1e6),
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  vector_active_us: (.vector_engine_active_time * 1e6),
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  scalar_active_us: (.scalar_engine_active_time * 1e6)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">}&#39;</span> <span style="color:#e6db74">&#34;</span>$ARTIFACTS_DIR<span style="color:#e6db74">/summary.json&#34;</span>
+</span></span></code></pre></div><p>The representative baseline capture was:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Profile summary</th>
+          <th style="text-align: right">Baseline</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Latency</td>
+          <td style="text-align: right"><code>218.666 us</code></td>
+      </tr>
+      <tr>
+          <td>HBM read</td>
+          <td style="text-align: right"><code>16.008 MiB</code></td>
+      </tr>
+      <tr>
+          <td>HBM write</td>
+          <td style="text-align: right"><code>8.000 MiB</code></td>
+      </tr>
+      <tr>
+          <td>DMA transfer time</td>
+          <td style="text-align: right"><code>76.154 us</code></td>
+      </tr>
+      <tr>
+          <td>Vector Engine active time</td>
+          <td style="text-align: right"><code>162.230 us</code></td>
+      </tr>
+      <tr>
+          <td>Scalar Engine active time</td>
+          <td style="text-align: right"><code>78.340 us</code></td>
+      </tr>
+  </tbody>
+</table>
+<p>Read against a <code>218.666 us</code> latency, the counters already point somewhere: the
+Vector Engine is active for <code>162.230 us</code>, most of the run, while DMA transfers
+take <code>76.154 us</code> and the Scalar Engine <code>78.340 us</code>. Vector work clearly
+dominates. But the summary says only that this work is long, not whether it
+overlaps DMA and so hides behind it, nor whether it is one necessary chain or
+several redundant instructions that could be fused. Totals cannot show
+structure, and structure is what determines the optimization. Export the same
+capture to Perfetto to see it [7]:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>neuron-explorer view <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --output-format perfetto <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --output-file <span style="color:#e6db74">&#34;</span>$ARTIFACTS_DIR<span style="color:#e6db74">/rmsnorm.pftrace&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -n <span style="color:#e6db74">&#34;</span>$ARTIFACTS_DIR<span style="color:#e6db74">/kernel.neff&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -s <span style="color:#e6db74">&#34;</span>$NTFF<span style="color:#e6db74">&#34;</span>
+</span></span></code></pre></div><p><img src="perfetto_residual_rmsnorm_baseline.png" alt="Zoomed baseline Perfetto timeline showing DMA, Scalar Engine, and Vector Engine tracks" /></p>
+<p><em>Baseline timeline at a <code>0-220 us</code> zoom. The activation and residual loads and
+output stores overlap some compute, but separate reduction, copy, broadcast,
+and multiply instructions leave a long Vector and Scalar path.</em></p>
+<p>Reading this view takes a little orientation. Each horizontal lane is a
+<strong>track</strong>, one source of events over time, and each colored bar on it is a
+<strong>slice</strong> with a start and an end. The tracks fall into three groups. The
+<strong>Aggregated DMAs</strong> group (<code>qGpSimdDynamic</code>, <code>qSyncIO0</code>) is data movement: the
+<code>x</code>, <code>residual</code>, and <code>output_0</code> bars there are the transfers between HBM and
+on-chip memory. The <strong>Instructions</strong> group (<code>Vector Engine</code>, <code>Scalar Engine</code>,
+<code>GpSimd Engine</code>) is compute. The <strong>Semaphores</strong> group holds the idle waits. One
+name is easy to misread: <code>qGpSimdDynamic</code> is a DMA <em>queue</em> track (the leading
+<code>q</code>), distinct from the <code>GpSimd Engine</code> instruction track, even though both
+carry &ldquo;GpSimd&rdquo; because that engine issues the dynamic transfers; the queue bars
+are DMA, the engine bars are compute.</p>
+<p>A single engine also appears as several stacked rows, such as <code>Vector Engine</code>
+Rows 0, 1, and 2. This is one engine, not three: when its recorded slices
+overlap in time, the profiler stacks them onto sub-rows so they do not collide,
+so the row count is the depth of overlap, which is why the busier Row 0 fills
+while Row 2 is nearly empty. The overlap reflects instructions whose recorded
+intervals abut or nest (a SIMD engine applies one instruction across many lanes
+at once and pipelines successive instructions) rather than three independent
+computations running in parallel. The practical consequence is that a single
+engine&rsquo;s time is spread across its rows and those slices overlap, so it cannot
+be totaled by summing durations.</p>
+<p>For agent analysis, visual inspection should therefore be paired with interval
+queries [8]. The same overlap that stacks one engine into rows also holds across
+engines, since DMA and compute run in parallel, so summing durations
+double-counts: if one transfer runs <code>0-10 us</code> and another runs <code>5-15 us</code>, the
+wall-clock time with DMA active is <code>15 us</code>, not the <code>20 us</code> the durations sum to.
+The honest quantity is the <strong>interval union</strong>, the total time during which at
+least one slice of a given kind is active, counting each moment once. The queries
+below compute three such figures: the union of bulk-DMA time, the union of
+useful-compute time, and their <strong>intersection</strong>, the time when both are active
+at once.</p>
+<p>The selected bulk-DMA union is <code>69.841 us</code>, useful-compute union is
+<code>190.251 us</code>, and their intersection is <code>56.336 us</code>. Two conclusions follow, and
+together they set the optimization direction. First, <code>56.336 / 69.841 = 80.7%</code>
+of the DMA interval overlaps useful compute, so most data movement is already
+hidden behind computation rather than stalling the kernel. Second, the compute
+union is almost three times the DMA union. Because the engines run concurrently,
+runtime is governed by the longer of the two, so the long compute chain, not
+data movement, is what stretches this kernel out. Shortening that chain is the
+lever; making DMA faster would buy almost nothing.</p>
+<details>
+<summary>Exact Perfetto interval-union query</summary>
+<p>Raw Perfetto tracks contain overlapping slices. Summing their durations
+double-counts time, so the query merges each class before intersecting them.
+The <code>useful</code> CTE first selects and labels only the slices that count as <code>dma</code>
+or <code>compute</code>; the <code>running</code>, <code>marked</code>, and <code>grouped</code> CTEs are the standard
+merge-overlapping-intervals sweep, sorting slices by start time and opening a
+new group only where a gap appears; <code>merged</code> collapses each group to a single
+interval; and the final query sums those non-overlapping intervals and measures
+the DMA-compute overlap:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl -LO https://get.perfetto.dev/trace_processor
+</span></span><span style="display:flex;"><span>chmod +x trace_processor
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>./trace_processor query <span style="color:#e6db74">&#34;</span>$ARTIFACTS_DIR<span style="color:#e6db74">/rmsnorm.pftrace&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  <span style="color:#e6db74">&#34;WITH useful AS (
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">     SELECT CASE
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">              WHEN t.name GLOB &#39;qGpSimdDynamic*&#39; THEN &#39;dma&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">              ELSE &#39;compute&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            END AS kind,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            s.ts AS start,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            s.ts + s.dur AS finish
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">       FROM slice AS s
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">       JOIN track AS t ON t.id = s.track_id
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      WHERE s.dur &gt; 0
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        AND ((t.name GLOB &#39;qGpSimdDynamic*&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">              AND s.name IN (&#39;x&#39;, &#39;residual&#39;, &#39;output_0&#39;))
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">         OR (t.name GLOB &#39;Vector Engine*&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">             AND s.name IN (&#39;TENSOR_TENSOR&#39;, &#39;TENSOR_REDUCE&#39;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                            &#39;COPY&#39;, &#39;STREAM_SHUFFLE&#39;))
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">         OR (t.name GLOB &#39;Scalar Engine*&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">             AND s.name IN (&#39;ACTIVATE&#39;, &#39;COPY&#39;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                            &#39;ACTIVATION_READ_ACCUMULATOR&#39;)))
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">   ),
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">   running AS (
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">     SELECT *,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            MAX(finish) OVER (
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">              PARTITION BY kind
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">              ORDER BY start, finish
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">              ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            ) AS prior_finish
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">       FROM useful
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">   ),
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">   marked AS (
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">     SELECT *,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            CASE WHEN prior_finish IS NULL OR start &gt; prior_finish
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">                 THEN 1 ELSE 0 END AS new_group
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">       FROM running
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">   ),
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">   grouped AS (
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">     SELECT *,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            SUM(new_group) OVER (
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">              PARTITION BY kind ORDER BY start, finish
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            ) AS interval_group
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">       FROM marked
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">   ),
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">   merged AS (
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">     SELECT kind, interval_group,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            MIN(start) AS start,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            MAX(finish) AS finish
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">       FROM grouped
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      GROUP BY kind, interval_group
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">   ),
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">   dma AS (
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">     SELECT start, finish FROM merged WHERE kind = &#39;dma&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">   ),
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">   compute AS (
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">     SELECT start, finish FROM merged WHERE kind = &#39;compute&#39;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">   )
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">   SELECT
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">     ROUND((SELECT SUM(finish-start) FROM dma)/1000.0, 3)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">       AS dma_union_us,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">     ROUND((SELECT SUM(finish-start) FROM compute)/1000.0, 3)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">       AS compute_union_us,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">     ROUND(COALESCE(SUM(MAX(
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">       0,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">       MIN(d.finish,c.finish)-MAX(d.start,c.start)
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">     )), 0)/1000.0, 3) AS overlap_us
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">   FROM dma AS d CROSS JOIN compute AS c&#34;</span>
+</span></span></code></pre></div></details>
+<p>Four details prevent common misreadings, each one a slice the query must
+deliberately keep or exclude:</p>
+<ol>
+<li>On the <code>qGpSimdDynamic</code> queue track, <code>x</code>, <code>residual</code>, and <code>output_0</code> are the
+profiler&rsquo;s labels for the slices that load the activations, load the
+residual, and store the one declared output. These three are the bulk
+transfers the contract requires, which is why the filter names exactly them.
+The summary byte count also includes the small weight load, so it reads
+slightly higher than the bulk-DMA union.</li>
+<li><code>EVENT_SEMAPHORE</code> is a dependency wait, not arithmetic. On the timeline it
+appears as a single bar spanning the full <code>220 us</code> on the Tensor Engine and
+Sync Engine rows, which is tempting to read as those engines being busy the
+whole time. It is the opposite: the bar is long because the engine is idle,
+blocked on a semaphore. The Tensor Engine waits the entire kernel because
+this operator has no matrix multiply for it to run, so counting that bar as
+compute would fabricate <code>220 us</code> of work that never happened. The filter
+admits only named Vector and Scalar instructions and never these rows.</li>
+<li>Summing per-engine DMA tracks double-counts concurrent transfers, the same
+overlap problem the interval union exists to solve.</li>
+<li>The model-FLOP field is a derived estimate the profiler can only fill in when
+it has a full model graph to count operations from. A standalone NKI capture
+gives it no such context, so the field defaults to zero. That zero is missing
+data, not a measurement: it does not mean the kernel has no arithmetic, and
+feeding it into the roofline that follows (which needs a FLOP count) would
+collapse the intensity to zero and corrupt the classification. The roofline
+below instead derives the FLOP count by hand from the operator definition.</li>
+</ol>
+<h3 id="put-the-fixed-operator-on-a-roofline">
+  Put the fixed operator on a roofline
+  
+  <a class="anchor" href="#put-the-fixed-operator-on-a-roofline">#</a>
+  
+</h3>
+<p>Use the roofline model from Section 1.3 [11]. Let <code>N = RH = 4,194,304</code> be the
+number of activation elements. BF16 occupies two bytes. The fixed interface
+reads <code>x</code> and <code>residual</code>, reads the weight once, and writes <code>y</code>:</p>
 
+<span>\[ \begin{aligned}
+Q_{\min}
+  &amp;= 2N + 2N + 2H + 2N \\
+  &amp;= 6N + 2H \\
+  &amp;= 25{,}174{,}016\ \text{bytes}, \\
+F_{\mathrm{useful}}
+  &amp;\approx N + N + (N-R) + R + R + N + N \\
+  &amp;= 5N + R \\
+  &amp;= 20{,}972{,}544\ \text{FLOPs}, \\
+I
+  &amp;= \frac{F_{\mathrm{useful}}}{Q_{\min}} \\
+  &amp;\approx 0.8331\ \text{FLOP/byte}.
+\end{aligned} \]</span>
+<p>Each term is a direct count. In <code>Q_min</code> the three <code>2N</code> terms are the reads of
+<code>x</code> and <code>residual</code> and the write of <code>y</code>, each a <code>[1024, 4096]</code> BF16 tensor,
+and the <code>2H</code> term loads the weight vector once; these are the bytes the
+interface forces across HBM, so no implementation can move fewer. In
+<code>F_useful</code> the terms follow the operator left to right: <code>N</code> for the residual
+add, <code>N</code> for the per-element square, <code>N - R</code> for the row reductions (<code>H - 1</code>
+adds across each of <code>R</code> rows), <code>R</code> for the <code>1/H</code> scaling, <code>R</code> for adding
+<code>epsilon</code>, then <code>N</code> and <code>N</code> for scaling every element by its row inverse-RMS
+and by the weight. <code>I</code> divides the two, useful FLOPs per byte moved, a
+property of the operator that no rewrite can change.</p>
+<p>The FLOP count leaves the reciprocal-square-root evaluations separate because
+there is no universal FLOP equivalent for a special-function instruction: a
+seed lookup with one or two Newton refinement steps could be scored as a
+single operation or as ten to twenty, and any choice is arbitrary. Leaving it
+out is safe because <code>rsqrt</code> runs once per row, so there are only <code>R = 1024</code> of
+them against the <code>5N + R</code> element-wise and reduction FLOPs. Even a generous 20
+FLOP-equivalents each adds <code>20R</code>, about <code>0.1%</code> of <code>F_useful</code>, moving <code>I</code> from
+<code>0.8331</code> to roughly <code>0.8339</code>; the operator would have to more than triple its
+intensity to reach <code>I_ridge</code>, so the term cannot change the classification. It
+does bear on latency rather than intensity: each row&rsquo;s scale sits on the
+critical dependency chain, which is part of why the measured baseline below is
+compute-limited.</p>
+<p>The official DMA guide specifies 16 DMA engines per NeuronCore at <code>23 B/ns</code>
+per engine, an aggregate ceiling of <code>368 GB/s</code> [12]. It recommends at least
+4 KiB of contiguous data per partition for saturation; each activation row
+here supplies 8 KiB. The architecture guide reports <code>1.0 TFLOP/s</code> of FP32
+Vector Engine throughput [3].</p>
 
+<span>\[ \begin{aligned}
+B_{\mathrm{DMA,max}}
+  &amp;= 16 \times 23\ \text{B/ns}
+   = 368\ \text{GB/s}, \\
+I_{\mathrm{ridge}}
+  &amp;= \frac{1.0\ \text{TFLOP/s}}
+          {368\ \text{GB/s}}
+   \approx 2.72\ \text{FLOP/byte}, \\
+P_{\mathrm{roof}}(I)
+  &amp;= I B_{\mathrm{DMA,max}}
+   \approx 306.6\ \text{GFLOP/s}, \\
+t_{\mathrm{HBM,min}}
+  &amp;= \frac{Q_{\min}}{B_{\mathrm{DMA,max}}}
+   \approx 68.41\ \mu\text{s}.
+\end{aligned} \]</span>
+<p>Reading these in order: <code>B_DMA,max</code> is the aggregate HBM bandwidth, 16 engines
+at <code>23 B/ns</code>. <code>I_ridge</code> is the ridge point, peak compute divided by peak
+bandwidth, the intensity at which a kernel switches from memory-bound to
+compute-bound. <code>P_roof(I)</code> is the highest throughput this operator can reach at
+its own intensity: on the memory leg it is <code>I</code> times bandwidth, so even a
+perfect kernel tops out near <code>306.6 GFLOP/s</code> rather than the <code>1.0 TFLOP/s</code>
+compute peak. <code>t_HBM,min</code> is the time floor set by traffic alone, <code>Q_min</code>
+divided by bandwidth, the fastest any implementation could finish given the
+bytes it must move.</p>
+<p>Since <code>I &lt; I_ridge</code>, the operator lies on the memory leg of the ideal
+roofline. That is a statement about the best implementation of this fixed
+workload. It does not imply that the current implementation is waiting on
+memory.</p>
+<p>The measured baseline tells a different, compatible story:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Baseline-derived metric</th>
+          <th style="text-align: right">Value</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Useful throughput</td>
+          <td style="text-align: right"><code>95.9 GFLOP/s</code></td>
+      </tr>
+      <tr>
+          <td>Fraction of nominal roof</td>
+          <td style="text-align: right"><code>31.3%</code></td>
+      </tr>
+      <tr>
+          <td>Bandwidth while DMA is active</td>
+          <td style="text-align: right"><code>330.6 GB/s</code></td>
+      </tr>
+      <tr>
+          <td>Per-core DMA ceiling efficiency</td>
+          <td style="text-align: right"><code>89.8%</code></td>
+      </tr>
+      <tr>
+          <td>End-to-end effective bandwidth</td>
+          <td style="text-align: right"><code>115.1 GB/s</code></td>
+      </tr>
+      <tr>
+          <td>Runtime / HBM-only lower bound</td>
+          <td style="text-align: right"><code>3.20x</code></td>
+      </tr>
+      <tr>
+          <td>Useful compute union / bulk-DMA union</td>
+          <td style="text-align: right"><code>190.251 / 69.841 us</code></td>
+      </tr>
+  </tbody>
+</table>
+<p>The two bandwidth rows measure the same required traffic over different
+windows. End-to-end effective bandwidth divides by the full runtime
+(<code>Q_min / 218.7 us approx 115.1 GB/s</code>), so idle DMA time pulls it down.
+Bandwidth while DMA is active divides by only the span in which the engines
+are busy, so it runs about three times higher at <code>330.6 GB/s</code>; dividing that
+by the <code>368 GB/s</code> ceiling gives the <code>89.8%</code> per-core efficiency. That busy
+span is the full DMA-active window, wider than the bulk-DMA union in the last
+row, so the two do not share a denominator. Taken together, the transfers are
+near-optimal whenever they run and the engines sit idle for much of the
+runtime, waiting on compute.</p>
+<p>The DMA engines already approach their documented ceiling while active, and
+the profile reports the minimum required HBM traffic. The long compute union
+and separate Vector operations make this baseline <strong>compute/dependency
+limited</strong>, even though the ideal roofline classifies the operator itself as
+memory-bound. The first optimization should shorten the instruction chain,
+not attempt to remove bytes that the ABI requires.</p>
+<h3 id="give-the-evidence-back-to-the-agent">
+  Give the evidence back to the agent
+  
+  <a class="anchor" href="#give-the-evidence-back-to-the-agent">#</a>
+  
+</h3>
+<p>This is where the loop closes. Stages 1 and 2 produced evidence the agent
+cannot re-derive from the source alone, so the next prompt hands it back and
+asks the agent to optimize against measurement rather than guesswork. It
+carries the immutable contract, baseline source, correctness results, summary
+JSON, Perfetto trace, roofline calculation, and current NKI API references:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Optimize this kernel without changing its equations, inputs, output, shape,
+</span></span><span style="display:flex;"><span>layout, dtype path, tests, benchmark, or profiler command.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Before editing:
+</span></span><span style="display:flex;"><span>1. reconcile the ideal roofline classification with the measured bottleneck;
+</span></span><span style="display:flex;"><span>2. quantify useful DMA, useful compute, and their overlap from interval unions;
+</span></span><span style="display:flex;"><span>3. identify the longest avoidable instruction chain in the trace;
+</span></span><span style="display:flex;"><span>4. inspect the installed nki.language and nki.isa APIs for a way to combine
+</span></span><span style="display:flex;"><span>   adjacent work or remove an intermediate dependency;
+</span></span><span style="display:flex;"><span>5. state one falsifiable hypothesis, including counters expected to change
+</span></span><span style="display:flex;"><span>   and counters expected to remain constant; and
+</span></span><span style="display:flex;"><span>6. name the correctness cases most likely to reject the change.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Implement one candidate. Run every correctness gate and recapture the same
+</span></span><span style="display:flex;"><span>workload. Keep the change only if the measured counters support the hypothesis.
+</span></span></code></pre></div><p>The six numbered steps force the agent to reason before it edits. Steps 1
+through 4 make it read the evidence: reconcile the ideal classification with
+the measured bottleneck, quantify the interval unions, find the longest
+avoidable chain, and check what the installed API actually offers. The final
+line then binds any change to the correctness gates and a fresh capture. Steps
+5 and 6 are the ones that turn this from a request into a falsifiable
+experiment.</p>
+<p>Step 3&rsquo;s &ldquo;longest avoidable instruction chain&rdquo; is the highest-value target, so
+it is worth being precise about. A chain here is a run of instructions linked
+by data, where each one needs the previous result before it can start: the
+residual add feeds the square, which feeds the row reduction, which feeds the
+mean, the reciprocal square root, and finally the per-element normalization.
+The hardware can run unrelated instructions on different engines in parallel,
+but it cannot overlap two links of the same chain, so their durations add up.
+The longest such chain is the critical path: the kernel cannot finish until it
+does, which is why the measured baseline shows a compute union of <code>190.25 us</code>
+sitting far above the <code>69.84 us</code> DMA union. Avoidable means the link exists
+because of how the kernel was written, not because the math requires it. The
+reduction must follow the square, and normalization must follow the reciprocal
+square root, so those orderings are intrinsic. But the baseline computes the
+square as one Vector instruction and then reduces the intermediate in a
+separate one, and <code>nisa.activation</code> can square and accumulate the row sum in a
+single instruction. That pair is one avoidable link on the critical path, and
+collapsing it is the only kind of change that shortens runtime rather than
+shaving already-idle engines.</p>
+<p>Step 5 asks for one falsifiable hypothesis, split into counters expected to
+change and counters expected to hold. A counter is a quantity the profiler
+measures directly, such as HBM bytes moved, DMA active time, or Vector Engine
+active time, rather than something the code asserts, so it can settle the
+prediction objectively and cannot be argued past. A hypothesis phrased this way
+can be
+proven wrong by the next profile, which is what makes the optimization loop
+self-correcting rather than a sequence of hopeful rewrites. Naming the counters
+that should stay constant matters as much as naming the ones that should move:
+if a change is supposed to shorten the Vector path without touching data
+movement, then HBM bytes and DMA active time must not change, and if they do,
+the rewrite did something other than what was claimed. This is also the
+guardrail against reward hacking from Section 2. An agent optimizing for
+latency alone might quietly drop a term, narrow the dtype, or skip a row; a
+pre-committed prediction of which counters hold fixed makes that kind of shortcut
+show up as a failed prediction, not a faster number.</p>
+<p>Step 6 asks the agent to name the correctness cases most likely to reject the
+change. This is adversarial self-review before any code exists. If fusing the
+square and reduction changes accumulation order, the case most likely to break
+is the large-magnitude or mixed-sign row where BF16 rounding is most sensitive;
+if a broadcast is reshaped, the single-row or boundary-tile case is the one to
+watch. Forcing the agent to predict its own most probable failure focuses the
+correctness gate on the rows that matter and exposes a shaky change before it is
+written, rather than after a full profile. Together, steps 5 and 6 mean the
+agent commits to what success and failure each look like before it edits,
+so the recapture can only confirm or refute a claim already on the table.</p>
+<p>From this evidence, the agent proposed that combining the square and row
+reduction into one operation would shorten the Vector path. Its step-5
+hypothesis predicted unchanged HBM bytes and DMA active time (data movement
+untouched), lower Vector Engine active time and a shorter compute union (the
+fused chain), and lower end-to-end latency (the payoff). Its step-6 answer
+flagged the numerically sensitive rows, where fusing the reduction could shift
+BF16 rounding, as the cases most likely to reject the change.</p>
+<h2 id="3-execute-and-verify-the-optimization">
+  3. Execute and verify the optimization
+  
+  <a class="anchor" href="#3-execute-and-verify-the-optimization">#</a>
+  
+</h2>
+<h3 id="implement-one-profile-derived-change">
+  Implement one profile-derived change
+  
+  <a class="anchor" href="#implement-one-profile-derived-change">#</a>
+  
+</h3>
+<p>After inspecting the installed ISA, the agent used <code>nisa.activation</code> to apply
+the square and reduce its result in one operation [13]. It then used a
+per-row <code>nisa.tensor_scalar</code> broadcast for normalization [14]:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#a6e22e">@nki.jit</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">residual_rms_norm_fused_kernel</span>(x, residual, weight):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">assert</span> x<span style="color:#f92672">.</span>shape <span style="color:#f92672">==</span> residual<span style="color:#f92672">.</span>shape <span style="color:#f92672">==</span> (TOKENS, HIDDEN)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">assert</span> x<span style="color:#f92672">.</span>dtype <span style="color:#f92672">==</span> residual<span style="color:#f92672">.</span>dtype <span style="color:#f92672">==</span> nl<span style="color:#f92672">.</span>bfloat16
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">assert</span> weight<span style="color:#f92672">.</span>shape <span style="color:#f92672">==</span> (HIDDEN,)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">assert</span> weight<span style="color:#f92672">.</span>dtype <span style="color:#f92672">==</span> nl<span style="color:#f92672">.</span>bfloat16
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    out <span style="color:#f92672">=</span> nl<span style="color:#f92672">.</span>ndarray(x<span style="color:#f92672">.</span>shape, dtype<span style="color:#f92672">=</span>x<span style="color:#f92672">.</span>dtype, buffer<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>shared_hbm)
+</span></span><span style="display:flex;"><span>    weight_row <span style="color:#f92672">=</span> nl<span style="color:#f92672">.</span>load(weight<span style="color:#f92672">.</span>reshape((<span style="color:#ae81ff">1</span>, HIDDEN)))
+</span></span><span style="display:flex;"><span>    weight_tile <span style="color:#f92672">=</span> nl<span style="color:#f92672">.</span>broadcast_to(
+</span></span><span style="display:flex;"><span>        weight_row,
+</span></span><span style="display:flex;"><span>        shape<span style="color:#f92672">=</span>(TILE_TOKENS, HIDDEN),
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> tile_idx <span style="color:#f92672">in</span> range(NUM_TILES):
+</span></span><span style="display:flex;"><span>        start <span style="color:#f92672">=</span> tile_idx <span style="color:#f92672">*</span> TILE_TOKENS
+</span></span><span style="display:flex;"><span>        stop <span style="color:#f92672">=</span> start <span style="color:#f92672">+</span> TILE_TOKENS
+</span></span><span style="display:flex;"><span>        x_tile <span style="color:#f92672">=</span> nl<span style="color:#f92672">.</span>ndarray(
+</span></span><span style="display:flex;"><span>            (TILE_TOKENS, HIDDEN), dtype<span style="color:#f92672">=</span>x<span style="color:#f92672">.</span>dtype, buffer<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>sbuf
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>        residual_tile <span style="color:#f92672">=</span> nl<span style="color:#f92672">.</span>ndarray(
+</span></span><span style="display:flex;"><span>            (TILE_TOKENS, HIDDEN),
+</span></span><span style="display:flex;"><span>            dtype<span style="color:#f92672">=</span>residual<span style="color:#f92672">.</span>dtype,
+</span></span><span style="display:flex;"><span>            buffer<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>sbuf,
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>        summed <span style="color:#f92672">=</span> nl<span style="color:#f92672">.</span>ndarray(
+</span></span><span style="display:flex;"><span>            (TILE_TOKENS, HIDDEN), dtype<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>float32, buffer<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>sbuf
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>        square_scratch <span style="color:#f92672">=</span> nl<span style="color:#f92672">.</span>ndarray(
+</span></span><span style="display:flex;"><span>            (TILE_TOKENS, HIDDEN), dtype<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>float32, buffer<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>sbuf
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>        sum_square <span style="color:#f92672">=</span> nl<span style="color:#f92672">.</span>ndarray(
+</span></span><span style="display:flex;"><span>            (TILE_TOKENS, <span style="color:#ae81ff">1</span>), dtype<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>float32, buffer<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>sbuf
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        nisa<span style="color:#f92672">.</span>dma_copy(dst<span style="color:#f92672">=</span>x_tile, src<span style="color:#f92672">=</span>x[start:stop, :])
+</span></span><span style="display:flex;"><span>        nisa<span style="color:#f92672">.</span>dma_copy(
+</span></span><span style="display:flex;"><span>            dst<span style="color:#f92672">=</span>residual_tile,
+</span></span><span style="display:flex;"><span>            src<span style="color:#f92672">=</span>residual[start:stop, :],
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>        nisa<span style="color:#f92672">.</span>tensor_tensor(
+</span></span><span style="display:flex;"><span>            dst<span style="color:#f92672">=</span>summed,
+</span></span><span style="display:flex;"><span>            data1<span style="color:#f92672">=</span>x_tile,
+</span></span><span style="display:flex;"><span>            data2<span style="color:#f92672">=</span>residual_tile,
+</span></span><span style="display:flex;"><span>            op<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>add,
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>        nisa<span style="color:#f92672">.</span>activation(
+</span></span><span style="display:flex;"><span>            dst<span style="color:#f92672">=</span>square_scratch,
+</span></span><span style="display:flex;"><span>            op<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>square,
+</span></span><span style="display:flex;"><span>            data<span style="color:#f92672">=</span>summed,
+</span></span><span style="display:flex;"><span>            reduce_op<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>add,
+</span></span><span style="display:flex;"><span>            reduce_res<span style="color:#f92672">=</span>sum_square,
+</span></span><span style="display:flex;"><span>            reduce_cmd<span style="color:#f92672">=</span>nisa<span style="color:#f92672">.</span>reduce_cmd<span style="color:#f92672">.</span>reset_reduce,
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>        nisa<span style="color:#f92672">.</span>activation(
+</span></span><span style="display:flex;"><span>            dst<span style="color:#f92672">=</span>sum_square,
+</span></span><span style="display:flex;"><span>            op<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>rsqrt,
+</span></span><span style="display:flex;"><span>            data<span style="color:#f92672">=</span>sum_square,
+</span></span><span style="display:flex;"><span>            scale<span style="color:#f92672">=</span><span style="color:#ae81ff">1.0</span> <span style="color:#f92672">/</span> HIDDEN,
+</span></span><span style="display:flex;"><span>            bias<span style="color:#f92672">=</span>EPS,
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>        nisa<span style="color:#f92672">.</span>tensor_scalar(
+</span></span><span style="display:flex;"><span>            dst<span style="color:#f92672">=</span>summed,
+</span></span><span style="display:flex;"><span>            data<span style="color:#f92672">=</span>summed,
+</span></span><span style="display:flex;"><span>            op0<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>multiply,
+</span></span><span style="display:flex;"><span>            operand0<span style="color:#f92672">=</span>sum_square,
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>        nisa<span style="color:#f92672">.</span>tensor_tensor(
+</span></span><span style="display:flex;"><span>            dst<span style="color:#f92672">=</span>x_tile,
+</span></span><span style="display:flex;"><span>            data1<span style="color:#f92672">=</span>summed,
+</span></span><span style="display:flex;"><span>            data2<span style="color:#f92672">=</span>weight_tile,
+</span></span><span style="display:flex;"><span>            op<span style="color:#f92672">=</span>nl<span style="color:#f92672">.</span>multiply,
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>        nisa<span style="color:#f92672">.</span>dma_copy(dst<span style="color:#f92672">=</span>out[start:stop, :], src<span style="color:#f92672">=</span>x_tile)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> out
+</span></span></code></pre></div><p>The one profile-derived change is the fused <code>nisa.activation</code> that squares
+<code>summed</code> and accumulates its row sum in a single pass: <code>op=nl.square</code> performs
+the square while <code>reduce_op=nl.add</code> and <code>reduce_res=sum_square</code> write the
+per-row total, collapsing the baseline&rsquo;s two dependent Vector instructions into
+one. That is the avoidable link from step 3, and it is the whole optimization.
+Everything around it is the baseline&rsquo;s arithmetic re-expressed in the ISA: the
+following <code>nisa.activation</code> folds the <code>1/H</code> scale and the <code>epsilon</code> bias into a
+single <code>rsqrt</code>, <code>nisa.tensor_scalar</code> broadcasts each row&rsquo;s scalar across its
+elements for normalization, and the two <code>nisa.tensor_tensor</code> calls apply the
+residual add and the final weight multiply. The square/reduction path and
+subsequent activation use FP32, preserving the dtype contract, and the explicit
+<code>reset_reduce</code> starts a new row reduction on every tile [13].</p>
+<h3 id="repeat-correctness-before-accepting-speed">
+  Repeat correctness before accepting speed
+  
+  <a class="anchor" href="#repeat-correctness-before-accepting-speed">#</a>
+  
+</h3>
+<p>Run both kernels through the same read-only oracle:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>python content/docs/section-3/subsection-5/rmsnorm_agent_lab.py <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --kernel both
+</span></span></code></pre></div><p>The random cases produced:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>[baseline]
+</span></span><span style="display:flex;"><span>random_seed_7    allclose=True max_abs=0.015625 mean_abs=3.506939e-07 cosine=0.9999999986
+</span></span><span style="display:flex;"><span>random_seed_2026 allclose=True max_abs=0.015625 mean_abs=3.251807e-07 cosine=0.9999999989
+</span></span><span style="display:flex;"><span>[fused]
+</span></span><span style="display:flex;"><span>random_seed_7    allclose=True max_abs=0.031250 mean_abs=1.073323e-05 cosine=0.9999999617
+</span></span><span style="display:flex;"><span>random_seed_2026 allclose=True max_abs=0.031250 mean_abs=1.151147e-05 cosine=0.9999999593
+</span></span></code></pre></div><p>Zeros, constants, alternating signs, small and large values, and exact
+residual cancellation also passed. The different error distribution is
+expected from the changed reduction sequence, but it remains inside the
+predeclared budget.</p>
+<h3 id="recapture-and-compare-the-same-evidence">
+  Recapture and compare the same evidence
+  
+  <a class="anchor" href="#recapture-and-compare-the-same-evidence">#</a>
+  
+</h3>
+<p>Compile the candidate into a separate fresh artifact directory and repeat the
+same second-execution capture, summary query, Perfetto export, and interval
+query. Representative captures and two repeats of each executable gave:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Profile summary</th>
+          <th style="text-align: right">Baseline</th>
+          <th style="text-align: right">Agent candidate</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Representative latency</td>
+          <td style="text-align: right"><code>218.666 us</code></td>
+          <td style="text-align: right"><code>119.547 us</code></td>
+      </tr>
+      <tr>
+          <td>Three-capture latency range</td>
+          <td style="text-align: right"><code>216.276-218.846 us</code></td>
+          <td style="text-align: right"><code>119.547-120.057 us</code></td>
+      </tr>
+      <tr>
+          <td>HBM read</td>
+          <td style="text-align: right"><code>16.008 MiB</code></td>
+          <td style="text-align: right"><code>16.008 MiB</code></td>
+      </tr>
+      <tr>
+          <td>HBM write</td>
+          <td style="text-align: right"><code>8.000 MiB</code></td>
+          <td style="text-align: right"><code>8.000 MiB</code></td>
+      </tr>
+      <tr>
+          <td>DMA transfer time</td>
+          <td style="text-align: right"><code>76.154 us</code></td>
+          <td style="text-align: right"><code>77.454 us</code></td>
+      </tr>
+      <tr>
+          <td>Vector Engine active time</td>
+          <td style="text-align: right"><code>162.230 us</code></td>
+          <td style="text-align: right"><code>80.167 us</code></td>
+      </tr>
+      <tr>
+          <td>Scalar Engine active time</td>
+          <td style="text-align: right"><code>78.340 us</code></td>
+          <td style="text-align: right"><code>68.926 us</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><img src="perfetto_residual_rmsnorm_candidate.png" alt="Zoomed optimized Perfetto timeline showing the shorter instruction path and overlapped DMA" /></p>
+<p><em>Candidate timeline at a <code>0-120 us</code> zoom. The same eight activation and
+residual loads and output stores remain, while the repeated compute chain is
+shorter and overlaps a larger fraction of the DMA span.</em></p>
+<p>The interval and roofline-derived comparison is:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Derived metric</th>
+          <th style="text-align: right">Baseline</th>
+          <th style="text-align: right">Agent candidate</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Bulk-DMA union</td>
+          <td style="text-align: right"><code>69.841 us</code></td>
+          <td style="text-align: right"><code>68.457 us</code></td>
+      </tr>
+      <tr>
+          <td>Useful-compute union</td>
+          <td style="text-align: right"><code>190.251 us</code></td>
+          <td style="text-align: right"><code>99.922 us</code></td>
+      </tr>
+      <tr>
+          <td>DMA/compute intersection</td>
+          <td style="text-align: right"><code>56.336 us</code></td>
+          <td style="text-align: right"><code>61.849 us</code></td>
+      </tr>
+      <tr>
+          <td>Fraction of DMA union overlapped</td>
+          <td style="text-align: right"><code>80.7%</code></td>
+          <td style="text-align: right"><code>90.3%</code></td>
+      </tr>
+      <tr>
+          <td>Useful throughput</td>
+          <td style="text-align: right"><code>95.9 GFLOP/s</code></td>
+          <td style="text-align: right"><code>175.4 GFLOP/s</code></td>
+      </tr>
+      <tr>
+          <td>Fraction of nominal roof</td>
+          <td style="text-align: right"><code>31.3%</code></td>
+          <td style="text-align: right"><code>57.2%</code></td>
+      </tr>
+      <tr>
+          <td>Bandwidth while DMA is active</td>
+          <td style="text-align: right"><code>330.6 GB/s</code></td>
+          <td style="text-align: right"><code>325.0 GB/s</code></td>
+      </tr>
+      <tr>
+          <td>End-to-end effective bandwidth</td>
+          <td style="text-align: right"><code>115.1 GB/s</code></td>
+          <td style="text-align: right"><code>210.6 GB/s</code></td>
+      </tr>
+      <tr>
+          <td>Runtime / HBM-only lower bound</td>
+          <td style="text-align: right"><code>3.20x</code></td>
+          <td style="text-align: right"><code>1.75x</code></td>
+      </tr>
+  </tbody>
+</table>
+<p>The candidate is <code>1.83x</code> faster, a <code>45.3%</code> latency reduction. HBM traffic and
+DMA duration are effectively unchanged, while Vector Engine active time falls
+by <code>82.063 us</code> and useful-compute union falls by <code>90.329 us</code>. That is the
+signature predicted by the agent&rsquo;s hypothesis.</p>
+<p>The candidate has moved upward toward the memory roof at the same arithmetic
+intensity, but it has not reached it. Useful compute still spans <code>99.922 us</code>
+while bulk DMA spans <code>68.457 us</code>; compute extends to about <code>115.3 us</code>, followed
+by the final output-DMA tail. This implementation is therefore still
+<strong>compute/dependency limited</strong>, despite the fixed operator&rsquo;s ideal
+memory-bound classification.</p>
+<p>The next agent turn should again follow evidence. It can inspect the remaining
+Scalar and Vector slices, test a scheduling change only where the timeline
+shows a bubble, or renegotiate a wider fusion contract that keeps output in
+SBUF for a downstream consumer. It should not add unused arithmetic to inflate
+intensity or claim bandwidth saved when the profile reports unchanged bytes.</p>
+<h2 id="integrate-the-accepted-kernel">
+  Integrate the accepted kernel
+  
+  <a class="anchor" href="#integrate-the-accepted-kernel">#</a>
+  
+</h2>
+<p>Standalone acceptance is not framework acceptance. Exercise the kernel at
+each intended call site after the optimization loop.</p>
+<h3 id="pytorch-and-jax">
+  PyTorch and JAX
+  
+  <a class="anchor" href="#pytorch-and-jax">#</a>
+  
+</h3>
+<p>An <code>@nki.jit</code> call with a PyTorch/XLA or JAX device tensor is lowered as a
+custom operation in the surrounding graph [4]. The same kernel that ran
+standalone becomes a single node the XLA compiler schedules alongside the rest
+of the model, so the integration test is checking that the device boundary
+holds inside a real graph, not re-testing the kernel arithmetic. A concise
+PyTorch/XLA check is:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> torch
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> torch_xla
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> rmsnorm_agent_lab <span style="color:#f92672">import</span> EPS, residual_rms_norm_fused_kernel
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>x_cpu <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>randn((<span style="color:#ae81ff">1024</span>, <span style="color:#ae81ff">4096</span>), dtype<span style="color:#f92672">=</span>torch<span style="color:#f92672">.</span>bfloat16)
+</span></span><span style="display:flex;"><span>residual_cpu <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>randn_like(x_cpu)
+</span></span><span style="display:flex;"><span>weight_cpu <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>empty((<span style="color:#ae81ff">4096</span>,), dtype<span style="color:#f92672">=</span>torch<span style="color:#f92672">.</span>bfloat16)<span style="color:#f92672">.</span>uniform_(<span style="color:#ae81ff">0.75</span>, <span style="color:#ae81ff">1.25</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>z <span style="color:#f92672">=</span> x_cpu<span style="color:#f92672">.</span>float() <span style="color:#f92672">+</span> residual_cpu<span style="color:#f92672">.</span>float()
+</span></span><span style="display:flex;"><span>reference <span style="color:#f92672">=</span> (
+</span></span><span style="display:flex;"><span>    z
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">*</span> torch<span style="color:#f92672">.</span>rsqrt(z<span style="color:#f92672">.</span>square()<span style="color:#f92672">.</span>mean(dim<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, keepdim<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>) <span style="color:#f92672">+</span> EPS)
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">*</span> weight_cpu<span style="color:#f92672">.</span>float()
+</span></span><span style="display:flex;"><span>)<span style="color:#f92672">.</span>bfloat16()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>device <span style="color:#f92672">=</span> torch_xla<span style="color:#f92672">.</span>device()
+</span></span><span style="display:flex;"><span>actual <span style="color:#f92672">=</span> residual_rms_norm_fused_kernel(
+</span></span><span style="display:flex;"><span>    x_cpu<span style="color:#f92672">.</span>to(device),
+</span></span><span style="display:flex;"><span>    residual_cpu<span style="color:#f92672">.</span>to(device),
+</span></span><span style="display:flex;"><span>    weight_cpu<span style="color:#f92672">.</span>to(device),
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>torch_xla<span style="color:#f92672">.</span>sync(wait<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">assert</span> torch<span style="color:#f92672">.</span>allclose(actual<span style="color:#f92672">.</span>cpu(), reference, atol<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span><span style="color:#f92672">**-</span><span style="color:#ae81ff">7</span>, rtol<span style="color:#f92672">=</span><span style="color:#ae81ff">1e-2</span>)
+</span></span></code></pre></div><p>The check mirrors the standalone oracle so a framework-level regression cannot
+hide. The reference is built on the host in FP32 and cast to BF16 only at the
+end, matching the kernel&rsquo;s FP32-arithmetic, BF16-I/O path, so the two agree by
+construction rather than by luck. Moving the inputs with <code>.to(device)</code> is what
+forces the <code>@nki.jit</code> lowering; <code>torch_xla.sync(wait=True)</code> then runs the lazy
+graph and blocks until the device result is ready, without which the following
+comparison would read an unmaterialized tensor. The <code>atol=2**-7, rtol=1e-2</code>
+tolerances are the same predeclared BF16 budget the correctness gate used, so a
+change that passed standalone but drifts once XLA fuses the surrounding graph
+still gets caught. The JAX path is analogous: pass device arrays into the same
+<code>@nki.jit</code> kernel and it lowers as a custom call in the JAX graph the same way.</p>
+<p>Inference integration does not create a gradient rule. Training requires a
+real backward implementation and a separate mathematical contract,
+correctness suite, and profile.</p>
+<h3 id="nkipy">
+  NKIPy
+  
+  <a class="anchor" href="#nkipy">#</a>
+  
+</h3>
+<p><a href="https://github.com/aws-neuron/nkipy">NKIPy</a> is an open-source framework
+maintained by our team. It offers a NumPy-like traced graph and an explicit
+<code>nki_custom_op</code> boundary. It still uses the Neuron Compiler and Tensorizer to
+lower and package the graph and custom call, then executes the resulting NEFF
+through its runtime [9]. It is the second call site to check because it
+exercises a different lowering path than XLA. On the XLA path the kernel&rsquo;s
+operations are lowered into the same graph as their neighbors, and the compiler
+optimizes across that whole graph: it can fold an adjacent operation into the
+kernel, reassociate arithmetic that touches its inputs, or impose a global
+tensor layout, so the kernel loses its identity as a discrete unit. NKIPy does
+the opposite. It wraps the kernel as an explicit custom operation, a single
+opaque node with a declared shape, dtype, and stride contract that the compiler
+schedules around but never looks inside; the arithmetic runs exactly as
+written, isolated from the surrounding graph. The two paths therefore fail in
+different ways. The XLA path can drift through cross-boundary optimization,
+while the custom-op path can break on a mismatched boundary contract, so a
+kernel that satisfies one can still fail the other. Verifying both is what
+turns standalone acceptance into framework acceptance.</p>
+<p>Framework integration can shift the output without touching a line of the
+kernel, which is why the check is not redundant with the standalone gate. The
+custom-op boundary declares the shapes, strides, and dtype the kernel expects;
+if the traced graph feeds a non-contiguous view or coerces a dtype at the
+boundary, the kernel runs on different data than the gate validated. Buffer
+reuse is the sharpest risk here, because this kernel writes scratch back into
+<code>x_tile</code> and <code>summed</code>: if the runtime aliases an input buffer to the output to
+save memory, an in-place write can corrupt an input that a later consumer still
+needs. And because <code>@baremetal_jit</code> traces lazily, nothing executes until the
+graph is run, so a comparison that reads before materialization would test a
+stale tensor. Each of these failure modes is silent and tends to produce a
+close-but-wrong result, so the same predeclared budget is re-applied here
+rather than assumed to carry across.</p>
+<p>The mechanics are worth reading in order. <code>nki_custom_op</code> wraps the optimized
+kernel into a graph node, <code>@baremetal_jit</code> traces <code>residual_rmsnorm_graph</code> into
+a compiled artifact and runs it directly on the device without a host
+framework, and the inputs are plain NumPy arrays in <code>ml_dtypes.bfloat16</code>, so
+the same BF16 data path is preserved across the boundary. As on the XLA path,
+<code>residual_rms_norm_reference</code> recomputes the expected result independently and
+<code>compare</code> applies the same predeclared budget, checking both <code>allclose</code> and a
+cosine floor of <code>0.9999</code>.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> numpy <span style="color:#66d9ef">as</span> np
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> ml_dtypes <span style="color:#f92672">import</span> bfloat16
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> nkipy.core.nki_op <span style="color:#f92672">import</span> nki_custom_op
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> nkipy.runtime <span style="color:#f92672">import</span> baremetal_jit
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> rmsnorm_agent_lab <span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>    compare,
+</span></span><span style="display:flex;"><span>    residual_rms_norm_framework_kernel,
+</span></span><span style="display:flex;"><span>    residual_rms_norm_reference,
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>residual_rmsnorm_op <span style="color:#f92672">=</span> nki_custom_op(
+</span></span><span style="display:flex;"><span>    nki_kernel<span style="color:#f92672">=</span>residual_rms_norm_framework_kernel
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@baremetal_jit</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">residual_rmsnorm_graph</span>(x, residual, weight):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> residual_rmsnorm_op(x, residual, weight)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>rng <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>random<span style="color:#f92672">.</span>default_rng(<span style="color:#ae81ff">2026</span>)
+</span></span><span style="display:flex;"><span>x <span style="color:#f92672">=</span> rng<span style="color:#f92672">.</span>normal(size<span style="color:#f92672">=</span>(<span style="color:#ae81ff">1024</span>, <span style="color:#ae81ff">4096</span>))<span style="color:#f92672">.</span>astype(bfloat16)
+</span></span><span style="display:flex;"><span>residual <span style="color:#f92672">=</span> rng<span style="color:#f92672">.</span>normal(size<span style="color:#f92672">=</span>(<span style="color:#ae81ff">1024</span>, <span style="color:#ae81ff">4096</span>))<span style="color:#f92672">.</span>astype(bfloat16)
+</span></span><span style="display:flex;"><span>weight <span style="color:#f92672">=</span> rng<span style="color:#f92672">.</span>uniform(<span style="color:#ae81ff">0.75</span>, <span style="color:#ae81ff">1.25</span>, size<span style="color:#f92672">=</span>(<span style="color:#ae81ff">4096</span>,))<span style="color:#f92672">.</span>astype(bfloat16)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>actual <span style="color:#f92672">=</span> residual_rmsnorm_graph(x, residual, weight)
+</span></span><span style="display:flex;"><span>expected <span style="color:#f92672">=</span> residual_rms_norm_reference(x, residual, weight)
+</span></span><span style="display:flex;"><span>metrics <span style="color:#f92672">=</span> compare(actual, expected)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">assert</span> metrics<span style="color:#f92672">.</span>allclose
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">assert</span> metrics<span style="color:#f92672">.</span>cosine <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0.9999</span>
+</span></span></code></pre></div><p>The checked framework variant preserves the optimized equations and
+instruction sequence while reusing scratch allocations in the form required
+by this custom-op path. It produced BF16 <code>[1024, 4096]</code> output with maximum
+absolute error <code>0.03125</code>, mean absolute error <code>1.15e-5</code>, and cosine similarity
+<code>0.9999999593</code>. Those figures match the standalone fused-kernel results
+exactly, which is the point: the custom-op boundary changed how the kernel is
+packaged and dispatched, not the arithmetic it performs, so the numbers carry
+across unchanged rather than drifting.</p>
+<h2 id="the-reusable-loop">
+  The reusable loop
+  
+  <a class="anchor" href="#the-reusable-loop">#</a>
+  
+</h2>
+<p>The three numbered stages generalize into a procedure that outlives this one
+operator. The setup steps run once, the middle steps repeat each time a fresh
+profile suggests another change, and the procedure ends only when the
+measurements stop improving or the target itself moves:</p>
+<ol>
+<li>Expose the current target, APIs, harness, and relevant optimization memory.</li>
+<li>Freeze the executable reference, interface, and device-computation
+boundary.</li>
+<li>Let the agent generate a readable baseline.</li>
+<li>Compile on the target device, then pass structural, numerical, mutation, and
+anti-fallback checks.</li>
+<li>Capture a warmed execution and retain the executable, trace, summary, and
+source revision.</li>
+<li>Reconcile the ideal roofline with the measured engine, DMA, dependency, and
+overlap evidence.</li>
+<li>Ask the agent for one falsifiable optimization and predicted counter
+changes.</li>
+<li>Rerun the unchanged oracle and profile commands.</li>
+<li>Accept only an improvement whose measurements match its explanation.</li>
+<li>Record the measured lesson, then test the kernel through every intended
+framework boundary.</li>
+</ol>
+<p>What makes this a loop rather than a checklist is that steps 6 through 9 feed
+back on themselves. Each accepted change becomes the new baseline, and the
+profile that measured it becomes the evidence for the next hypothesis, so the
+cycle turns until the profile stops improving. Step 10 then closes the current
+target and records what was learned, which means the optimization memory that
+step 1 exposes to the next run is the byproduct of this one.</p>
+<p>The agent supplies hypotheses and code changes. The immutable reference,
+device boundary, hardware execution, and profile supply the evidence. That
+division of labor is the same one the methods earlier in this section rely on:
+extra search or inference-time compute buys real speedups only when a
+trustworthy verifier, not the agent&rsquo;s own claim, decides what counts as an
+improvement.</p>
 <h2 id="references">
   References
   
@@ -492,7 +2006,23 @@ https://github.com/alex-shpak/hugo-book
   
 </h2>
 <ol>
-<li>[Placeholder reference.]</li>
+<li>AWS Neuron, <em>Neuron Kernel Interface (NKI)</em>. <a href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/nki/index.html">https://awsdocs-neuron.readthedocs-hosted.com/en/latest/nki/index.html</a></li>
+<li>AWS Neuron, <em>NKI Language Guide</em>. <a href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/nki/get-started/nki-language-guide.html">https://awsdocs-neuron.readthedocs-hosted.com/en/latest/nki/get-started/nki-language-guide.html</a></li>
+<li>AWS Neuron, <em>Trainium2 Architecture Guide for NKI</em>. <a href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/nki/guides/architecture/trainium2_arch.html">https://awsdocs-neuron.readthedocs-hosted.com/en/latest/nki/guides/architecture/trainium2_arch.html</a></li>
+<li>AWS Neuron, <em>NKI Kernel as a Framework Custom Operator</em>. <a href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/nki/guides/framework_custom_op.html">https://awsdocs-neuron.readthedocs-hosted.com/en/latest/nki/guides/framework_custom_op.html</a></li>
+<li>AWS Neuron, <em>Profile NKI Kernels</em>. <a href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/nki/guides/use-neuron-profile.html">https://awsdocs-neuron.readthedocs-hosted.com/en/latest/nki/guides/use-neuron-profile.html</a></li>
+<li>AWS Neuron, <em>Profile a Workload with Neuron Explorer</em>. <a href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/tools/neuron-explorer/how-to-profile-workload.html">https://awsdocs-neuron.readthedocs-hosted.com/en/latest/tools/neuron-explorer/how-to-profile-workload.html</a></li>
+<li>AWS Neuron, <em>View Neuron Profiles in Perfetto</em>. <a href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/tools/neuron-explorer/view-perfetto.html">https://awsdocs-neuron.readthedocs-hosted.com/en/latest/tools/neuron-explorer/view-perfetto.html</a></li>
+<li>Perfetto, <em>Trace Processor</em>. <a href="https://perfetto.dev/docs/analysis/trace-processor">https://perfetto.dev/docs/analysis/trace-processor</a></li>
+<li>AWS Neuron, <em>NKIPy: Rapid Prototyping on Trainium</em>. <a href="https://github.com/aws-neuron/nkipy">https://github.com/aws-neuron/nkipy</a></li>
+<li>NumPy, <em><code>numpy.allclose</code></em>. <a href="https://numpy.org/doc/stable/reference/generated/numpy.allclose.html">https://numpy.org/doc/stable/reference/generated/numpy.allclose.html</a></li>
+<li>S. Williams, A. Waterman, and D. Patterson, <em>Roofline: An Insightful Visual Performance Model for Multicore Architectures</em>. <a href="https://doi.org/10.1145/1498765.1498785">https://doi.org/10.1145/1498765.1498785</a></li>
+<li>AWS Neuron, <em>NKI DMA Bandwidth Guide</em>. <a href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/nki/deep-dives/nki-dma-bandwidth-guide.html">https://awsdocs-neuron.readthedocs-hosted.com/en/latest/nki/deep-dives/nki-dma-bandwidth-guide.html</a></li>
+<li>AWS Neuron, <em><code>nki.isa.activation</code></em>. <a href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/nki/api/generated/nki.isa.activation.html">https://awsdocs-neuron.readthedocs-hosted.com/en/latest/nki/api/generated/nki.isa.activation.html</a></li>
+<li>AWS Neuron, <em><code>nki.isa.tensor_scalar</code></em>. <a href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/nki/api/generated/nki.isa.tensor_scalar.html">https://awsdocs-neuron.readthedocs-hosted.com/en/latest/nki/api/generated/nki.isa.tensor_scalar.html</a></li>
+<li>G. Zhang, S. Zhu, A. Wei, Z. Song, A. Nie, Z. Jia, N. Vijaykumar, Y. Wang, and K. Olukotun, <em>AccelOpt: A Self-Improving LLM Agentic System for AI Accelerator Kernel Optimization</em>. arXiv:2511.15915, 2025. <a href="https://arxiv.org/abs/2511.15915">https://arxiv.org/abs/2511.15915</a></li>
+<li>Anthropic, <em>How Claude remembers your project</em>. <a href="https://code.claude.com/docs/en/memory">https://code.claude.com/docs/en/memory</a></li>
+<li>OpenAI, <em>Codex Memories</em>. <a href="https://learn.chatgpt.com/docs/customization/memories">https://learn.chatgpt.com/docs/customization/memories</a></li>
 </ol>
 </article>
  
@@ -558,6 +2088,42 @@ https://github.com/alex-shpak/hugo-book
   
 <nav id="TableOfContents">
   <ul>
+    <li><a href="#what-you-need-to-know-about-nki">What you need to know about NKI</a></li>
+    <li><a href="#give-the-agent-the-context-it-cannot-infer">Give the agent the context it cannot infer</a>
+      <ul>
+        <li><a href="#retain-measured-optimization-experience">Retain measured optimization experience</a></li>
+      </ul>
+    </li>
+    <li><a href="#1-generate-a-kernel-from-the-reference">1. Generate a kernel from the reference</a>
+      <ul>
+        <li><a href="#make-the-device-boundary-part-of-the-contract">Make the device boundary part of the contract</a></li>
+        <li><a href="#use-an-executable-reference">Use an executable reference</a></li>
+        <li><a href="#accept-a-simple-first-kernel">Accept a simple first kernel</a></li>
+        <li><a href="#gate-on-correctness-before-profiling">Gate on correctness before profiling</a></li>
+      </ul>
+    </li>
+    <li><a href="#2-profile-the-baseline-and-choose-a-direction">2. Profile the baseline and choose a direction</a>
+      <ul>
+        <li><a href="#capture-a-repeatable-execution">Capture a repeatable execution</a></li>
+        <li><a href="#start-with-the-profile-summary">Start with the profile summary</a></li>
+        <li><a href="#put-the-fixed-operator-on-a-roofline">Put the fixed operator on a roofline</a></li>
+        <li><a href="#give-the-evidence-back-to-the-agent">Give the evidence back to the agent</a></li>
+      </ul>
+    </li>
+    <li><a href="#3-execute-and-verify-the-optimization">3. Execute and verify the optimization</a>
+      <ul>
+        <li><a href="#implement-one-profile-derived-change">Implement one profile-derived change</a></li>
+        <li><a href="#repeat-correctness-before-accepting-speed">Repeat correctness before accepting speed</a></li>
+        <li><a href="#recapture-and-compare-the-same-evidence">Recapture and compare the same evidence</a></li>
+      </ul>
+    </li>
+    <li><a href="#integrate-the-accepted-kernel">Integrate the accepted kernel</a>
+      <ul>
+        <li><a href="#pytorch-and-jax">PyTorch and JAX</a></li>
+        <li><a href="#nkipy">NKIPy</a></li>
+      </ul>
+    </li>
+    <li><a href="#the-reusable-loop">The reusable loop</a></li>
     <li><a href="#references">References</a></li>
   </ul>
 </nav>
