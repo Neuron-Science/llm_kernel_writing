@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="600" viewBox="0 0 512 600" role="img" aria-label="The RL post-training loop for kernels as a vertical cycle: sample a task x, the policy generates candidate kernels y, the oracle executes them (compile, check, time), that produces a verifiable reward r(x, y), a policy-gradient step updates the policy, and a return arrow loops back to the top">
+  <!-- The execution-feedback loop, from the Section 3.2 ASCII cycle:
+       sample task x -> policy pi_theta generates kernel(s) y -> execute
+       (compile . check . time) -> reward r(x,y) -> policy-gradient update
+       -> back to the top. A clockwise cycle rendered as a vertical stack
+       with a return arrow up the left side. This matches the slide-4 figure
+       exactly (same box and arrow placement); the through-line caption lives
+       in the page's figure caption rather than inside the SVG. Teal marks the
+       automatic oracle (execute) that turns the three signals into a reward. -->
+  <rect x="0" y="0" width="512" height="600" fill="#eef2f6"/>
+
+  <!-- ================= 1. sample task x ================= -->
+  <rect x="96" y="64" width="330" height="56" rx="12" ry="12" fill="#f8fafc" stroke="#64748b" stroke-width="2.5"/>
+  <circle cx="126" cy="92" r="15" fill="#64748b"/>
+  <text x="126" y="98" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#ffffff">1</text>
+  <text x="154" y="88" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#334155">sample task  x</text>
+  <text x="154" y="106" font-family="Helvetica, Arial, sans-serif" font-size="11.5" fill="#64748b">drawn from the task pool</text>
+
+  <!-- arrow 1 -> 2 -->
+  <line x1="261" y1="122" x2="261" y2="150" stroke="#64748b" stroke-width="2.5"/>
+  <polygon points="261,160 254,150 268,150" fill="#64748b"/>
+
+  <!-- ================= 2. policy generates kernel ================= -->
+  <rect x="96" y="162" width="330" height="64" rx="12" ry="12" fill="#f8fafc" stroke="#64748b" stroke-width="2.5"/>
+  <circle cx="126" cy="194" r="15" fill="#64748b"/>
+  <text x="126" y="200" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#ffffff">2</text>
+  <text x="154" y="190" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#334155">policy &#960;<tspan dy="3" font-size="11">&#952;</tspan><tspan dy="-3"> &#8594; kernel(s) y</tspan></text>
+  <text x="154" y="208" font-family="Helvetica, Arial, sans-serif" font-size="11.5" fill="#64748b">generate one or more candidate kernels</text>
+
+  <!-- arrow 2 -> 3 -->
+  <line x1="261" y1="228" x2="261" y2="256" stroke="#64748b" stroke-width="2.5"/>
+  <polygon points="261,266 254,256 268,256" fill="#64748b"/>
+
+  <!-- ================= 3. execute: the oracle (teal) ================= -->
+  <rect x="96" y="268" width="330" height="76" rx="12" ry="12" fill="#ccfbf1" stroke="#0d9488" stroke-width="2.5"/>
+  <circle cx="126" cy="306" r="15" fill="#0d9488"/>
+  <text x="126" y="312" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#ffffff">3</text>
+  <text x="154" y="298" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#0f766e">execute the oracle</text>
+  <text x="154" y="319" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#0f766e">compile &#183; check &#183; time</text>
+  <text x="154" y="337" font-family="Helvetica, Arial, sans-serif" font-size="11.5" fill="#0f766e">cheap, deterministic, on the target hardware</text>
+
+  <!-- arrow 3 -> 4 -->
+  <line x1="261" y1="346" x2="261" y2="374" stroke="#64748b" stroke-width="2.5"/>
+  <polygon points="261,384 254,374 268,374" fill="#64748b"/>
+
+  <!-- ================= 4. reward r(x, y) ================= -->
+  <rect x="96" y="386" width="330" height="64" rx="12" ry="12" fill="#f8fafc" stroke="#64748b" stroke-width="2.5"/>
+  <circle cx="126" cy="418" r="15" fill="#64748b"/>
+  <text x="126" y="424" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#ffffff">4</text>
+  <text x="154" y="414" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#334155">reward  r(x, y)</text>
+  <text x="154" y="432" font-family="Helvetica, Arial, sans-serif" font-size="11.5" fill="#64748b">verifiable, objective &#8212; not a preference model</text>
+
+  <!-- arrow 4 -> 5 -->
+  <line x1="261" y1="452" x2="261" y2="480" stroke="#64748b" stroke-width="2.5"/>
+  <polygon points="261,490 254,480 268,480" fill="#64748b"/>
+
+  <!-- ================= 5. policy-gradient update ================= -->
+  <rect x="96" y="492" width="330" height="64" rx="12" ry="12" fill="#f8fafc" stroke="#64748b" stroke-width="2.5"/>
+  <circle cx="126" cy="524" r="15" fill="#64748b"/>
+  <text x="126" y="530" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#ffffff">5</text>
+  <text x="154" y="520" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#334155">policy-gradient update</text>
+  <text x="154" y="538" font-family="Helvetica, Arial, sans-serif" font-size="11.5" fill="#64748b">reinforce fast + correct (PPO / GRPO)</text>
+
+  <!-- ================= return arrow: loop back to the top ================= -->
+  <path d="M 96 524 H 48 V 92 H 88" fill="none" stroke="#0d9488" stroke-width="2.5"/>
+  <polygon points="96,92 86,87 86,97" fill="#0d9488"/>
+  <text transform="rotate(-90 33 308)" x="33" y="308" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" font-style="italic" fill="#0f766e">iterate</text>
+</svg>

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="
-  Advanced Agentic Systems
+  Post-Training LLMs for Kernel Generation
   
   #
   
@@ -15,31 +15,30 @@
   #
   
 
-This section covers advanced agentic and reasoning-based methods for kernel optimization,
-then puts them into practice in a hands-on demo. We discuss single-turn and multi-turn
-reinforcement learning for iterative kernel refinement, evolution-based approaches that maintain
-and search over populations of candidate kernels (including methods that search over how a kernel
-is decomposed into subproblems rather than over a monolithic artifact), and inference-time
-scaling applied to kernel code reasoning. Together these methods form the agentic systems that
-iteratively generate, evaluate, and improve kernels with feedback from compilers and profilers,
-all resting on the same trustworthy, verifiable reward built in Section 2. The section closes
-with a live, follow-along demo that generates Triton kernels for NVIDIA GPUs and NKI kernels for
-AWS Trainium using the agentic pipelines developed above.">
+This section applies the post-training machinery of Section 1 to kernels. We start with
+supervised fine-tuning on kernel corpora, which grounds a base model in a kernel language but is
+capped by the demonstrations it imitates. We then turn to reinforcement learning from execution
+feedback, which lets the model learn from compiling and timing its own kernels and so surpass that
+ceiling, and develop the single-turn and multi-turn (agentic) RL that iteratively refines kernels
+across turns of feedback. We close with how the execution reward is designed from its component
+signals, since the reward is the only channel through which &ldquo;what we actually want&rdquo; enters
+training, and a poorly designed one is exactly what the verification and cheating-detection
+discipline of Section 2.3 defends against.">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#343a40">
 <meta name="color-scheme" content="light dark"><meta property="og:url" content="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/">
   <meta property="og:site_name" content="Teaching LLMs to Write System Kernels">
-  <meta property="og:title" content="Advanced Agentic Systems">
-  <meta property="og:description" content="Advanced Agentic Systems # Overview # This section covers advanced agentic and reasoning-based methods for kernel optimization, then puts them into practice in a hands-on demo. We discuss single-turn and multi-turn reinforcement learning for iterative kernel refinement, evolution-based approaches that maintain and search over populations of candidate kernels (including methods that search over how a kernel is decomposed into subproblems rather than over a monolithic artifact), and inference-time scaling applied to kernel code reasoning. Together these methods form the agentic systems that iteratively generate, evaluate, and improve kernels with feedback from compilers and profilers, all resting on the same trustworthy, verifiable reward built in Section 2. The section closes with a live, follow-along demo that generates Triton kernels for NVIDIA GPUs and NKI kernels for AWS Trainium using the agentic pipelines developed above.">
+  <meta property="og:title" content="Post-Training LLMs for Kernel Generation">
+  <meta property="og:description" content="Post-Training LLMs for Kernel Generation # Overview # This section applies the post-training machinery of Section 1 to kernels. We start with supervised fine-tuning on kernel corpora, which grounds a base model in a kernel language but is capped by the demonstrations it imitates. We then turn to reinforcement learning from execution feedback, which lets the model learn from compiling and timing its own kernels and so surpass that ceiling, and develop the single-turn and multi-turn (agentic) RL that iteratively refines kernels across turns of feedback. We close with how the execution reward is designed from its component signals, since the reward is the only channel through which “what we actually want” enters training, and a poorly designed one is exactly what the verification and cheating-detection discipline of Section 2.3 defends against.">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="website">
-<title>Advanced Agentic Systems | Teaching LLMs to Write System Kernels</title>
+<title>Post-Training LLMs for Kernel Generation | Teaching LLMs to Write System Kernels</title>
 <link rel="icon" href="/llm_kernel_writing/favicon.png" >
 <link rel="manifest" href="/llm_kernel_writing/manifest.json">
 <link rel="canonical" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/">
 <link rel="stylesheet" href="/llm_kernel_writing/book.min.27cffe658670f57112663ed746a421db277c2dd6549965c27f9ad0103cccd990.css" integrity="sha256-J8/&#43;ZYZw9XESZj7XRqQh2yd8LdZUmWXCf5rQEDzM2ZA=" crossorigin="anonymous">
   <script defer src="/llm_kernel_writing/fuse.min.js"></script>
-  <script defer src="/llm_kernel_writing/en.search.min.3a794c86b11580e135f99fb5a9d05275c7fdb605ecdf816dca53de45335cf6ca.js" integrity="sha256-OnlMhrEVgOE1&#43;Z&#43;1qdBSdcf9tgXs34FtylPeRTNc9so=" crossorigin="anonymous"></script>
+  <script defer src="/llm_kernel_writing/en.search.min.4ef56be7e65ddbf5c290f9e9540ecc218ceb2c95fac3ed7235d1512c035fb236.js" integrity="sha256-TvVr5&#43;Zd2/XCkPnpVA7MIYzrLJX6w&#43;1yNdFRLANfsjY=" crossorigin="anonymous"></script>
 <link rel="alternate" type="application/rss+xml" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/index.xml" title="Teaching LLMs to Write System Kernels" />
 <!--
 Made with Book Theme
@@ -219,7 +218,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-2/" class="">Post-Training LLMs for Kernel Generation</a>
+    <a href="/llm_kernel_writing/docs/section-2/" class="">Inference-Scaling for Kernel Generation</a>
   
 
           
@@ -232,25 +231,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-2/subsection-1/" class="">2.1 Supervised Fine-Tuning on Kernel Corpora</a>
-  
-
-          
-  <ul>
-    
-  </ul>
-
-        </li>
-      
-    
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="/llm_kernel_writing/docs/section-2/subsection-2/" class="">2.2 Reinforcement Learning from Execution Feedback</a>
+    <a href="/llm_kernel_writing/docs/section-2/subsection-1/" class="">2.1 Inference-Time Scaling for Kernel Code Reasoning</a>
   
 
           
@@ -268,7 +249,43 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-2/subsection-3/" class="">2.3 RL for Kernel Optimization and Reward Hacking</a>
+    <a href="/llm_kernel_writing/docs/section-2/subsection-2/" class="">2.2 Evolution-Based Approaches for Iterative Kernel Refinement</a>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/llm_kernel_writing/docs/section-2/subsection-3/" class="">2.3 Verification and Cheating Detection</a>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/llm_kernel_writing/docs/section-2/subsection-4/" class="">2.4 NKI Kernel Generation Using LLM Agents</a>
   
 
           
@@ -291,7 +308,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/" class="active">Advanced Agentic Systems</a>
+    <a href="/llm_kernel_writing/docs/section-3/" class="active">Post-Training LLMs for Kernel Generation</a>
   
 
           
@@ -304,25 +321,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/subsection-1/" class="">3.1 Single-Turn and Multi-Turn RL for Kernel Optimization</a>
-  
-
-          
-  <ul>
-    
-  </ul>
-
-        </li>
-      
-    
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="/llm_kernel_writing/docs/section-3/subsection-2/" class="">3.2 Evolution-Based Approaches for Iterative Kernel Refinement</a>
+    <a href="/llm_kernel_writing/docs/section-3/subsection-1/" class="">3.1 Supervised Fine-Tuning on Kernel Corpora</a>
   
 
           
@@ -340,7 +339,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/subsection-3/" class="">3.3 Inference-Time Scaling for Kernel Code Reasoning</a>
+    <a href="/llm_kernel_writing/docs/section-3/subsection-2/" class="">3.2 Reinforcement Learning from Execution Feedback</a>
   
 
           
@@ -358,7 +357,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/subsection-4/" class="">3.4 Triton Kernel Generation Using LLM Agents</a>
+    <a href="/llm_kernel_writing/docs/section-3/subsection-3/" class="">3.3 Single-Turn and Multi-Turn RL for Kernel Optimization</a>
   
 
           
@@ -376,7 +375,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/subsection-5/" class="">3.5 NKI Kernel Generation Using LLM Agents</a>
+    <a href="/llm_kernel_writing/docs/section-3/subsection-4/" class="">3.4 Reward Design for Kernel RL</a>
   
 
           
@@ -428,7 +427,7 @@ https://github.com/alex-shpak/hugo-book
     <img src="/llm_kernel_writing/svg/menu.svg" class="book-icon" alt="Menu" />
   </label>
 
-  <h3>Advanced Agentic Systems</h3>
+  <h3>Post-Training LLMs for Kernel Generation</h3>
 
   <label for="toc-control">
     
@@ -447,11 +446,10 @@ https://github.com/alex-shpak/hugo-book
     <li><a href="#overview"><strong>Overview</strong></a></li>
     <li><a href="#contents-of-this-section"><strong>Contents of this section</strong></a>
       <ul>
-        <li><a href="#31-single-turn-and-multi-turn-rl-for-kernel-optimization">3.1 Single-Turn and Multi-Turn RL for Kernel Optimization</a></li>
-        <li><a href="#32-evolution-based-approaches-for-iterative-kernel-refinement">3.2 Evolution-Based Approaches for Iterative Kernel Refinement</a></li>
-        <li><a href="#33-inference-time-scaling-for-kernel-code-reasoning">3.3 Inference-Time Scaling for Kernel Code Reasoning</a></li>
-        <li><a href="#34-triton-kernel-generation-using-llm-agents">3.4 Triton Kernel Generation Using LLM Agents</a></li>
-        <li><a href="#35-nki-kernel-generation-using-llm-agents">3.5 NKI Kernel Generation Using LLM Agents</a></li>
+        <li><a href="#31-supervised-fine-tuning-on-kernel-corpora">3.1 Supervised Fine-Tuning on Kernel Corpora</a></li>
+        <li><a href="#32-reinforcement-learning-from-execution-feedback">3.2 Reinforcement Learning from Execution Feedback</a></li>
+        <li><a href="#33-single-turn-and-multi-turn-rl-for-kernel-optimization">3.3 Single-Turn and Multi-Turn RL for Kernel Optimization</a></li>
+        <li><a href="#34-reward-design-for-kernel-rl">3.4 Reward Design for Kernel RL</a></li>
       </ul>
     </li>
   </ul>
@@ -466,10 +464,10 @@ https://github.com/alex-shpak/hugo-book
 
       
       
-  <article class="markdown book-article"><h1 id="advanced-agentic-systems">
-  <strong>Advanced Agentic Systems</strong>
+  <article class="markdown book-article"><h1 id="post-training-llms-for-kernel-generation">
+  <strong>Post-Training LLMs for Kernel Generation</strong>
   
-  <a class="anchor" href="#advanced-agentic-systems">#</a>
+  <a class="anchor" href="#post-training-llms-for-kernel-generation">#</a>
   
 </h1>
 <h2 id="overview">
@@ -478,65 +476,54 @@ https://github.com/alex-shpak/hugo-book
   <a class="anchor" href="#overview">#</a>
   
 </h2>
-<p>This section covers advanced agentic and reasoning-based methods for kernel optimization,
-then puts them into practice in a hands-on demo. We discuss single-turn and multi-turn
-reinforcement learning for iterative kernel refinement, evolution-based approaches that maintain
-and search over populations of candidate kernels (including methods that search over how a kernel
-is decomposed into subproblems rather than over a monolithic artifact), and inference-time
-scaling applied to kernel code reasoning. Together these methods form the agentic systems that
-iteratively generate, evaluate, and improve kernels with feedback from compilers and profilers,
-all resting on the same trustworthy, verifiable reward built in Section 2. The section closes
-with a live, follow-along demo that generates Triton kernels for NVIDIA GPUs and NKI kernels for
-AWS Trainium using the agentic pipelines developed above.</p>
+<p>This section applies the post-training machinery of Section 1 to kernels. We start with
+supervised fine-tuning on kernel corpora, which grounds a base model in a kernel language but is
+capped by the demonstrations it imitates. We then turn to reinforcement learning from execution
+feedback, which lets the model learn from compiling and timing its own kernels and so surpass that
+ceiling, and develop the single-turn and multi-turn (agentic) RL that iteratively refines kernels
+across turns of feedback. We close with how the execution reward is designed from its component
+signals, since the reward is the only channel through which &ldquo;what we actually want&rdquo; enters
+training, and a poorly designed one is exactly what the verification and cheating-detection
+discipline of Section 2.3 defends against.</p>
 <h2 id="contents-of-this-section">
   <strong>Contents of this section</strong>
   
   <a class="anchor" href="#contents-of-this-section">#</a>
   
 </h2>
-<h3 id="31-single-turn-and-multi-turn-rl-for-kernel-optimization">
-  <a href="/llm_kernel_writing/docs/section-3/subsection-1/">3.1 Single-Turn and Multi-Turn RL for Kernel Optimization</a>
+<h3 id="31-supervised-fine-tuning-on-kernel-corpora">
+  <a href="/llm_kernel_writing/docs/section-3/subsection-1/">3.1 Supervised Fine-Tuning on Kernel Corpora</a>
   
-  <a class="anchor" href="#31-single-turn-and-multi-turn-rl-for-kernel-optimization">#</a>
-  
-</h3>
-<p>Contrasts single-turn generation with multi-turn RL, where the agent iteratively refines
-kernels using execution and profiling feedback across multiple turns.</p>
-<h3 id="32-evolution-based-approaches-for-iterative-kernel-refinement">
-  <a href="/llm_kernel_writing/docs/section-3/subsection-2/">3.2 Evolution-Based Approaches for Iterative Kernel Refinement</a>
-  
-  <a class="anchor" href="#32-evolution-based-approaches-for-iterative-kernel-refinement">#</a>
+  <a class="anchor" href="#31-supervised-fine-tuning-on-kernel-corpora">#</a>
   
 </h3>
-<p>Explores evolutionary and search-based methods that maintain and improve populations of
-candidate kernels over successive iterations, including approaches that search over the modular
-decomposition itself for kernels that are more token-efficient, transferable, and reliably
-verifiable.</p>
-<h3 id="33-inference-time-scaling-for-kernel-code-reasoning">
-  <a href="/llm_kernel_writing/docs/section-3/subsection-3/">3.3 Inference-Time Scaling for Kernel Code Reasoning</a>
+<p>Building a <em>(task, kernel)</em> corpus, through sampling, filtering, and augmentation, and training a
+base model to imitate it, along with the limits of imitation.</p>
+<h3 id="32-reinforcement-learning-from-execution-feedback">
+  <a href="/llm_kernel_writing/docs/section-3/subsection-2/">3.2 Reinforcement Learning from Execution Feedback</a>
   
-  <a class="anchor" href="#33-inference-time-scaling-for-kernel-code-reasoning">#</a>
+  <a class="anchor" href="#32-reinforcement-learning-from-execution-feedback">#</a>
   
 </h3>
-<p>Applies inference-time compute scaling to kernel code reasoning across three axes (width,
-depth, and structured search) plus reasoning length, and argues that a trustworthy verifier
-is what lets extra compute buy real speedups rather than reward hacking.</p>
-<h3 id="34-triton-kernel-generation-using-llm-agents">
-  <a href="/llm_kernel_writing/docs/section-3/subsection-4/">3.4 Triton Kernel Generation Using LLM Agents</a>
+<p>Casting kernel generation as RL: prompt-only tasks, the compile-correct-fast reward from running
+each kernel, and the curriculum that keeps training on solvable tasks.</p>
+<h3 id="33-single-turn-and-multi-turn-rl-for-kernel-optimization">
+  <a href="/llm_kernel_writing/docs/section-3/subsection-3/">3.3 Single-Turn and Multi-Turn RL for Kernel Optimization</a>
   
-  <a class="anchor" href="#34-triton-kernel-generation-using-llm-agents">#</a>
-  
-</h3>
-<p>A live, follow-along walkthrough of generating Triton kernels for NVIDIA GPUs using an
-agentic LLM pipeline, putting the methods above into practice with provided notebooks.</p>
-<h3 id="35-nki-kernel-generation-using-llm-agents">
-  <a href="/llm_kernel_writing/docs/section-3/subsection-5/">3.5 NKI Kernel Generation Using LLM Agents</a>
-  
-  <a class="anchor" href="#35-nki-kernel-generation-using-llm-agents">#</a>
+  <a class="anchor" href="#33-single-turn-and-multi-turn-rl-for-kernel-optimization">#</a>
   
 </h3>
-<p>A live, follow-along walkthrough of generating Neuron Kernel Interface (NKI) kernels for
-AWS Trainium using an agentic LLM pipeline.</p>
+<p>Contrasts single-turn generation with multi-turn RL, where the agent iteratively refines kernels
+using execution and profiling feedback across turns, and the context-management and
+credit-assignment problems this raises.</p>
+<h3 id="34-reward-design-for-kernel-rl">
+  <a href="/llm_kernel_writing/docs/section-3/subsection-4/">3.4 Reward Design for Kernel RL</a>
+  
+  <a class="anchor" href="#34-reward-design-for-kernel-rl">#</a>
+  
+</h3>
+<p>The signals a kernel reward should carry and how to fold them into a single scalar, from linear
+weighted sums to gated and hierarchical designs, the reward whose weaknesses Section 2.3 hardens.</p>
 </article>
  
       
@@ -561,17 +548,17 @@ AWS Trainium using an agentic LLM pipeline.</p>
   <div class="flex flex-wrap justify-between">
     <span>
     
-      <a href="/llm_kernel_writing/docs/section-2/subsection-3/" class="flex align-center book-icon">
-        <img src="/llm_kernel_writing/svg/backward.svg" class="book-icon" alt="Previous" title="2.3 RL for Kernel Optimization and Reward Hacking" />
-        <span>2.3 RL for Kernel Optimization and Reward Hacking</span>
+      <a href="/llm_kernel_writing/docs/section-2/subsection-4/" class="flex align-center book-icon">
+        <img src="/llm_kernel_writing/svg/backward.svg" class="book-icon" alt="Previous" title="2.4 NKI Kernel Generation Using LLM Agents" />
+        <span>2.4 NKI Kernel Generation Using LLM Agents</span>
       </a>
     
     </span>
     <span>
     
       <a href="/llm_kernel_writing/docs/section-3/subsection-1/" class="flex align-center book-icon">
-        <span>3.1 Single-Turn and Multi-Turn RL for Kernel Optimization</span>
-        <img src="/llm_kernel_writing/svg/forward.svg" class="book-icon" alt="Next" title="3.1 Single-Turn and Multi-Turn RL for Kernel Optimization" />
+        <span>3.1 Supervised Fine-Tuning on Kernel Corpora</span>
+        <img src="/llm_kernel_writing/svg/forward.svg" class="book-icon" alt="Next" title="3.1 Supervised Fine-Tuning on Kernel Corpora" />
       </a>
     
     </span>
@@ -609,11 +596,10 @@ AWS Trainium using an agentic LLM pipeline.</p>
     <li><a href="#overview"><strong>Overview</strong></a></li>
     <li><a href="#contents-of-this-section"><strong>Contents of this section</strong></a>
       <ul>
-        <li><a href="#31-single-turn-and-multi-turn-rl-for-kernel-optimization">3.1 Single-Turn and Multi-Turn RL for Kernel Optimization</a></li>
-        <li><a href="#32-evolution-based-approaches-for-iterative-kernel-refinement">3.2 Evolution-Based Approaches for Iterative Kernel Refinement</a></li>
-        <li><a href="#33-inference-time-scaling-for-kernel-code-reasoning">3.3 Inference-Time Scaling for Kernel Code Reasoning</a></li>
-        <li><a href="#34-triton-kernel-generation-using-llm-agents">3.4 Triton Kernel Generation Using LLM Agents</a></li>
-        <li><a href="#35-nki-kernel-generation-using-llm-agents">3.5 NKI Kernel Generation Using LLM Agents</a></li>
+        <li><a href="#31-supervised-fine-tuning-on-kernel-corpora">3.1 Supervised Fine-Tuning on Kernel Corpora</a></li>
+        <li><a href="#32-reinforcement-learning-from-execution-feedback">3.2 Reinforcement Learning from Execution Feedback</a></li>
+        <li><a href="#33-single-turn-and-multi-turn-rl-for-kernel-optimization">3.3 Single-Turn and Multi-Turn RL for Kernel Optimization</a></li>
+        <li><a href="#34-reward-design-for-kernel-rl">3.4 Reward Design for Kernel RL</a></li>
       </ul>
     </li>
   </ul>

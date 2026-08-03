@@ -4,46 +4,34 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="
-  Triton Kernel Generation Using LLM Agents
+  Reward Design for Kernel RL
   
   #
   
 
 
 
+The reward is the only channel through which &ldquo;what we actually want&rdquo; enters RL training, a scalar 
 
-
+  \( r(x, y) \)
   
 
-
-[Placeholder content for subsection 4.1 Triton Kernel Generation Using LLM Agents.]
-
-
-
-  References
-  
-  #
-  
-
-
-[Placeholder reference.]
-">
+ that should be high when a kernel compiles, is correct, and runs fast. Section 3.2 introduced the gated compile-correct-fast reward in its simplest form; this subsection is about designing it well. How the reward is composed decides what the policy learns, and its weaknesses become the policy&rsquo;s exploits, so the two questions here are what signals the reward should carry and how to fold them into a single reward design. The failure mode that a poorly designed reward invites, reward hacking, and the verification pipeline that defends against it, is the subject of Section 2.3; the reward built here is exactly the checker that pipeline hardens.">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#343a40">
 <meta name="color-scheme" content="light dark"><meta property="og:url" content="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-4/">
   <meta property="og:site_name" content="Teaching LLMs to Write System Kernels">
-  <meta property="og:title" content="3.4 Triton Kernel Generation Using LLM Agents">
-  <meta property="og:description" content="Triton Kernel Generation Using LLM Agents # [Placeholder content for subsection 4.1 Triton Kernel Generation Using LLM Agents.]
-References # [Placeholder reference.]">
+  <meta property="og:title" content="3.4 Reward Design for Kernel RL">
+  <meta property="og:description" content="Reward Design for Kernel RL # The reward is the only channel through which “what we actually want” enters RL training, a scalar \( r(x, y) \) that should be high when a kernel compiles, is correct, and runs fast. Section 3.2 introduced the gated compile-correct-fast reward in its simplest form; this subsection is about designing it well. How the reward is composed decides what the policy learns, and its weaknesses become the policy’s exploits, so the two questions here are what signals the reward should carry and how to fold them into a single reward design. The failure mode that a poorly designed reward invites, reward hacking, and the verification pipeline that defends against it, is the subject of Section 2.3; the reward built here is exactly the checker that pipeline hardens.">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="website">
-<title>3.4 Triton Kernel Generation Using LLM Agents | Teaching LLMs to Write System Kernels</title>
+<title>3.4 Reward Design for Kernel RL | Teaching LLMs to Write System Kernels</title>
 <link rel="icon" href="/llm_kernel_writing/favicon.png" >
 <link rel="manifest" href="/llm_kernel_writing/manifest.json">
 <link rel="canonical" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-4/">
 <link rel="stylesheet" href="/llm_kernel_writing/book.min.27cffe658670f57112663ed746a421db277c2dd6549965c27f9ad0103cccd990.css" integrity="sha256-J8/&#43;ZYZw9XESZj7XRqQh2yd8LdZUmWXCf5rQEDzM2ZA=" crossorigin="anonymous">
   <script defer src="/llm_kernel_writing/fuse.min.js"></script>
-  <script defer src="/llm_kernel_writing/en.search.min.3a794c86b11580e135f99fb5a9d05275c7fdb605ecdf816dca53de45335cf6ca.js" integrity="sha256-OnlMhrEVgOE1&#43;Z&#43;1qdBSdcf9tgXs34FtylPeRTNc9so=" crossorigin="anonymous"></script>
+  <script defer src="/llm_kernel_writing/en.search.min.4ef56be7e65ddbf5c290f9e9540ecc218ceb2c95fac3ed7235d1512c035fb236.js" integrity="sha256-TvVr5&#43;Zd2/XCkPnpVA7MIYzrLJX6w&#43;1yNdFRLANfsjY=" crossorigin="anonymous"></script>
 <link rel="alternate" type="application/rss+xml" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-4/index.xml" title="Teaching LLMs to Write System Kernels" />
 <!--
 Made with Book Theme
@@ -223,7 +211,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-2/" class="">Post-Training LLMs for Kernel Generation</a>
+    <a href="/llm_kernel_writing/docs/section-2/" class="">Inference-Scaling for Kernel Generation</a>
   
 
           
@@ -236,25 +224,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-2/subsection-1/" class="">2.1 Supervised Fine-Tuning on Kernel Corpora</a>
-  
-
-          
-  <ul>
-    
-  </ul>
-
-        </li>
-      
-    
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="/llm_kernel_writing/docs/section-2/subsection-2/" class="">2.2 Reinforcement Learning from Execution Feedback</a>
+    <a href="/llm_kernel_writing/docs/section-2/subsection-1/" class="">2.1 Inference-Time Scaling for Kernel Code Reasoning</a>
   
 
           
@@ -272,7 +242,43 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-2/subsection-3/" class="">2.3 RL for Kernel Optimization and Reward Hacking</a>
+    <a href="/llm_kernel_writing/docs/section-2/subsection-2/" class="">2.2 Evolution-Based Approaches for Iterative Kernel Refinement</a>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/llm_kernel_writing/docs/section-2/subsection-3/" class="">2.3 Verification and Cheating Detection</a>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/llm_kernel_writing/docs/section-2/subsection-4/" class="">2.4 NKI Kernel Generation Using LLM Agents</a>
   
 
           
@@ -295,7 +301,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/" class="">Advanced Agentic Systems</a>
+    <a href="/llm_kernel_writing/docs/section-3/" class="">Post-Training LLMs for Kernel Generation</a>
   
 
           
@@ -308,25 +314,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/subsection-1/" class="">3.1 Single-Turn and Multi-Turn RL for Kernel Optimization</a>
-  
-
-          
-  <ul>
-    
-  </ul>
-
-        </li>
-      
-    
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="/llm_kernel_writing/docs/section-3/subsection-2/" class="">3.2 Evolution-Based Approaches for Iterative Kernel Refinement</a>
+    <a href="/llm_kernel_writing/docs/section-3/subsection-1/" class="">3.1 Supervised Fine-Tuning on Kernel Corpora</a>
   
 
           
@@ -344,7 +332,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/subsection-3/" class="">3.3 Inference-Time Scaling for Kernel Code Reasoning</a>
+    <a href="/llm_kernel_writing/docs/section-3/subsection-2/" class="">3.2 Reinforcement Learning from Execution Feedback</a>
   
 
           
@@ -362,7 +350,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/subsection-4/" class="active">3.4 Triton Kernel Generation Using LLM Agents</a>
+    <a href="/llm_kernel_writing/docs/section-3/subsection-3/" class="">3.3 Single-Turn and Multi-Turn RL for Kernel Optimization</a>
   
 
           
@@ -380,7 +368,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/subsection-5/" class="">3.5 NKI Kernel Generation Using LLM Agents</a>
+    <a href="/llm_kernel_writing/docs/section-3/subsection-4/" class="active">3.4 Reward Design for Kernel RL</a>
   
 
           
@@ -432,7 +420,7 @@ https://github.com/alex-shpak/hugo-book
     <img src="/llm_kernel_writing/svg/menu.svg" class="book-icon" alt="Menu" />
   </label>
 
-  <h3>3.4 Triton Kernel Generation Using LLM Agents</h3>
+  <h3>3.4 Reward Design for Kernel RL</h3>
 
   <label for="toc-control">
     
@@ -448,6 +436,8 @@ https://github.com/alex-shpak/hugo-book
   
 <nav id="TableOfContents">
   <ul>
+    <li><a href="#signals-for-good-kernels">Signals for good kernels</a></li>
+    <li><a href="#reward-designs">Reward designs</a></li>
     <li><a href="#references">References</a></li>
   </ul>
 </nav>
@@ -461,17 +451,60 @@ https://github.com/alex-shpak/hugo-book
 
       
       
-  <article class="markdown book-article"><h1 id="triton-kernel-generation-using-llm-agents">
-  <strong>Triton Kernel Generation Using LLM Agents</strong>
+  <article class="markdown book-article"><h1 id="reward-design-for-kernel-rl">
+  Reward Design for Kernel RL
   
-  <a class="anchor" href="#triton-kernel-generation-using-llm-agents">#</a>
+  <a class="anchor" href="#reward-design-for-kernel-rl">#</a>
   
 </h1>
+
+
+<p>The reward is the <em>only</em> channel through which &ldquo;what we actually want&rdquo; enters RL training, a scalar 
+<span>
+  \( r(x, y) \)
+  </span>
+
+ that should be high when a kernel compiles, is correct, and runs fast. Section 3.2 introduced the gated compile-correct-fast reward in its simplest form; this subsection is about designing it well. How the reward is composed decides what the policy learns, and its weaknesses become the policy&rsquo;s exploits, so the two questions here are what <strong>signals</strong> the reward should carry and how to fold them into a single reward <strong>design</strong>. The failure mode that a poorly designed reward invites, reward hacking, and the verification pipeline that defends against it, is the subject of Section 2.3; the reward built here is exactly the checker that pipeline hardens.</p>
+<h2 id="signals-for-good-kernels">
+  Signals for good kernels
+  
+  <a class="anchor" href="#signals-for-good-kernels">#</a>
+  
+</h2>
+<p>End-to-end <strong>speedup</strong> over a baseline is the headline signal, but a reward built on speedup alone is both <em>sparse</em> (a kernel earns nothing until it is correct <em>and</em> faster) and <em>easy to game</em>. Richer, more diagnostic signals make the reward denser and harder to exploit. The commonly used signals fall into a few groups:</p>
+<ul>
+<li><strong>Correctness</strong>: outputs match the reference within tolerance, ideally across many shapes and dtypes, not one. <em>Example: a fused RMSNorm kernel matches the PyTorch reference to within <code>atol=1e-2</code> on inputs of shape <code>(4096, 1024)</code> and <code>(8192, 4096)</code>.</em></li>
+<li><strong>Performance</strong>: end-to-end speedup, but also its <em>breakdown</em>: kernel-vs-total runtime, per-region timing to locate the bottleneck, and the compute / memory-access / synchronization / launch split. <em>Example: the kernel runs 1.8x faster than the reference, and profiling attributes 90% of that time to global-memory reads rather than compute.</em></li>
+<li><strong>Memory and hardware efficiency</strong>: memory-bandwidth utilization, peak memory footprint, cache-hit rate, FLOP efficiency, and (on accelerators such as Trainium) engine-specific occupancy of the tensor/vector/scalar units and DMA activity. <em>Example: the kernel sustains 85% of the hardware&rsquo;s peak memory bandwidth, confirming it is close to the roofline for a memory-bound operator.</em></li>
+<li><strong>Robustness</strong>: variance of correctness and speed <em>across shapes</em>, and run-to-run timing consistency (e.g., median-of-buckets timing to resist noise). <em>Example: the kernel stays correct and above 1.5x speedup on both power-of-two and non-power-of-two <code>N</code>, rather than only on the shapes it was tuned for.</em></li>
+<li><strong>Quality</strong>: a rule-based or LLM-judge assessment of whether the kernel is a genuine, idiomatic implementation rather than a degenerate one. <em>Example: a judge flags a &ldquo;matmul&rdquo; kernel that secretly calls <code>torch.matmul</code> as not a genuine implementation, even though it passes the correctness check.</em></li>
+</ul>
+<p>Beyond making the reward denser, several of these signals double as <strong>anti-cheating</strong> signals: a kernel that claims a large speedup while its custom code covers only a trivial fraction of the runtime, or while the tensor engine sits idle, is almost certainly gaming the reward rather than optimizing it. Turning these signals into a robust verifier that a policy cannot cheat is exactly the pipeline of Section 2.3.</p>
+<h2 id="reward-designs">
+  Reward designs
+  
+  <a class="anchor" href="#reward-designs">#</a>
+  
+</h2>
+<p>Given a set of signals 
+<span>
+  \( s_k(x, y) \)
+  </span>
+
+, the design question is how to fold them into a single scalar. The gated compile-correct-fast reward of Section 3.2 is the simplest such design; the shapes below generalize it, arranged roughly from most to least hackable:</p>
+<ul>
+<li><strong>Linear weighted sum.</strong> 
+<span>
+  \( r(x, y) = \sum_k w_k\, s_k(x, y) \)
+  </span>
+
+: add up the component signals, e.g. correctness plus speedup (Kevin [3]) or correctness alone (AutoTriton [4]). Simple and dense, but every term is an independent surface to game, and a large weight on speed can dominate correctness.</li>
+<li><strong>Discrete milestone / gating.</strong> Bucket the outcome into ordered tiers so partial progress is rewarded without unbounded incentives:
 
 <link rel="stylesheet" href="/llm_kernel_writing/katex/katex.min.css" />
 <script defer src="/llm_kernel_writing/katex/katex.min.js"></script>
 
-  <script defer src="/llm_kernel_writing/katex/auto-render.min.js" onload="renderMathInElement(document.body, {
+<script defer src="/llm_kernel_writing/katex/auto-render.min.js" onload="renderMathInElement(document.body, {
   &#34;delimiters&#34;: [
     {&#34;left&#34;: &#34;$$&#34;, &#34;right&#34;: &#34;$$&#34;, &#34;display&#34;: true},
     {&#34;left&#34;: &#34;$&#34;, &#34;right&#34;: &#34;$&#34;, &#34;display&#34;: false},
@@ -481,18 +514,67 @@ https://github.com/alex-shpak/hugo-book
 }
 );"></script>
 
+<span>\[ r(x, y) = \begin{cases} 0, &amp; \text{fails to compile}, \\ 1, &amp; \text{correct}, \\ 2, &amp; \text{correct and faster than baseline}. \end{cases} \]</span>
+This is robust to outliers and low-variance, and correctness strictly gates any performance reward (CUDA Agent [2]).</li>
+<li><strong>Conditional gating.</strong> A stricter version of the above: performance is scored only once correctness passes, and efficiency signals only once a speed threshold passes, so the policy cannot trade correctness for speed. Writing the checks as <em>multiplicative</em> factors makes any failed gate zero out the reward; TritonRL [1] instantiates this as
 
-<p>[Placeholder content for subsection 4.1 Triton Kernel Generation Using LLM Agents.]</p>
+<span>\[ R_{\text{correct}}(x, y) = \mathrm{valid}(y)\cdot\mathrm{correct}(x, y), \\[4pt]
+R_{\text{speedup}}(x, y) = \mathrm{valid}(y)\cdot\mathrm{clip}\big(\mathrm{speedup}(x, y),\, 2\big), \]</span>
+where 
+<span>
+  \( \mathrm{valid}(y) = \mathrm{syntax}(y)\cdot\mathrm{func}(y) \)
+  </span>
 
+ is itself a product of a syntax and a functionality check, so a kernel earns speedup credit only once it is valid <em>and</em> correct, and the speedup factor is capped at 
+<span>
+  \( 2\times \)
+  </span>
 
+.</li>
+<li><strong>Hierarchical decomposition.</strong> Split the trajectory into parts and reward them differently, for instance a high-level optimization <em>plan</em> vs. the low-level <em>code</em>, attaching speed-oriented credit to the plan and correctness credit to the implementation (TritonRL [1]). Concretely, the plan tokens and code tokens of a single response receive <em>different</em> rewards,
+
+<span>\[ r^{\text{plan}}(x, y) = R_{\text{speedup}}(x, y), \qquad r^{\text{code}}(x, y) = R_{\text{correct}}(x, y), \]</span>
+and the policy optimizes their weighted combination
+
+<span>\[ \mathcal{J}(\theta) = \mathbb{E}\big[\, \alpha\, \mathcal{J}^{\text{plan}}(\theta) + \mathcal{J}^{\text{code}}(\theta) \,\big], \]</span>
+where each 
+<span>
+  \( \mathcal{J}^{c} \)
+  </span>
+
+ is a GRPO objective computed over only the tokens of class 
+<span>
+  \( c \in \{\text{plan}, \text{code}\} \)
+  </span>
+
+, each with its own group-relative advantage. Rewarding code for correctness rather than speedup is deliberate: because the code is conditioned on the plan, charging it for a slow <em>plan</em> would penalize a faithful implementation of an inherently suboptimal strategy. The weight 
+<span>
+  \( \alpha \approx 0.1 \)
+  </span>
+
+ lets the plan policy evolve slowly enough for the code policy to keep pace. This is the same plan/code split developed as a within-response credit-assignment tool in Section 3.3, and it somewhat ameliorates the sparse credit assignment problem.</li>
+<li><strong>Length shaping.</strong> Orthogonal to the hackability axis, this targets a different failure mode (verbosity, not cheating): a concave length penalty (short kernels for easy tasks, longer allowed for hard ones) discourages padding and rambling without punishing genuinely complex kernels (Composer 2 [5]).</li>
+</ul>
+<!-- Two related knobs act at the *optimizer* level rather than in 
+<span>
+  \( r \)
+  </span>
+
+ itself: **clip-higher** (an asymmetric PPO clip that keeps low-probability exploratory tokens alive to prevent entropy collapse) and **overlong reward shaping** (a soft penalty for truncated/over-long responses to reduce length-driven reward noise), both from *DAPO*. -->
+<p>However carefully these shapes are chosen, each one is still a <em>proxy</em> the policy will probe for gaps. Making the reward robust to that probing, catching the kernel that satisfies the letter of the check while cheating underneath, is a distinct problem from designing the reward, and is the subject of Section 2.3.</p>
 <h2 id="references">
   References
   
   <a class="anchor" href="#references">#</a>
   
 </h2>
+<p><strong>LLM kernel generation and reward design.</strong></p>
 <ol>
-<li>[Placeholder reference.]</li>
+<li>J. Woo, S. Zhu, A. Nie, Z. Jia, Y. Wang, and Y. Park. <em>TritonRL: Training LLMs to Think and Code Triton Without Cheating.</em> arXiv:2510.17891, 2025. <a href="https://arxiv.org/abs/2510.17891">arxiv.org/abs/2510.17891</a></li>
+<li>W. Dai, H. Wu, Q. Yu, et al. <em>CUDA Agent: Large-Scale Agentic RL for High-Performance CUDA Kernel Generation.</em> arXiv:2602.24286, 2026. <a href="https://arxiv.org/abs/2602.24286">arxiv.org/abs/2602.24286</a></li>
+<li>C. Baronio, P. Marsella, B. Pan, S. Guo, and S. Alberti. <em>Kevin: Multi-Turn RL for Generating CUDA Kernels.</em> arXiv:2507.11948, 2025. <a href="https://arxiv.org/abs/2507.11948">arxiv.org/abs/2507.11948</a></li>
+<li>S. Li, Z. Wang, Y. He, Y. Li, Q. Shi, J. Li, Y. Hu, W. Che, X. Han, Z. Liu, and M. Sun. <em>AutoTriton: Automatic Triton Programming with Reinforcement Learning in LLMs.</em> arXiv:2507.05687, 2025. <a href="https://arxiv.org/abs/2507.05687">arxiv.org/abs/2507.05687</a></li>
+<li>Cursor Research. <em>Composer 2 Technical Report.</em> arXiv:2603.24477, 2026. <a href="https://arxiv.org/abs/2603.24477">arxiv.org/abs/2603.24477</a></li>
 </ol>
 </article>
  
@@ -519,17 +601,12 @@ https://github.com/alex-shpak/hugo-book
     <span>
     
       <a href="/llm_kernel_writing/docs/section-3/subsection-3/" class="flex align-center book-icon">
-        <img src="/llm_kernel_writing/svg/backward.svg" class="book-icon" alt="Previous" title="3.3 Inference-Time Scaling for Kernel Code Reasoning" />
-        <span>3.3 Inference-Time Scaling for Kernel Code Reasoning</span>
+        <img src="/llm_kernel_writing/svg/backward.svg" class="book-icon" alt="Previous" title="3.3 Single-Turn and Multi-Turn RL for Kernel Optimization" />
+        <span>3.3 Single-Turn and Multi-Turn RL for Kernel Optimization</span>
       </a>
     
     </span>
     <span>
-    
-      <a href="/llm_kernel_writing/docs/section-3/subsection-5/" class="flex align-center book-icon">
-        <span>3.5 NKI Kernel Generation Using LLM Agents</span>
-        <img src="/llm_kernel_writing/svg/forward.svg" class="book-icon" alt="Next" title="3.5 NKI Kernel Generation Using LLM Agents" />
-      </a>
     
     </span>
   </div>
@@ -563,6 +640,8 @@ https://github.com/alex-shpak/hugo-book
   
 <nav id="TableOfContents">
   <ul>
+    <li><a href="#signals-for-good-kernels">Signals for good kernels</a></li>
+    <li><a href="#reward-designs">Reward designs</a></li>
     <li><a href="#references">References</a></li>
   </ul>
 </nav>

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520" role="img" aria-label="Three axes of test-time compute: width vertical, depth horizontal, structured search in the corner, reasoning length as an orthogonal fourth knob">
+  <!-- Three axes of test-time compute (landscape, web version):
+       WIDTH (vertical) x DEPTH (horizontal), STRUCTURED SEARCH in the corner
+       where both are high, REASONING LENGTH as an orthogonal (dashed) knob. -->
+  <rect x="2" y="2" width="896" height="516" rx="16" ry="16" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+
+  <!-- ================= Axes ================= -->
+  <!-- Width axis (vertical, up) -->
+  <line x1="248" y1="392" x2="248" y2="86" stroke="#334155" stroke-width="3"/>
+  <polygon points="248,72 240,94 256,94" fill="#334155"/>
+  <!-- Depth axis (horizontal, right) -->
+  <line x1="248" y1="392" x2="836" y2="392" stroke="#334155" stroke-width="3"/>
+  <polygon points="850,392 828,384 828,400" fill="#334155"/>
+  <!-- Origin -->
+  <circle cx="248" cy="392" r="8" fill="#0d9488"/>
+
+  <!-- Width-axis title (rotated along the axis) -->
+  <text transform="rotate(-90 96 240)" x="96" y="240" text-anchor="middle"
+        font-family="Helvetica, Arial, sans-serif" font-size="24" font-weight="bold"
+        letter-spacing="2" fill="#334155">WIDTH</text>
+  <text transform="rotate(-90 124 240)" x="124" y="240" text-anchor="middle"
+        font-family="Helvetica, Arial, sans-serif" font-size="15" fill="#64748b">parallel samples &#183; best-of-N</text>
+
+  <!-- Depth-axis title (below the axis) -->
+  <text x="560" y="428" text-anchor="middle" font-family="Helvetica, Arial, sans-serif"
+        font-size="24" font-weight="bold" letter-spacing="2" fill="#334155">DEPTH</text>
+  <text x="560" y="450" text-anchor="middle" font-family="Helvetica, Arial, sans-serif"
+        font-size="15" fill="#64748b">sequential refinement turns &#183; feedback-conditioned</text>
+
+  <!-- ================= Structured search (the corner) ================= -->
+  <!-- Dashed guides: the box lives at high width AND high depth -->
+  <line x1="560" y1="212" x2="560" y2="392" stroke="#0d9488" stroke-width="1.5" stroke-dasharray="4 5" opacity="0.7"/>
+  <line x1="480" y1="160" x2="248" y2="160" stroke="#0d9488" stroke-width="1.5" stroke-dasharray="4 5" opacity="0.7"/>
+  <rect x="480" y="116" width="330" height="96" rx="12" ry="12"
+        fill="#ccfbf1" stroke="#0d9488" stroke-width="2.5"/>
+  <text x="645" y="148" text-anchor="middle" font-family="Helvetica, Arial, sans-serif"
+        font-size="19" font-weight="bold" letter-spacing="1" fill="#0f766e">STRUCTURED SEARCH</text>
+  <text x="645" y="174" text-anchor="middle" font-family="Helvetica, Arial, sans-serif"
+        font-size="15" fill="#334155">width &#215; depth, pruned by fitness</text>
+  <text x="645" y="196" text-anchor="middle" font-family="Helvetica, Arial, sans-serif"
+        font-size="13" font-style="italic" fill="#64748b">beam &#183; tree &#183; evolutionary</text>
+
+  <!-- ================= Reasoning length: orthogonal knob ================= -->
+  <line x1="248" y1="392" x2="150" y2="464" stroke="#d97706" stroke-width="3" stroke-dasharray="7 5"/>
+  <polygon points="139,472 160,466 149,453" fill="#d97706"/>
+  <text x="196" y="500" text-anchor="middle" font-family="Helvetica, Arial, sans-serif"
+        font-size="16" font-weight="bold" fill="#b45309">reasoning length</text>
+  <text x="470" y="500" text-anchor="middle" font-family="Helvetica, Arial, sans-serif"
+        font-size="13" font-style="italic" fill="#92400e">an orthogonal fourth knob &#183; reasoning tokens per generation</text>
+</svg>

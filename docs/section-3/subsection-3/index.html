@@ -4,34 +4,29 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="
-  Inference-Time Scaling for Kernel Code Reasoning
+  Single-Turn and Multi-Turn RL for Kernel Optimization
   
   #
   
 
 
 
-
-
-  
-
-
-Sections 3.1 and 3.2 each spent more test-time compute to get a better kernel: 3.1 by refining one kernel over many turns of feedback, 3.2 by evolving a population across generations. This subsection steps back and treats that spending as the object of study. Inference-time scaling is the practice of trading extra compute at generation time, more samples, more reasoning tokens, more search, for a better answer, holding the model fixed. It is the counterpart to the training-time scaling of Section 2: rather than post-train a stronger policy, we run a fixed policy harder.">
+Section 3.2 set up reinforcement learning for kernels in its simplest form. This section situates that setup on a spectrum, from single-turn to multi-turn RL, and develops the machinery that trains a policy to refine over turns. Section 2.1 already introduced sequential refinement as an inference-time depth axis, running a fixed policy over feedback-conditioned turns; here the concern is the complementary one of using RL to train a policy that refines well, which raises its own trajectory objective, context-management, and credit-assignment questions.">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#343a40">
 <meta name="color-scheme" content="light dark"><meta property="og:url" content="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-3/">
   <meta property="og:site_name" content="Teaching LLMs to Write System Kernels">
-  <meta property="og:title" content="3.3 Inference-Time Scaling for Kernel Code Reasoning">
-  <meta property="og:description" content="Inference-Time Scaling for Kernel Code Reasoning # Sections 3.1 and 3.2 each spent more test-time compute to get a better kernel: 3.1 by refining one kernel over many turns of feedback, 3.2 by evolving a population across generations. This subsection steps back and treats that spending as the object of study. Inference-time scaling is the practice of trading extra compute at generation time, more samples, more reasoning tokens, more search, for a better answer, holding the model fixed. It is the counterpart to the training-time scaling of Section 2: rather than post-train a stronger policy, we run a fixed policy harder.">
+  <meta property="og:title" content="3.3 Single-Turn and Multi-Turn RL for Kernel Optimization">
+  <meta property="og:description" content="Single-Turn and Multi-Turn RL for Kernel Optimization # Section 3.2 set up reinforcement learning for kernels in its simplest form. This section situates that setup on a spectrum, from single-turn to multi-turn RL, and develops the machinery that trains a policy to refine over turns. Section 2.1 already introduced sequential refinement as an inference-time depth axis, running a fixed policy over feedback-conditioned turns; here the concern is the complementary one of using RL to train a policy that refines well, which raises its own trajectory objective, context-management, and credit-assignment questions.">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="website">
-<title>3.3 Inference-Time Scaling for Kernel Code Reasoning | Teaching LLMs to Write System Kernels</title>
+<title>3.3 Single-Turn and Multi-Turn RL for Kernel Optimization | Teaching LLMs to Write System Kernels</title>
 <link rel="icon" href="/llm_kernel_writing/favicon.png" >
 <link rel="manifest" href="/llm_kernel_writing/manifest.json">
 <link rel="canonical" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-3/">
 <link rel="stylesheet" href="/llm_kernel_writing/book.min.27cffe658670f57112663ed746a421db277c2dd6549965c27f9ad0103cccd990.css" integrity="sha256-J8/&#43;ZYZw9XESZj7XRqQh2yd8LdZUmWXCf5rQEDzM2ZA=" crossorigin="anonymous">
   <script defer src="/llm_kernel_writing/fuse.min.js"></script>
-  <script defer src="/llm_kernel_writing/en.search.min.3a794c86b11580e135f99fb5a9d05275c7fdb605ecdf816dca53de45335cf6ca.js" integrity="sha256-OnlMhrEVgOE1&#43;Z&#43;1qdBSdcf9tgXs34FtylPeRTNc9so=" crossorigin="anonymous"></script>
+  <script defer src="/llm_kernel_writing/en.search.min.4ef56be7e65ddbf5c290f9e9540ecc218ceb2c95fac3ed7235d1512c035fb236.js" integrity="sha256-TvVr5&#43;Zd2/XCkPnpVA7MIYzrLJX6w&#43;1yNdFRLANfsjY=" crossorigin="anonymous"></script>
 <link rel="alternate" type="application/rss+xml" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-3/index.xml" title="Teaching LLMs to Write System Kernels" />
 <!--
 Made with Book Theme
@@ -211,7 +206,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-2/" class="">Post-Training LLMs for Kernel Generation</a>
+    <a href="/llm_kernel_writing/docs/section-2/" class="">Inference-Scaling for Kernel Generation</a>
   
 
           
@@ -224,25 +219,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-2/subsection-1/" class="">2.1 Supervised Fine-Tuning on Kernel Corpora</a>
-  
-
-          
-  <ul>
-    
-  </ul>
-
-        </li>
-      
-    
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="/llm_kernel_writing/docs/section-2/subsection-2/" class="">2.2 Reinforcement Learning from Execution Feedback</a>
+    <a href="/llm_kernel_writing/docs/section-2/subsection-1/" class="">2.1 Inference-Time Scaling for Kernel Code Reasoning</a>
   
 
           
@@ -260,7 +237,43 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-2/subsection-3/" class="">2.3 RL for Kernel Optimization and Reward Hacking</a>
+    <a href="/llm_kernel_writing/docs/section-2/subsection-2/" class="">2.2 Evolution-Based Approaches for Iterative Kernel Refinement</a>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/llm_kernel_writing/docs/section-2/subsection-3/" class="">2.3 Verification and Cheating Detection</a>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/llm_kernel_writing/docs/section-2/subsection-4/" class="">2.4 NKI Kernel Generation Using LLM Agents</a>
   
 
           
@@ -283,7 +296,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/" class="">Advanced Agentic Systems</a>
+    <a href="/llm_kernel_writing/docs/section-3/" class="">Post-Training LLMs for Kernel Generation</a>
   
 
           
@@ -296,25 +309,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/subsection-1/" class="">3.1 Single-Turn and Multi-Turn RL for Kernel Optimization</a>
-  
-
-          
-  <ul>
-    
-  </ul>
-
-        </li>
-      
-    
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="/llm_kernel_writing/docs/section-3/subsection-2/" class="">3.2 Evolution-Based Approaches for Iterative Kernel Refinement</a>
+    <a href="/llm_kernel_writing/docs/section-3/subsection-1/" class="">3.1 Supervised Fine-Tuning on Kernel Corpora</a>
   
 
           
@@ -332,7 +327,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/subsection-3/" class="active">3.3 Inference-Time Scaling for Kernel Code Reasoning</a>
+    <a href="/llm_kernel_writing/docs/section-3/subsection-2/" class="">3.2 Reinforcement Learning from Execution Feedback</a>
   
 
           
@@ -350,7 +345,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/subsection-4/" class="">3.4 Triton Kernel Generation Using LLM Agents</a>
+    <a href="/llm_kernel_writing/docs/section-3/subsection-3/" class="active">3.3 Single-Turn and Multi-Turn RL for Kernel Optimization</a>
   
 
           
@@ -368,7 +363,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/subsection-5/" class="">3.5 NKI Kernel Generation Using LLM Agents</a>
+    <a href="/llm_kernel_writing/docs/section-3/subsection-4/" class="">3.4 Reward Design for Kernel RL</a>
   
 
           
@@ -420,7 +415,7 @@ https://github.com/alex-shpak/hugo-book
     <img src="/llm_kernel_writing/svg/menu.svg" class="book-icon" alt="Menu" />
   </label>
 
-  <h3>3.3 Inference-Time Scaling for Kernel Code Reasoning</h3>
+  <h3>3.3 Single-Turn and Multi-Turn RL for Kernel Optimization</h3>
 
   <label for="toc-control">
     
@@ -436,13 +431,13 @@ https://github.com/alex-shpak/hugo-book
   
 <nav id="TableOfContents">
   <ul>
-    <li><a href="#three-axes-of-test-time-compute">Three axes of test-time compute</a></li>
-    <li><a href="#width-parallel-sampling-and-best-of-n">Width: parallel sampling and Best-of-N</a></li>
-    <li><a href="#depth-sequential-refinement">Depth: sequential refinement</a></li>
-    <li><a href="#structured-search-width-times-depth">Structured search: width times depth</a></li>
-    <li><a href="#the-reasoning-token-axis-more-is-not-always-better">The reasoning-token axis: more is not always better</a></li>
-    <li><a href="#verification-is-the-enabler-and-the-bottleneck">Verification is the enabler and the bottleneck</a></li>
-    <li><a href="#takeaways">Takeaways</a></li>
+    <li><a href="#single-turn-rl-one-attempt-per-task">Single-turn RL: one attempt per task</a></li>
+    <li><a href="#multi-turn-rl">Multi-turn RL</a>
+      <ul>
+        <li><a href="#context-management">Context management</a></li>
+        <li><a href="#credit-assignment">Credit assignment</a></li>
+      </ul>
+    </li>
     <li><a href="#references">References</a></li>
   </ul>
 </nav>
@@ -456,17 +451,88 @@ https://github.com/alex-shpak/hugo-book
 
       
       
-  <article class="markdown book-article"><h1 id="inference-time-scaling-for-kernel-code-reasoning">
-  <strong>Inference-Time Scaling for Kernel Code Reasoning</strong>
+  <article class="markdown book-article"><h1 id="single-turn-and-multi-turn-rl-for-kernel-optimization">
+  <strong>Single-Turn and Multi-Turn RL for Kernel Optimization</strong>
   
-  <a class="anchor" href="#inference-time-scaling-for-kernel-code-reasoning">#</a>
+  <a class="anchor" href="#single-turn-and-multi-turn-rl-for-kernel-optimization">#</a>
   
 </h1>
+
+
+<p>Section 3.2 set up reinforcement learning for kernels in its simplest form. This section situates that setup on a spectrum, from <strong>single-turn</strong> to <strong>multi-turn</strong> RL, and develops the machinery that <em>trains</em> a policy to refine over turns. Section 2.1 already introduced sequential refinement as an <em>inference-time</em> depth axis, running a fixed policy over feedback-conditioned turns; here the concern is the complementary one of using RL to <em>train</em> a policy that refines well, which raises its own trajectory objective, context-management, and credit-assignment questions.</p>
+<h2 id="single-turn-rl-one-attempt-per-task">
+  Single-turn RL: one attempt per task
+  
+  <a class="anchor" href="#single-turn-rl-one-attempt-per-task">#</a>
+  
+</h2>
+<p>In the <strong>single-turn</strong> setting of Section 3.2, the policy gets exactly one attempt at each task: given a prompt 
+<span>
+  \( x \)
+  </span>
+
+ it samples a kernel 
+<span>
+  \( y \sim \pi_\theta(\cdot \mid x) \)
+  </span>
+
+, the environment returns a single terminal reward 
+<span>
+  \( r(x, y) \)
+  </span>
+
+ (compile, check, time), and a policy-gradient step follows. It is simple and effective, and it is the foundation the multi-turn case extends. Its limitation is that it <em>discards information</em>: when a kernel fails to compile or runs slowly, the concrete evidence of <em>why</em>, the compiler diagnostic, the failing test, the profile, is thrown away, and the next sample starts from scratch rather than from that feedback. A second, subtler limitation is internal to each attempt: the environment returns <em>one</em> scalar for the whole response, so the reward cannot say <em>which part</em> of a long generation earned it. A response that reasons out a genuinely fast strategy but then commits a single low-level indexing error is scored the same as one whose approach was wrong throughout, and the good reasoning is penalized along with the faulty code. This <em>within-response</em> credit-assignment problem exists even for a single attempt, and the token-class decomposition discussed below is designed to address it.</p>
+<h2 id="multi-turn-rl">
+  Multi-turn RL
+  
+  <a class="anchor" href="#multi-turn-rl">#</a>
+  
+</h2>
+<p>Section 2.1 described sequential refinement as an inference-time knob: run a fixed policy over several feedback-conditioned turns, each reading the compiler error, correctness diff, or profile of the last. <strong>Multi-turn RL</strong> is the training-time counterpart, recovering the information single-turn RL throws away by <em>training</em> the policy to act well over those turns rather than merely running it over them. This is the standard setup for <strong>tool-use agents</strong> [6] that interleave reasoning with tool calls — issuing web searches, running code, or invoking a compiler and profiler; kernel refinement is one such case, where the tools are the compiler and the hardware (<em>Kevin</em> [1], <em>CUDA Agent</em> [3]; <em>RAGEN/StarPO</em> [4], <em>Search-R1</em> [5]). A recurring empirical finding is that, under a fixed compute budget, investing in iterative refinement over turns outperforms drawing many independent single-shot samples, because feedback across turns is more informative than one-shot diversity [1].</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>        ┌──── context grows each turn:  x, (y_1, f_1), …, (y_{t-1}, f_{t-1}) ────┐
+</span></span><span style="display:flex;"><span>        │                                                                       │
+</span></span><span style="display:flex;"><span>        ▼                                                                       │
+</span></span><span style="display:flex;"><span>   [ policy π_θ ] ──▶ answer y_t ──▶ [ execute ] ──▶ feedback f_t ──────────────┘
+</span></span><span style="display:flex;"><span>                                      (compiler error · correctness · profiling)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>   after T turns  ──▶  final answer&#39;s outcome = reward r  ──▶  policy-gradient update
+</span></span></code></pre></div><p>Here each turn feeds the previous attempts and their feedback back into the policy, so the model revises rather than restarts; the reward is applied once the trajectory ends (single-turn RL is just the special case 
+<span>
+  \( T = 1 \)
+  </span>
+
+).</p>
+<p>Formally, write the <strong>history</strong> entering turn 
+<span>
+  \( t \)
+  </span>
+
+ as 
+<span>
+  \( h_t = (x,\, y_1, f_1,\, \dots,\, y_{t-1}, f_{t-1}) \)
+  </span>
+
+ — the prompt together with every earlier attempt and its feedback. The policy samples the next attempt from 
+<span>
+  \( y_t \sim \pi_\theta(\cdot \mid h_t) \)
+  </span>
+
+, the environment returns feedback 
+<span>
+  \( f_t \)
+  </span>
+
+, and the objective is the expected return of the whole trajectory 
+<span>
+  \( \tau = (y_1, \dots, y_T) \)
+  </span>
+
+:</p>
 
 <link rel="stylesheet" href="/llm_kernel_writing/katex/katex.min.css" />
 <script defer src="/llm_kernel_writing/katex/katex.min.js"></script>
 
-  <script defer src="/llm_kernel_writing/katex/auto-render.min.js" onload="renderMathInElement(document.body, {
+<script defer src="/llm_kernel_writing/katex/auto-render.min.js" onload="renderMathInElement(document.body, {
   &#34;delimiters&#34;: [
     {&#34;left&#34;: &#34;$$&#34;, &#34;right&#34;: &#34;$$&#34;, &#34;display&#34;: true},
     {&#34;left&#34;: &#34;$&#34;, &#34;right&#34;: &#34;$&#34;, &#34;display&#34;: false},
@@ -476,146 +542,101 @@ https://github.com/alex-shpak/hugo-book
 }
 );"></script>
 
-
-<p>Sections 3.1 and 3.2 each spent <em>more test-time compute</em> to get a better kernel: 3.1 by refining one kernel over many turns of feedback, 3.2 by evolving a population across generations. This subsection steps back and treats that spending as the object of study. <strong>Inference-time scaling</strong> is the practice of trading extra compute at generation time, more samples, more reasoning tokens, more search, for a better answer, holding the model fixed. It is the counterpart to the <em>training-time</em> scaling of Section 2: rather than post-train a stronger policy, we run a fixed policy harder.</p>
-<p>Kernel generation is an unusually good fit for inference-time scaling, for one structural reason: it has a <strong>cheap, automatic, and (with the safeguards of Section 2.3) trustworthy verifier</strong>. Compiling a kernel, checking its output against a reference, and timing it is fully automated, so unlike open-ended text generation, we can always <em>keep the best verified candidate</em> out of however many we produce. That single fact is what makes spending more compute pay off, and it is also what makes the verifier the true bottleneck, as the last part of this subsection argues.</p>
-<h2 id="three-axes-of-test-time-compute">
-  Three axes of test-time compute
-  
-  <a class="anchor" href="#three-axes-of-test-time-compute">#</a>
-  
-</h2>
-<p>Test-time compute can be spent along three axes, and every system in this section is one choice among them:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>        width  (parallel samples, best-of-N)
-</span></span><span style="display:flex;"><span>          ▲
-</span></span><span style="display:flex;"><span>          │   ┌───────────────┐
-</span></span><span style="display:flex;"><span>          │   │  structured   │   beam / tree / evolutionary search
-</span></span><span style="display:flex;"><span>          │   │    search     │   (Section 3.2): width × depth, pruned by fitness
-</span></span><span style="display:flex;"><span>          │   └───────────────┘
-</span></span><span style="display:flex;"><span>          │
-</span></span><span style="display:flex;"><span>   best-of-N ●─────────────────────▶ depth (sequential refinement turns, Section 3.1)
-</span></span><span style="display:flex;"><span>   (parallel)                        multi-turn RL agents
-</span></span><span style="display:flex;"><span>          │
-</span></span><span style="display:flex;"><span>          └──▶ reasoning tokens per generation  (a third, orthogonal knob)
-</span></span></code></pre></div><ul>
-<li><strong>Width (parallel sampling).</strong> Draw 
+<span>\[ J(\theta) = \mathbb{E}_{\tau \sim \pi_\theta}\Big[\, \sum_{t=1}^{T} r_t \,\Big], \]</span>
+<p>where 
 <span>
-  \( N \)
+  \( r_t \)
   </span>
 
- independent kernels from the same prompt and return the best verified one (Best-of-
+ is the reward at turn 
 <span>
-  \( N \)
+  \( t \)
   </span>
 
-). The more you draw, the likelier <em>some</em> sample is correct [1].</li>
-<li><strong>Depth (sequential refinement).</strong> Spend the budget refining <em>one</em> trajectory over turns, each conditioned on execution feedback. This is multi-turn RL at inference time (Section 3.1).</li>
-<li><strong>Structured search.</strong> Combine width and depth: maintain several candidates, refine them, and prune by fitness. Beam search, tree search, and evolution (Section 3.2) all live here.</li>
-</ul>
-<p>A fourth, orthogonal knob is the <strong>reasoning length</strong> per generation: how many chain-of-thought tokens the model emits before committing to code. We treat it separately below because, for kernels, more is not always better.</p>
-<p>The general lesson from test-time-compute research is that <em>how</em> the budget is spent matters as much as how much: allocating compute optimally (choosing between more samples and more refinement based on difficulty) can beat naively scaling either axis, and can even substitute for a larger model [2, 3]. The rest of this subsection instantiates that lesson for kernels.</p>
-<h2 id="width-parallel-sampling-and-best-of-n">
-  Width: parallel sampling and Best-of-N
-  
-  <a class="anchor" href="#width-parallel-sampling-and-best-of-n">#</a>
-  
-</h2>
-<p>The simplest scaling is to sample many kernels and keep the fastest correct one. MKEvolve&rsquo;s <strong>Parallel Scaling</strong> baseline does exactly this, drawing 160 independent kernels per problem [4], and it is the standard reference point every other method is measured against. Its behavior exposes both the appeal and the limit of pure width.</p>
-<p>The appeal is <strong>coverage</strong>, the chance that at least one sample is correct. On MultiKernelBench [5], a multi-platform benchmark of 285 tasks across CUDA, AscendC (Huawei NPU), and Pallas (TPU), the best model under <em>greedy</em> one-shot decoding solves only 164 of 855 platform-task instances, but moving to 
+. In the common <strong>outcome-reward</strong> setting the environment scores only the <em>final</em> answer — 
 <span>
-  \( N = 5 \)
+  \( r_T = r(x, y_T) \)
   </span>
 
- sampled generations raises Claude Sonnet 4 to 200 total passes, with CUDA Pass@5 reaching 55.8% [5]. ConCuR [6] shows the same lift on KernelBench, reported with the 
+ and 
 <span>
-  \( \text{Fast}_p \)
+  \( r_t = 0 \)
   </span>
 
- metric: the fraction of problems solved with a kernel at least 
+ for 
 <span>
-  \( p \)
+  \( t \lt T \)
   </span>
 
- times as fast as <code>torch.compile</code>. Going from Pass@1 to Pass@10, its KernelCoder-32B model rises from 58% to 91% executable and from 17% to 32% 
-<span>
-  \( \text{Fast}_1 \)
-  </span>
-
- on Level 1, and from 59% to 95% executable on Level 2 [6]. More draws find more correct kernels.</p>
-<p>The limit is that width has <strong>diminishing and uneven returns</strong>. On MultiKernelBench the same models that reach 47% CUDA Pass@1 manage only single-digit rates on AscendC and Pallas no matter how they are decoded, because the base model was barely exposed to those backends during training [5], and no amount of sampling conjures a capability the policy lacks. Width raises coverage but not the <em>ceiling</em>, which is why the systems in 3.1 and 3.2 invest in depth and search instead. A cautionary corollary appears in robust benchmarking: because each additional sample is another chance to stumble onto an evaluator exploit, pure width <em>amplifies</em> reward hacking, which we return to below.</p>
-<p>Parallel sampling is also the natural substrate for the population methods of 3.2. A beam search&rsquo;s per-round expansion, or an evolutionary generation&rsquo;s offspring, is a batch of parallel samples that is then <em>pruned by fitness</em> rather than merely deduplicated, which is what lets structured search convert raw width into directed progress [7].</p>
-<h2 id="depth-sequential-refinement">
-  Depth: sequential refinement
+ — so the entire trajectory is judged by the last kernel it produces. Handing out <strong>per-turn (process) rewards</strong> instead is the alternative, and how a single terminal reward is then spread back over the turns is exactly the credit-assignment question below.</p>
+<p>Training over multi-turn trajectories raises two recurring issues beyond the single-turn case — keeping the growing context manageable, and assigning credit across turns.</p>
+<h3 id="context-management">
+  Context management
   
-  <a class="anchor" href="#depth-sequential-refinement">#</a>
+  <a class="anchor" href="#context-management">#</a>
   
-</h2>
-<p>The alternative to sampling wide is refining deep: spend the budget on successive turns of one trajectory, each reading the compiler error, correctness diff, or profile of the last (Section 3.1). The central empirical finding, from Kevin [8], is that under a <em>fixed</em> compute budget, investing in iterative refinement across turns <strong>outperforms</strong> drawing the same number of independent single-shot samples, because feedback is more informative than one-shot diversity [8]. Depth uses information that width discards.</p>
-<p>Depth is not automatically better, though: it needs the feedback to be trustworthy and <em>representative</em>. Astra [9] makes this concrete by decomposing refinement into separate testing, profiling, planning, and coding agents that share a trajectory log over 5 rounds; the multi-agent form reached 1.32x average speedup on production SGLang CUDA kernels versus 1.08x for an otherwise identical monolithic agent, and the monolith even <em>regressed</em> to a slowdown on one kernel when unrepresentative test inputs biased its profiling [9]. Deeper refinement amplifies whatever the feedback says, so a bad measurement compounds.</p>
-<h2 id="structured-search-width-times-depth">
-  Structured search: width times depth
-  
-  <a class="anchor" href="#structured-search-width-times-depth">#</a>
-  
-</h2>
-<p>Real systems rarely pick a single axis; they combine them and let a fitness function prune. KernelEvolve [10] illustrates the pattern explicitly with a two-phase schedule: a <strong>draft phase</strong> (roughly the first 10 steps) of independent parallel sampling <em>without</em> feedback, followed by a <strong>tree-expansion phase</strong> (steps ~10 to 50) where each node ingests execution feedback and the search deepens under a selection policy (greedy, MCTS with UCT, or evolutionary) [10]. Width seeds diversity; depth then exploits the best seeds. This is the same width-times-depth structure as the beam searches of 3.2 (Autocomp, AccelOpt), and MKEvolve&rsquo;s topology evolution [4], differing only in what gets pruned and what memory persists across steps.</p>
-<p>The payoff of structuring the search, rather than scaling one axis blindly, is efficiency. MKEvolve reaches better kernels than a 160-sample beam search while spending <strong>15% to 35% fewer LLM tokens</strong>, precisely because refining subkernels concentrates compute where it helps instead of regenerating whole kernels [4]. AccelOpt [11] makes the cost argument even sharper: open-source models running its search-plus-memory loop matched Claude Sonnet 4 kernel quality at roughly <strong>26x lower cost</strong> [11]. Well-structured search converts a fixed compute budget into more improvement per token.</p>
-<h2 id="the-reasoning-token-axis-more-is-not-always-better">
-  The reasoning-token axis: more is not always better
-  
-  <a class="anchor" href="#the-reasoning-token-axis-more-is-not-always-better">#</a>
-  
-</h2>
-<p>Reasoning models spend test-time compute a fourth way, by emitting long chains of thought before the code. It is tempting to assume longer reasoning yields better kernels, but the kernel evidence points the other way. ConCuR [6] measured it directly and found that <strong>shorter correct reasoning traces correlate with higher kernel-generation accuracy</strong>, while speedup is essentially <em>uncorrelated</em> with reasoning length (Pearson 
-<span>
-  \( r \approx -0.047 \)
-  </span>
-
-) [6]. Curating training data toward the shortest correct-and-fast trace per problem, just 4,892 examples, produced an open-source model competitive with far larger reasoning models on KernelBench [6]. The token budget is better spent on <em>width or depth of search</em> than on <em>length of monologue</em>.</p>
-<p>Reasoning length is still useful as a <strong>difficulty signal</strong>. ConCuR proposes Average Reasoning Length as a per-task difficulty metric (Easy under 4000 tokens, Medium 4000 to 8500, Hard above), which is exactly the kind of estimate an inference-scaling controller needs to allocate its budget: sample wider and refine deeper on the tasks a difficulty proxy flags as hard, and stop early on the easy ones [6]. This closes the loop back to the &ldquo;compute-optimal allocation&rdquo; idea [2]: the win is not more compute everywhere, but more compute where it moves the needle.</p>
-<h2 id="verification-is-the-enabler-and-the-bottleneck">
-  Verification is the enabler and the bottleneck
-  
-  <a class="anchor" href="#verification-is-the-enabler-and-the-bottleneck">#</a>
-  
-</h2>
-<p>Every axis above rests on the same foundation: a verifier good enough that &ldquo;the best of 
-<span>
-  \( N \)
-  </span>
-
-&rdquo; or &ldquo;the fittest survivor&rdquo; actually <em>is</em> the best kernel. Scaling inference compute scales the search&rsquo;s contact with that verifier, so any gap in it is found and exploited faster the harder we search. This is the reward-hacking problem of Section 2.3, now sharpened by scale: the more candidates we generate, the more likely one of them games the check rather than solving the task.</p>
-<p>The robust-kbench study [7] quantifies the danger. On benchmark tasks with exploitable evaluators, generated kernels reported fake speedups as large as 50x to 120x (for example by hardcoding a softmax output to 1.0), and after excluding the contaminated tasks the average measured speedup collapsed from <strong>3.13x to 1.49x</strong> [7]. Its defenses are exactly what inference-time scaling needs to stay honest: cheap LLM verifiers that reject bad kernels before expensive hardware runs, plus anti-cheating filters (diverse initializations, multiple input configurations, forward <em>and</em> backward passes, and rejection of degenerate near-constant outputs) [7]. FlashInfer-Bench [12] adds the deployment-grounded version, scoring candidates on real serving traces and injecting the winner into a live SGLang or vLLM engine so the measured speedup is end-to-end rather than an isolated micro-benchmark [12].</p>
-<p>This is why the benchmarks themselves are load-bearing for inference-time scaling, not incidental. Each one hardens a different failure mode of &ldquo;just search harder&rdquo;:</p>
+</h3>
+<p>Every turn appends the previous attempt and its (often long) feedback — compiler diagnostics, correctness diffs, full profiler dumps — to the prompt. Left unchecked the context explodes within a few turns (a handful of full reasoning traces can reach tens of thousands of tokens), so multi-turn RL borrows the standard toolkit that long-horizon agents use to keep it bounded:</p>
 <ul>
-<li><strong>KernelBench</strong> [13] defines the core protocol, correctness within tolerance plus the 
-<span>
-  \( \text{Fast}_p \)
-  </span>
-
- speedup metric over <code>torch.compile</code>, that all of Section 3 reports against.</li>
-<li><strong>MultiKernelBench</strong> [5] extends it across three hardware backends, exposing that search gains on CUDA do not transfer to under-represented backends without more than sampling.</li>
-<li><strong>robust-kbench</strong> [7] closes the correctness and timing loopholes that scaled sampling would otherwise exploit.</li>
-<li><strong>FlashInfer-Bench</strong> [12] grounds evaluation in production LLM-serving workloads and live substitution, so the search optimizes what actually ships.</li>
+<li><strong>Truncation / windowing.</strong> Keep only the most recent few turns and drop older ones outright. Simplest, but on its own it discards information that later turns may still need.</li>
+<li><strong>Summarization (compaction).</strong> Replace older turns — or just their verbose reasoning — with a short, model-generated summary, while keeping the durable artifacts (the kernel and its evaluation result). This preserves continuity far better than plain truncation and is the common choice: for example, <em>Kevin</em> discards each turn&rsquo;s full chain-of-thought but has the model <em>summarize</em> the changes it made, carrying that summary plus the kernel and feedback forward (without it, the context reaches 50–100k tokens within a few turns) [1]. End-to-end summarization has also been studied as a general multi-turn-RL technique [7].</li>
+<li><strong>Observation compression.</strong> Compress the tool output itself — surface the first error or the top profiler bottlenecks rather than the raw logs — since the environment&rsquo;s feedback is often the bulkiest part of a turn.</li>
+<li><strong>External memory / retrieval.</strong> Offload the history to an external store and retrieve only the relevant pieces on demand [8], trading context length for retrieval machinery.</li>
 </ul>
-<p>The through-line of this subsection, and of Section 3, is that inference-time compute buys better kernels <em>only in proportion to how trustworthy the verifier is</em>. Width, depth, search, and reasoning length are all levers on the same machine, and a leaky evaluator turns every one of them into a lever for cheating rather than for speed.</p>
-<h2 id="takeaways">
-  Takeaways
+<p>These are typically cascaded — compress observations first, window next, summarize as a last resort — to preserve the <em>state</em> needed to make progress (the current best attempt and why it fell short) at a fraction of the token cost.</p>
+<h3 id="credit-assignment">
+  Credit assignment
   
-  <a class="anchor" href="#takeaways">#</a>
+  <a class="anchor" href="#credit-assignment">#</a>
   
-</h2>
+</h3>
+<p>Credit assignment is a core problem in <em>any</em> long-horizon or multi-turn RL — for kernels, but equally for general code and math reasoning: when the reward lands only at the <em>end</em> of a trajectory (you must finish and run a kernel to score it), that terminal signal has to be propagated back to the tokens, turns, and decisions that actually earned it. The main design axis is the <strong>granularity</strong> of the attribution, from finest to coarsest:</p>
 <ul>
-<li>Inference-time scaling trades test-time compute for kernel quality along three axes, <strong>width</strong> (parallel Best-of-
+<li><strong>Token-level.</strong> The finest grain assigns credit per token, by estimating each step&rsquo;s value with Monte-Carlo rollouts [11] or with a learned <strong>process reward model</strong> that scores intermediate steps, trained on human step labels [12] or on automatically generated ones [13]. It is the most informative but far the most expensive, and seldom needed for kernels.</li>
+<li><strong>Turn-level.</strong> Each turn gets its own advantage, usually from a <strong>reward-to-go</strong> — a discounted sum of the current and future turns&rsquo; rewards, 
 <span>
-  \( N \)
+  \( G_t = \sum_{l \ge 0} \gamma^l\, r_{t+l} \)
   </span>
 
-), <strong>depth</strong> (sequential refinement, Section 3.1), and <strong>structured search</strong> (beam/tree/evolution, Section 3.2), plus an orthogonal <strong>reasoning-length</strong> knob.</li>
-<li>Width raises <em>coverage</em> cheaply but not the capability ceiling and has uneven, diminishing returns; depth exploits feedback that width discards but amplifies bad measurements; structured search combines both and, when well-organized, reaches better kernels for <strong>fewer tokens</strong> (MKEvolve&rsquo;s 15-35% saving, AccelOpt&rsquo;s 26x cost cut).</li>
-<li>For kernels, <strong>longer reasoning is not always better</strong> (shorter correct traces correlate with higher accuracy, and speedup is uncorrelated with trace length); reasoning length is better used as a difficulty signal for compute-optimal budget allocation.</li>
-<li>All of it depends on a <strong>trustworthy verifier</strong>: scaling search scales exposure to evaluator exploits, so anti-cheating benchmarks (robust-kbench, FlashInfer-Bench) and the safeguards of Section 2.3 are what let inference-time compute buy real speed instead of reward hacking.</li>
+ — combined with a value baseline, most commonly via <strong>generalized advantage estimation</strong> [9], so an early revision that <em>enabled</em> a later success is credited for it [1, 2, 3]. A related concern is de-biasing the baseline: the standard fix is a leave-one-out estimate that excludes a sample from its own baseline [10], which Dr. Kernel [2] extends to the turn level.</li>
+<li><strong>Trajectory-level.</strong> The coarsest grain gives <em>every</em> turn of the trajectory the same single advantage — one score for the whole multi-turn rollout — which is simplest and lowest-variance but cannot tell which turn (let alone which step) actually earned the reward. Turn-level is exactly this signal subdivided per turn.</li>
 </ul>
+<p>Finer credit assignment lowers the variance of the learning signal but adds cost and its own estimation error, so kernel systems in practice sit mostly at the turn levels.</p>
+<p><strong>A second axis: attribution by token class.</strong> The granularity ladder above subdivides a trajectory <em>temporally</em>, by token, by turn, or as a whole. An orthogonal move is to subdivide a <em>single</em> response by the <strong>role</strong> of its tokens. TritonRL&rsquo;s <strong>hierarchical reward decomposition (HRD)</strong> [14] does this for kernels: it splits one response into a high-level <em>planning</em> span (the reasoning trace) and a low-level <em>coding</em> span (the emitted kernel) and gives each span its own reward and its own group-relative advantage, rather than one scalar for the whole response. Because it decomposes a <em>single</em> response, it applies even to a single attempt (TritonRL is single-turn) and sits off the token/turn/trajectory ladder rather than at a point on it, directly addressing the within-response credit problem noted at the start of this section.</p>
+<p>The two spans are rewarded <em>asymmetrically</em> (Section 3.4): the plan tokens receive the speedup reward and the code tokens the correctness reward. The asymmetry is deliberate. Because the code is written <em>conditioned on</em> the plan, charging the code for a slow plan would punish a faithful implementation of an inherently suboptimal strategy, so correctness-only on the code decouples that confound while the speedup pressure lands on the plan, where the strategy is actually chosen. Rewarding both spans for speedup instead lowers the match-or-beat-reference rate from 36% to 33% on single-operator tasks [14]. The two spans then co-evolve under one weighted objective,</p>
+
+<span>\[ \mathcal{J}(\theta) = \mathbb{E}\big[\, \alpha\, \mathcal{J}^{\text{plan}}(\theta) + \mathcal{J}^{\text{code}}(\theta) \,\big], \]</span>
+<p>where 
+<span>
+  \( \mathcal{J}^{\text{plan}} \)
+  </span>
+
+ and 
+<span>
+  \( \mathcal{J}^{\text{code}} \)
+  </span>
+
+ are group-relative objectives computed over the plan and code tokens respectively, and the weight 
+<span>
+  \( \alpha \)
+  </span>
+
+ sets how fast the planning policy updates relative to the coding policy. A large 
+<span>
+  \( \alpha \)
+  </span>
+
+ near 1 lets the plan shift faster than the code can stabilize against, while 
+<span>
+  \( \alpha = 0 \)
+  </span>
+
+ freezes the plan; a small value (
+<span>
+  \( \alpha \approx 0.1 \)
+  </span>
+
+) works best, letting the plan drift slowly enough for the code policy to keep pace.</p>
 <h2 id="references">
   References
   
@@ -623,19 +644,20 @@ https://github.com/alex-shpak/hugo-book
   
 </h2>
 <ol>
-<li>B. Brown, J. Juravsky, R. Ehrlich, R. Clark, Q. V. Le, C. Ré, and A. Mirhoseini. <em>Large Language Monkeys: Scaling Inference Compute with Repeated Sampling.</em> arXiv:2407.21787, 2024. <a href="https://arxiv.org/abs/2407.21787">arxiv.org/abs/2407.21787</a></li>
-<li>C. Snell, J. Lee, K. Xu, and A. Kumar. <em>Scaling LLM Test-Time Compute Optimally Can Be More Effective Than Scaling Model Parameters.</em> arXiv:2408.03314, 2024. <a href="https://arxiv.org/abs/2408.03314">arxiv.org/abs/2408.03314</a></li>
-<li>NVIDIA Developer Blog. <em>Automating GPU Kernel Generation with DeepSeek-R1 and Inference-Time Scaling.</em> 2025. <a href="https://developer.nvidia.com/blog/automating-gpu-kernel-generation-with-deepseek-r1-and-inference-time-scaling/">developer.nvidia.com/blog/automating-gpu-kernel-generation-with-deepseek-r1-and-inference-time-scaling</a></li>
-<li>J. Yoo, R. Saha, S. Zhu, T. Yu, W. Tang, and Y. Park. <em>MKEvolve: A Modular Multi-Agent Framework for Kernel Code Generation.</em> arXiv:2607.20501, 2026 (ICML 2026 Workshop on Compositional Learning). <a href="https://arxiv.org/abs/2607.20501">arxiv.org/abs/2607.20501</a></li>
-<li>Z. Wen, Y. Zhang, Z. Li, Z. Liu, L. Xie, and T. Zhang. <em>MultiKernelBench: A Multi-Platform Benchmark for Kernel Generation.</em> arXiv:2507.17773, 2025. <a href="https://arxiv.org/abs/2507.17773">arxiv.org/abs/2507.17773</a></li>
-<li>L. Kong, J. Wei, H. Shen, and H. Wang. <em>ConCuR: Conciseness Makes State-of-the-Art Kernel Generation.</em> arXiv:2510.07356, 2025. <a href="https://arxiv.org/abs/2510.07356">arxiv.org/abs/2510.07356</a></li>
-<li>R. T. Lange, Q. Sun, A. Prasad, M. Faldor, Y. Tang, and D. Ha. <em>Towards Robust Agentic CUDA Kernel Benchmarking, Verification, and Optimization.</em> arXiv:2509.14279, 2025. <a href="https://arxiv.org/abs/2509.14279">arxiv.org/abs/2509.14279</a></li>
 <li>C. Baronio, P. Marsella, B. Pan, S. Guo, and S. Alberti. <em>Kevin: Multi-Turn RL for Generating CUDA Kernels.</em> arXiv:2507.11948, 2025. <a href="https://arxiv.org/abs/2507.11948">arxiv.org/abs/2507.11948</a></li>
-<li>A. Wei, T. Sun, Y. Seenichamy, H. Song, A. Ouyang, A. Mirhoseini, K. Wang, and A. Aiken. <em>Astra: A Multi-Agent System for GPU Kernel Performance Optimization.</em> arXiv:2509.07506, 2025. <a href="https://arxiv.org/abs/2509.07506">arxiv.org/abs/2509.07506</a></li>
-<li>G. Liao, H. Qin, Y. Wang, A. Golden, M. Kuchnik, et al. <em>KernelEvolve: Scaling Agentic Kernel Coding for Heterogeneous AI Accelerators at Meta.</em> arXiv:2512.23236, 2026. <a href="https://arxiv.org/abs/2512.23236">arxiv.org/abs/2512.23236</a></li>
-<li>G. Zhang, S. Zhu, A. Wei, Z. Song, A. Nie, Z. Jia, N. Vijaykumar, Y. Wang, and K. Olukotun. <em>AccelOpt: A Self-Improving LLM Agentic System for AI Accelerator Kernel Optimization.</em> arXiv:2511.15915, 2025. <a href="https://arxiv.org/abs/2511.15915">arxiv.org/abs/2511.15915</a></li>
-<li>S. Xing, Y. Zhai, A. Jiang, Y. Dong, Y. Wu, Z. Ye, C. Ruan, Y. Huang, Y. Zhang, L. Yin, et al. <em>FlashInfer-Bench: Building the Virtuous Cycle for AI-driven LLM Systems.</em> arXiv:2601.00227, 2026. <a href="https://arxiv.org/abs/2601.00227">arxiv.org/abs/2601.00227</a></li>
-<li>A. Ouyang, S. Guo, S. Arora, A. L. Zhang, W. Hu, C. Ré, and A. Mirhoseini. <em>KernelBench: Can LLMs Write Efficient GPU Kernels?</em> ICML 2025. <a href="https://openreview.net/forum?id=yeoN1iQT1x">openreview.net/forum?id=yeoN1iQT1x</a></li>
+<li>W. Liu, J. Xu, Y. Li, L. Zheng, T. Li, Q. Liu, and J. He. <em>Dr. Kernel: Reinforcement Learning Done Right for Triton Kernel Generations.</em> arXiv:2602.05885, 2026. <a href="https://arxiv.org/abs/2602.05885">arxiv.org/abs/2602.05885</a></li>
+<li>W. Dai, H. Wu, Q. Yu, et al. <em>CUDA Agent: Large-Scale Agentic RL for High-Performance CUDA Kernel Generation.</em> arXiv:2602.24286, 2026. <a href="https://arxiv.org/abs/2602.24286">arxiv.org/abs/2602.24286</a></li>
+<li>Z. Wang, K. Wang, Q. Ma, et al. <em>RAGEN: Understanding Self-Evolution in LLM Agents via Multi-Turn Reinforcement Learning</em> (StarPO). arXiv:2504.20073, 2025. <a href="https://arxiv.org/abs/2504.20073">arxiv.org/abs/2504.20073</a></li>
+<li>B. Jin, H. Zeng, Z. Yue, et al. <em>Search-R1: Training LLMs to Reason and Leverage Search Engines with Reinforcement Learning.</em> arXiv:2503.09516, 2025. <a href="https://arxiv.org/abs/2503.09516">arxiv.org/abs/2503.09516</a></li>
+<li><em>A Practitioner&rsquo;s Guide to Multi-turn Agentic Reinforcement Learning.</em> arXiv:2510.01132, 2025. <a href="https://arxiv.org/abs/2510.01132">arxiv.org/abs/2510.01132</a></li>
+<li><em>Scaling LLM Multi-turn RL with End-to-end Summarization.</em> arXiv:2510.06727, 2025. <a href="https://arxiv.org/abs/2510.06727">arxiv.org/abs/2510.06727</a></li>
+<li>C. Packer, S. Wooders, K. Lin, et al. <em>MemGPT: Towards LLMs as Operating Systems.</em> arXiv:2310.08560, 2023. <a href="https://arxiv.org/abs/2310.08560">arxiv.org/abs/2310.08560</a></li>
+<li>J. Schulman, P. Moritz, S. Levine, M. Jordan, and P. Abbeel. <em>High-Dimensional Continuous Control Using Generalized Advantage Estimation</em> (GAE). arXiv:1506.02438, 2015. <a href="https://arxiv.org/abs/1506.02438">arxiv.org/abs/1506.02438</a></li>
+<li>A. Ahmadian, C. Cremer, M. Gallé, et al. <em>Back to Basics: Revisiting REINFORCE-Style Optimization for Learning from Human Feedback in LLMs</em> (RLOO). arXiv:2402.14740, 2024. <a href="https://arxiv.org/abs/2402.14740">arxiv.org/abs/2402.14740</a></li>
+<li>A. Kazemnejad, M. Aghajohari, E. Portelance, et al. <em>VinePPO: Unlocking RL Potential for LLM Reasoning through Refined Credit Assignment.</em> arXiv:2410.01679, 2024. <a href="https://arxiv.org/abs/2410.01679">arxiv.org/abs/2410.01679</a></li>
+<li>H. Lightman, V. Kosaraju, Y. Burda, et al. <em>Let&rsquo;s Verify Step by Step</em> (process reward models). arXiv:2305.20050, 2023. <a href="https://arxiv.org/abs/2305.20050">arxiv.org/abs/2305.20050</a></li>
+<li>P. Wang, L. Li, Z. Shao, et al. <em>Math-Shepherd: Verify and Reinforce LLMs Step-by-step without Human Annotations.</em> arXiv:2312.08935, 2024. <a href="https://arxiv.org/abs/2312.08935">arxiv.org/abs/2312.08935</a></li>
+<li>J. Woo, S. Zhu, A. Nie, Z. Jia, Y. Wang, and Y. Park. <em>TritonRL: Training LLMs to Think and Code Triton Without Cheating.</em> arXiv:2510.17891, 2025. <a href="https://arxiv.org/abs/2510.17891">arxiv.org/abs/2510.17891</a></li>
 </ol>
 </article>
  
@@ -662,16 +684,16 @@ https://github.com/alex-shpak/hugo-book
     <span>
     
       <a href="/llm_kernel_writing/docs/section-3/subsection-2/" class="flex align-center book-icon">
-        <img src="/llm_kernel_writing/svg/backward.svg" class="book-icon" alt="Previous" title="3.2 Evolution-Based Approaches for Iterative Kernel Refinement" />
-        <span>3.2 Evolution-Based Approaches for Iterative Kernel Refinement</span>
+        <img src="/llm_kernel_writing/svg/backward.svg" class="book-icon" alt="Previous" title="3.2 Reinforcement Learning from Execution Feedback" />
+        <span>3.2 Reinforcement Learning from Execution Feedback</span>
       </a>
     
     </span>
     <span>
     
       <a href="/llm_kernel_writing/docs/section-3/subsection-4/" class="flex align-center book-icon">
-        <span>3.4 Triton Kernel Generation Using LLM Agents</span>
-        <img src="/llm_kernel_writing/svg/forward.svg" class="book-icon" alt="Next" title="3.4 Triton Kernel Generation Using LLM Agents" />
+        <span>3.4 Reward Design for Kernel RL</span>
+        <img src="/llm_kernel_writing/svg/forward.svg" class="book-icon" alt="Next" title="3.4 Reward Design for Kernel RL" />
       </a>
     
     </span>
@@ -706,13 +728,13 @@ https://github.com/alex-shpak/hugo-book
   
 <nav id="TableOfContents">
   <ul>
-    <li><a href="#three-axes-of-test-time-compute">Three axes of test-time compute</a></li>
-    <li><a href="#width-parallel-sampling-and-best-of-n">Width: parallel sampling and Best-of-N</a></li>
-    <li><a href="#depth-sequential-refinement">Depth: sequential refinement</a></li>
-    <li><a href="#structured-search-width-times-depth">Structured search: width times depth</a></li>
-    <li><a href="#the-reasoning-token-axis-more-is-not-always-better">The reasoning-token axis: more is not always better</a></li>
-    <li><a href="#verification-is-the-enabler-and-the-bottleneck">Verification is the enabler and the bottleneck</a></li>
-    <li><a href="#takeaways">Takeaways</a></li>
+    <li><a href="#single-turn-rl-one-attempt-per-task">Single-turn RL: one attempt per task</a></li>
+    <li><a href="#multi-turn-rl">Multi-turn RL</a>
+      <ul>
+        <li><a href="#context-management">Context management</a></li>
+        <li><a href="#credit-assignment">Credit assignment</a></li>
+      </ul>
+    </li>
     <li><a href="#references">References</a></li>
   </ul>
 </nav>

@@ -33,21 +33,21 @@ per-channel weight w. Writing r for the token index (r = 0, ..., 1023)
 and h for the hidden index (h = 0, ..., 4095):">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#343a40">
-<meta name="color-scheme" content="light dark"><meta property="og:url" content="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-5/">
+<meta name="color-scheme" content="light dark"><meta property="og:url" content="https://neuron-science.github.io/llm_kernel_writing/docs/section-2/subsection-4/">
   <meta property="og:site_name" content="Teaching LLMs to Write System Kernels">
-  <meta property="og:title" content="3.5 NKI Kernel Generation Using LLM Agents">
+  <meta property="og:title" content="2.4 NKI Kernel Generation Using LLM Agents">
   <meta property="og:description" content="NKI Kernel Generation Using LLM Agents # The methods developed across this section (iterative refinement, search, and inference-time scaling, all anchored to a trustworthy verifier) are already proven effective in production kernel generation. They share one lesson: an agent should not be asked to write a fast kernel in one unverified step. This demo puts them to work on NKI for AWS Trainium, following a more useful sequence:
 give the agent an executable reference and ask it to produce a correct NKI kernel; profile that baseline, inspect both the summary and timeline, and use a roofline model to choose an optimization direction; and ask the agent to implement that optimization, then repeat the same correctness and profiling gates. The worked operator is a BF16 residual add followed by weighted RMSNorm over 1024 tokens with hidden size 4096: the input activations x and a residual tensor a are summed elementwise, and that sum is then normalized by its root-mean-square across the hidden dimension and rescaled by a learned per-channel weight w. Writing r for the token index (r = 0, ..., 1023) and h for the hidden index (h = 0, ..., 4095):">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="website">
-<title>3.5 NKI Kernel Generation Using LLM Agents | Teaching LLMs to Write System Kernels</title>
+<title>2.4 NKI Kernel Generation Using LLM Agents | Teaching LLMs to Write System Kernels</title>
 <link rel="icon" href="/llm_kernel_writing/favicon.png" >
 <link rel="manifest" href="/llm_kernel_writing/manifest.json">
-<link rel="canonical" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-5/">
+<link rel="canonical" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-2/subsection-4/">
 <link rel="stylesheet" href="/llm_kernel_writing/book.min.27cffe658670f57112663ed746a421db277c2dd6549965c27f9ad0103cccd990.css" integrity="sha256-J8/&#43;ZYZw9XESZj7XRqQh2yd8LdZUmWXCf5rQEDzM2ZA=" crossorigin="anonymous">
   <script defer src="/llm_kernel_writing/fuse.min.js"></script>
-  <script defer src="/llm_kernel_writing/en.search.min.3a794c86b11580e135f99fb5a9d05275c7fdb605ecdf816dca53de45335cf6ca.js" integrity="sha256-OnlMhrEVgOE1&#43;Z&#43;1qdBSdcf9tgXs34FtylPeRTNc9so=" crossorigin="anonymous"></script>
-<link rel="alternate" type="application/rss+xml" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-5/index.xml" title="Teaching LLMs to Write System Kernels" />
+  <script defer src="/llm_kernel_writing/en.search.min.4ef56be7e65ddbf5c290f9e9540ecc218ceb2c95fac3ed7235d1512c035fb236.js" integrity="sha256-TvVr5&#43;Zd2/XCkPnpVA7MIYzrLJX6w&#43;1yNdFRLANfsjY=" crossorigin="anonymous"></script>
+<link rel="alternate" type="application/rss+xml" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-2/subsection-4/index.xml" title="Teaching LLMs to Write System Kernels" />
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -226,7 +226,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-2/" class="">Post-Training LLMs for Kernel Generation</a>
+    <a href="/llm_kernel_writing/docs/section-2/" class="">Inference-Scaling for Kernel Generation</a>
   
 
           
@@ -239,25 +239,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-2/subsection-1/" class="">2.1 Supervised Fine-Tuning on Kernel Corpora</a>
-  
-
-          
-  <ul>
-    
-  </ul>
-
-        </li>
-      
-    
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="/llm_kernel_writing/docs/section-2/subsection-2/" class="">2.2 Reinforcement Learning from Execution Feedback</a>
+    <a href="/llm_kernel_writing/docs/section-2/subsection-1/" class="">2.1 Inference-Time Scaling for Kernel Code Reasoning</a>
   
 
           
@@ -275,7 +257,43 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-2/subsection-3/" class="">2.3 RL for Kernel Optimization and Reward Hacking</a>
+    <a href="/llm_kernel_writing/docs/section-2/subsection-2/" class="">2.2 Evolution-Based Approaches for Iterative Kernel Refinement</a>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/llm_kernel_writing/docs/section-2/subsection-3/" class="">2.3 Verification and Cheating Detection</a>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/llm_kernel_writing/docs/section-2/subsection-4/" class="active">2.4 NKI Kernel Generation Using LLM Agents</a>
   
 
           
@@ -298,7 +316,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/" class="">Advanced Agentic Systems</a>
+    <a href="/llm_kernel_writing/docs/section-3/" class="">Post-Training LLMs for Kernel Generation</a>
   
 
           
@@ -311,25 +329,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/subsection-1/" class="">3.1 Single-Turn and Multi-Turn RL for Kernel Optimization</a>
-  
-
-          
-  <ul>
-    
-  </ul>
-
-        </li>
-      
-    
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="/llm_kernel_writing/docs/section-3/subsection-2/" class="">3.2 Evolution-Based Approaches for Iterative Kernel Refinement</a>
+    <a href="/llm_kernel_writing/docs/section-3/subsection-1/" class="">3.1 Supervised Fine-Tuning on Kernel Corpora</a>
   
 
           
@@ -347,7 +347,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/subsection-3/" class="">3.3 Inference-Time Scaling for Kernel Code Reasoning</a>
+    <a href="/llm_kernel_writing/docs/section-3/subsection-2/" class="">3.2 Reinforcement Learning from Execution Feedback</a>
   
 
           
@@ -365,7 +365,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/subsection-4/" class="">3.4 Triton Kernel Generation Using LLM Agents</a>
+    <a href="/llm_kernel_writing/docs/section-3/subsection-3/" class="">3.3 Single-Turn and Multi-Turn RL for Kernel Optimization</a>
   
 
           
@@ -383,7 +383,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/subsection-5/" class="active">3.5 NKI Kernel Generation Using LLM Agents</a>
+    <a href="/llm_kernel_writing/docs/section-3/subsection-4/" class="">3.4 Reward Design for Kernel RL</a>
   
 
           
@@ -435,7 +435,7 @@ https://github.com/alex-shpak/hugo-book
     <img src="/llm_kernel_writing/svg/menu.svg" class="book-icon" alt="Menu" />
   </label>
 
-  <h3>3.5 NKI Kernel Generation Using LLM Agents</h3>
+  <h3>2.4 NKI Kernel Generation Using LLM Agents</h3>
 
   <label for="toc-control">
     
@@ -726,7 +726,7 @@ and general lessons from measured positive and negative kernel pairs into a
 bounded optimization memory (size-capped, so it cannot grow without limit) that
 conditions later rounds. Its ablation found that search with memory reached
 similar speedup in 13 rather than 16 iterations, reducing search cost by roughly
-16-17%. Section 3.2 develops the full search method; the practical lesson here
+16-17%. Section 2.2 develops the full search method; the practical lesson here
 is to preserve an evidence-backed optimization episode, not the entire
 conversation:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>context: residual RMSNorm, BF16 [1024, 4096], one NeuronCore
@@ -775,8 +775,8 @@ and the cheapest way to pass one is often to compute the answer on the host with
 Torch or NumPy and hand the kernel a finished tensor to copy out. Such a
 candidate is correct yet hollow: the NKI kernel does no real work, so every
 profile, roofline, and speedup measured against it is meaningless. This is the
-kernel-generation form of the reward hacking that Section 2&rsquo;s verifiable reward
-is built to prevent, and it is why the boundary belongs in the contract rather
+kernel-generation form of the reward hacking that the verification pipeline of
+Section 2.3 is built to prevent, and it is why the boundary belongs in the contract rather
 than left to the agent&rsquo;s discretion. The two are different kinds of decision.
 Placement choices, which engine runs an operation or which memory holds a tile,
 are the agent&rsquo;s to make in pursuit of speed; but whether a computation happens
@@ -1077,7 +1077,7 @@ cases, not just the easy average.</p>
 </span></span><span style="display:flex;"><span>export NEURON_RT_VISIBLE_CORES<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>
 </span></span><span style="display:flex;"><span>export NEURON_LOGICAL_NC_CONFIG<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>
 </span></span><span style="display:flex;"><span>export NEURON_PLATFORM_TARGET_OVERRIDE<span style="color:#f92672">=</span>trn2
-</span></span><span style="display:flex;"><span>python content/docs/section-3/subsection-5/rmsnorm_agent_lab.py <span style="color:#ae81ff">\
+</span></span><span style="display:flex;"><span>python content/docs/section-2/subsection-4/rmsnorm_agent_lab.py <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --kernel baseline
 </span></span></code></pre></div><p>The two random cases returned:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>random_seed_7    allclose=True max_abs=0.015625 mean_abs=3.506939e-07 cosine=0.9999999986
@@ -1109,7 +1109,7 @@ capture is made reproducible before anything is measured. Preserve the
 standalone executable in a fresh artifact directory:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ARTIFACTS_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#66d9ef">$(</span>mktemp -d /tmp/rmsnorm-nki.XXXXXX<span style="color:#66d9ef">)</span><span style="color:#e6db74">&#34;</span>
 </span></span><span style="display:flex;"><span>export NKI_ARTIFACTS_DIR<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span>$ARTIFACTS_DIR<span style="color:#e6db74">&#34;</span>
-</span></span><span style="display:flex;"><span>python content/docs/section-3/subsection-5/rmsnorm_agent_lab.py <span style="color:#ae81ff">\
+</span></span><span style="display:flex;"><span>python content/docs/section-2/subsection-4/rmsnorm_agent_lab.py <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --kernel baseline
 </span></span></code></pre></div><p>Capture the second execution so the profile does not describe first-run
 effects. The first run pays one-time costs (code load, DMA queue setup, and
@@ -1547,7 +1547,7 @@ that should stay constant matters as much as naming the ones that should move:
 if a change is supposed to shorten the Vector path without touching data
 movement, then HBM bytes and DMA active time must not change, and if they do,
 the rewrite did something other than what was claimed. This is also the
-guardrail against reward hacking from Section 2. An agent optimizing for
+guardrail against reward hacking from Section 2.3. An agent optimizing for
 latency alone might quietly drop a term, narrow the dtype, or skip a row; a
 pre-committed prediction of which counters hold fixed makes that kind of shortcut
 show up as a failed prediction, not a faster number.</p>
@@ -1677,7 +1677,7 @@ subsequent activation use FP32, preserving the dtype contract, and the explicit
   
 </h3>
 <p>Run both kernels through the same read-only oracle:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>python content/docs/section-3/subsection-5/rmsnorm_agent_lab.py <span style="color:#ae81ff">\
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>python content/docs/section-2/subsection-4/rmsnorm_agent_lab.py <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --kernel both
 </span></span></code></pre></div><p>The random cases produced:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>[baseline]
@@ -2048,13 +2048,18 @@ improvement.</p>
   <div class="flex flex-wrap justify-between">
     <span>
     
-      <a href="/llm_kernel_writing/docs/section-3/subsection-4/" class="flex align-center book-icon">
-        <img src="/llm_kernel_writing/svg/backward.svg" class="book-icon" alt="Previous" title="3.4 Triton Kernel Generation Using LLM Agents" />
-        <span>3.4 Triton Kernel Generation Using LLM Agents</span>
+      <a href="/llm_kernel_writing/docs/section-2/subsection-3/" class="flex align-center book-icon">
+        <img src="/llm_kernel_writing/svg/backward.svg" class="book-icon" alt="Previous" title="2.3 Verification and Cheating Detection" />
+        <span>2.3 Verification and Cheating Detection</span>
       </a>
     
     </span>
     <span>
+    
+      <a href="/llm_kernel_writing/docs/section-3/" class="flex align-center book-icon">
+        <span>Post-Training LLMs for Kernel Generation</span>
+        <img src="/llm_kernel_writing/svg/forward.svg" class="book-icon" alt="Next" title="Post-Training LLMs for Kernel Generation" />
+      </a>
     
     </span>
   </div>

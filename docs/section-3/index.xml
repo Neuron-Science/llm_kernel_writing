@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Advanced Agentic Systems on Teaching LLMs to Write System Kernels</title>
+    <title>Post-Training LLMs for Kernel Generation on Teaching LLMs to Write System Kernels</title>
     <link>https://neuron-science.github.io/llm_kernel_writing/docs/section-3/</link>
-    <description>Recent content in Advanced Agentic Systems on Teaching LLMs to Write System Kernels</description>
+    <description>Recent content in Post-Training LLMs for Kernel Generation on Teaching LLMs to Write System Kernels</description>
     <generator>Hugo</generator>
     <language>en-us</language>
     <atom:link href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/index.xml" rel="self" type="application/rss+xml" />

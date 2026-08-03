@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="
-  Post-Training LLMs for Kernel Generation
+  Inference-Scaling for Kernel Generation
   
   #
   
@@ -15,22 +15,34 @@
   #
   
 
-This section applies the post-training machinery of Section 1 to kernels. We start with supervised fine-tuning on kernel corpora, which grounds a base model in a kernel language but is capped by the demonstrations it imitates. We then turn to reinforcement learning from execution feedback, which lets the model learn from compiling and timing its own kernels and so surpass that ceiling, and close with how such a reward is designed and how models learn to cheat it.">
+This section studies how to get better kernels by spending more compute at generation time,
+holding the model fixed. We frame inference-time scaling along three axes, width (parallel
+best-of-N sampling), depth (sequential, feedback-conditioned refinement), and structured search
+(beam, tree, and evolutionary methods that maintain and improve populations of candidate
+kernels, including methods that search over how a kernel is decomposed into subproblems rather
+than over a monolithic artifact), plus an orthogonal reasoning-length knob. What makes all of
+this pay off for kernels is a cheap, automatic verifier: compile a candidate, check it against a
+reference, and time it, so we can always keep the best verified result. That single fact also
+makes the verifier the true bottleneck, so we devote a subsection to verification and cheating
+detection, the anti-hacking discipline that lets extra compute buy real speedups rather than
+reward hacking. The section closes with a live, follow-along demo that generates Neuron Kernel
+Interface (NKI) kernels for AWS Trainium using an agentic, training-free inference pipeline. The
+post-training machinery that produces the underlying policy is developed in Section 3.">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#343a40">
 <meta name="color-scheme" content="light dark"><meta property="og:url" content="https://neuron-science.github.io/llm_kernel_writing/docs/section-2/">
   <meta property="og:site_name" content="Teaching LLMs to Write System Kernels">
-  <meta property="og:title" content="Post-Training LLMs for Kernel Generation">
-  <meta property="og:description" content="Post-Training LLMs for Kernel Generation # Overview # This section applies the post-training machinery of Section 1 to kernels. We start with supervised fine-tuning on kernel corpora, which grounds a base model in a kernel language but is capped by the demonstrations it imitates. We then turn to reinforcement learning from execution feedback, which lets the model learn from compiling and timing its own kernels and so surpass that ceiling, and close with how such a reward is designed and how models learn to cheat it.">
+  <meta property="og:title" content="Inference-Scaling for Kernel Generation">
+  <meta property="og:description" content="Inference-Scaling for Kernel Generation # Overview # This section studies how to get better kernels by spending more compute at generation time, holding the model fixed. We frame inference-time scaling along three axes, width (parallel best-of-N sampling), depth (sequential, feedback-conditioned refinement), and structured search (beam, tree, and evolutionary methods that maintain and improve populations of candidate kernels, including methods that search over how a kernel is decomposed into subproblems rather than over a monolithic artifact), plus an orthogonal reasoning-length knob. What makes all of this pay off for kernels is a cheap, automatic verifier: compile a candidate, check it against a reference, and time it, so we can always keep the best verified result. That single fact also makes the verifier the true bottleneck, so we devote a subsection to verification and cheating detection, the anti-hacking discipline that lets extra compute buy real speedups rather than reward hacking. The section closes with a live, follow-along demo that generates Neuron Kernel Interface (NKI) kernels for AWS Trainium using an agentic, training-free inference pipeline. The post-training machinery that produces the underlying policy is developed in Section 3.">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="website">
-<title>Post-Training LLMs for Kernel Generation | Teaching LLMs to Write System Kernels</title>
+<title>Inference-Scaling for Kernel Generation | Teaching LLMs to Write System Kernels</title>
 <link rel="icon" href="/llm_kernel_writing/favicon.png" >
 <link rel="manifest" href="/llm_kernel_writing/manifest.json">
 <link rel="canonical" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-2/">
 <link rel="stylesheet" href="/llm_kernel_writing/book.min.27cffe658670f57112663ed746a421db277c2dd6549965c27f9ad0103cccd990.css" integrity="sha256-J8/&#43;ZYZw9XESZj7XRqQh2yd8LdZUmWXCf5rQEDzM2ZA=" crossorigin="anonymous">
   <script defer src="/llm_kernel_writing/fuse.min.js"></script>
-  <script defer src="/llm_kernel_writing/en.search.min.3a794c86b11580e135f99fb5a9d05275c7fdb605ecdf816dca53de45335cf6ca.js" integrity="sha256-OnlMhrEVgOE1&#43;Z&#43;1qdBSdcf9tgXs34FtylPeRTNc9so=" crossorigin="anonymous"></script>
+  <script defer src="/llm_kernel_writing/en.search.min.4ef56be7e65ddbf5c290f9e9540ecc218ceb2c95fac3ed7235d1512c035fb236.js" integrity="sha256-TvVr5&#43;Zd2/XCkPnpVA7MIYzrLJX6w&#43;1yNdFRLANfsjY=" crossorigin="anonymous"></script>
 <link rel="alternate" type="application/rss+xml" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-2/index.xml" title="Teaching LLMs to Write System Kernels" />
 <!--
 Made with Book Theme
@@ -210,7 +222,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-2/" class="active">Post-Training LLMs for Kernel Generation</a>
+    <a href="/llm_kernel_writing/docs/section-2/" class="active">Inference-Scaling for Kernel Generation</a>
   
 
           
@@ -223,25 +235,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-2/subsection-1/" class="">2.1 Supervised Fine-Tuning on Kernel Corpora</a>
-  
-
-          
-  <ul>
-    
-  </ul>
-
-        </li>
-      
-    
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="/llm_kernel_writing/docs/section-2/subsection-2/" class="">2.2 Reinforcement Learning from Execution Feedback</a>
+    <a href="/llm_kernel_writing/docs/section-2/subsection-1/" class="">2.1 Inference-Time Scaling for Kernel Code Reasoning</a>
   
 
           
@@ -259,7 +253,43 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-2/subsection-3/" class="">2.3 RL for Kernel Optimization and Reward Hacking</a>
+    <a href="/llm_kernel_writing/docs/section-2/subsection-2/" class="">2.2 Evolution-Based Approaches for Iterative Kernel Refinement</a>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/llm_kernel_writing/docs/section-2/subsection-3/" class="">2.3 Verification and Cheating Detection</a>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/llm_kernel_writing/docs/section-2/subsection-4/" class="">2.4 NKI Kernel Generation Using LLM Agents</a>
   
 
           
@@ -282,7 +312,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/" class="">Advanced Agentic Systems</a>
+    <a href="/llm_kernel_writing/docs/section-3/" class="">Post-Training LLMs for Kernel Generation</a>
   
 
           
@@ -295,25 +325,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/subsection-1/" class="">3.1 Single-Turn and Multi-Turn RL for Kernel Optimization</a>
-  
-
-          
-  <ul>
-    
-  </ul>
-
-        </li>
-      
-    
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="/llm_kernel_writing/docs/section-3/subsection-2/" class="">3.2 Evolution-Based Approaches for Iterative Kernel Refinement</a>
+    <a href="/llm_kernel_writing/docs/section-3/subsection-1/" class="">3.1 Supervised Fine-Tuning on Kernel Corpora</a>
   
 
           
@@ -331,7 +343,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/subsection-3/" class="">3.3 Inference-Time Scaling for Kernel Code Reasoning</a>
+    <a href="/llm_kernel_writing/docs/section-3/subsection-2/" class="">3.2 Reinforcement Learning from Execution Feedback</a>
   
 
           
@@ -349,7 +361,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/subsection-4/" class="">3.4 Triton Kernel Generation Using LLM Agents</a>
+    <a href="/llm_kernel_writing/docs/section-3/subsection-3/" class="">3.3 Single-Turn and Multi-Turn RL for Kernel Optimization</a>
   
 
           
@@ -367,7 +379,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/subsection-5/" class="">3.5 NKI Kernel Generation Using LLM Agents</a>
+    <a href="/llm_kernel_writing/docs/section-3/subsection-4/" class="">3.4 Reward Design for Kernel RL</a>
   
 
           
@@ -419,7 +431,7 @@ https://github.com/alex-shpak/hugo-book
     <img src="/llm_kernel_writing/svg/menu.svg" class="book-icon" alt="Menu" />
   </label>
 
-  <h3>Post-Training LLMs for Kernel Generation</h3>
+  <h3>Inference-Scaling for Kernel Generation</h3>
 
   <label for="toc-control">
     
@@ -438,9 +450,10 @@ https://github.com/alex-shpak/hugo-book
     <li><a href="#overview"><strong>Overview</strong></a></li>
     <li><a href="#contents-of-this-section"><strong>Contents of this section</strong></a>
       <ul>
-        <li><a href="#21-supervised-fine-tuning-on-kernel-corpora">2.1 Supervised Fine-Tuning on Kernel Corpora</a></li>
-        <li><a href="#22-reinforcement-learning-from-execution-feedback">2.2 Reinforcement Learning from Execution Feedback</a></li>
-        <li><a href="#23-rl-for-kernel-optimization-and-reward-hacking">2.3 RL for Kernel Optimization and Reward Hacking</a></li>
+        <li><a href="#21-inference-time-scaling-for-kernel-code-reasoning">2.1 Inference-Time Scaling for Kernel Code Reasoning</a></li>
+        <li><a href="#22-evolution-based-approaches-for-iterative-kernel-refinement">2.2 Evolution-Based Approaches for Iterative Kernel Refinement</a></li>
+        <li><a href="#23-verification-and-cheating-detection">2.3 Verification and Cheating Detection</a></li>
+        <li><a href="#24-nki-kernel-generation-using-llm-agents">2.4 NKI Kernel Generation Using LLM Agents</a></li>
       </ul>
     </li>
   </ul>
@@ -455,10 +468,10 @@ https://github.com/alex-shpak/hugo-book
 
       
       
-  <article class="markdown book-article"><h1 id="post-training-llms-for-kernel-generation">
-  <strong>Post-Training LLMs for Kernel Generation</strong>
+  <article class="markdown book-article"><h1 id="inference-scaling-for-kernel-generation">
+  <strong>Inference-Scaling for Kernel Generation</strong>
   
-  <a class="anchor" href="#post-training-llms-for-kernel-generation">#</a>
+  <a class="anchor" href="#inference-scaling-for-kernel-generation">#</a>
   
 </h1>
 <h2 id="overview">
@@ -467,34 +480,61 @@ https://github.com/alex-shpak/hugo-book
   <a class="anchor" href="#overview">#</a>
   
 </h2>
-<p>This section applies the post-training machinery of Section 1 to kernels. We start with supervised fine-tuning on kernel corpora, which grounds a base model in a kernel language but is capped by the demonstrations it imitates. We then turn to reinforcement learning from execution feedback, which lets the model learn from compiling and timing its own kernels and so surpass that ceiling, and close with how such a reward is designed and how models learn to cheat it.</p>
+<p>This section studies how to get better kernels by spending more compute <em>at generation time</em>,
+holding the model fixed. We frame inference-time scaling along three axes, width (parallel
+best-of-N sampling), depth (sequential, feedback-conditioned refinement), and structured search
+(beam, tree, and evolutionary methods that maintain and improve populations of candidate
+kernels, including methods that search over how a kernel is decomposed into subproblems rather
+than over a monolithic artifact), plus an orthogonal reasoning-length knob. What makes all of
+this pay off for kernels is a cheap, automatic verifier: compile a candidate, check it against a
+reference, and time it, so we can always keep the best verified result. That single fact also
+makes the verifier the true bottleneck, so we devote a subsection to verification and cheating
+detection, the anti-hacking discipline that lets extra compute buy real speedups rather than
+reward hacking. The section closes with a live, follow-along demo that generates Neuron Kernel
+Interface (NKI) kernels for AWS Trainium using an agentic, training-free inference pipeline. The
+post-training machinery that produces the underlying policy is developed in Section 3.</p>
 <h2 id="contents-of-this-section">
   <strong>Contents of this section</strong>
   
   <a class="anchor" href="#contents-of-this-section">#</a>
   
 </h2>
-<h3 id="21-supervised-fine-tuning-on-kernel-corpora">
-  <a href="/llm_kernel_writing/docs/section-2/subsection-1/">2.1 Supervised Fine-Tuning on Kernel Corpora</a>
+<h3 id="21-inference-time-scaling-for-kernel-code-reasoning">
+  <a href="/llm_kernel_writing/docs/section-2/subsection-1/">2.1 Inference-Time Scaling for Kernel Code Reasoning</a>
   
-  <a class="anchor" href="#21-supervised-fine-tuning-on-kernel-corpora">#</a>
-  
-</h3>
-<p>Building a <em>(task, kernel)</em> corpus, through sampling, filtering, and augmentation, and training a base model to imitate it, along with the limits of imitation.</p>
-<h3 id="22-reinforcement-learning-from-execution-feedback">
-  <a href="/llm_kernel_writing/docs/section-2/subsection-2/">2.2 Reinforcement Learning from Execution Feedback</a>
-  
-  <a class="anchor" href="#22-reinforcement-learning-from-execution-feedback">#</a>
+  <a class="anchor" href="#21-inference-time-scaling-for-kernel-code-reasoning">#</a>
   
 </h3>
-<p>Casting kernel generation as RL: prompt-only tasks, the compile-correct-fast reward from running each kernel, and the curriculum that keeps training on solvable tasks.</p>
-<h3 id="23-rl-for-kernel-optimization-and-reward-hacking">
-  <a href="/llm_kernel_writing/docs/section-2/subsection-3/">2.3 RL for Kernel Optimization and Reward Hacking</a>
+<p>Frames inference-time compute scaling across three axes (width, depth, and structured search)
+plus reasoning length, develops the depth axis of feedback-conditioned sequential refinement, and
+argues that a trustworthy verifier is what lets extra compute buy real speedups.</p>
+<h3 id="22-evolution-based-approaches-for-iterative-kernel-refinement">
+  <a href="/llm_kernel_writing/docs/section-2/subsection-2/">2.2 Evolution-Based Approaches for Iterative Kernel Refinement</a>
   
-  <a class="anchor" href="#23-rl-for-kernel-optimization-and-reward-hacking">#</a>
+  <a class="anchor" href="#22-evolution-based-approaches-for-iterative-kernel-refinement">#</a>
   
 </h3>
-<p>Designing the reward from execution signals, the ways models game it, and the verification pipeline that keeps the reward honest.</p>
+<p>Explores the structured-search axis in depth: evolutionary and search-based methods that maintain
+and improve populations of candidate kernels over successive iterations, including approaches that
+search over the modular decomposition itself for kernels that are more token-efficient,
+transferable, and reliably verifiable.</p>
+<h3 id="23-verification-and-cheating-detection">
+  <a href="/llm_kernel_writing/docs/section-2/subsection-3/">2.3 Verification and Cheating Detection</a>
+  
+  <a class="anchor" href="#23-verification-and-cheating-detection">#</a>
+  
+</h3>
+<p>Why scaling search scales exposure to evaluator exploits: the reward-hacking taxonomy, the
+verification pipeline (sandbox isolation, robust correctness, genuine-kernel checks, robust
+timing), and the anti-cheating benchmarks that keep measured speedups honest.</p>
+<h3 id="24-nki-kernel-generation-using-llm-agents">
+  <a href="/llm_kernel_writing/docs/section-2/subsection-4/">2.4 NKI Kernel Generation Using LLM Agents</a>
+  
+  <a class="anchor" href="#24-nki-kernel-generation-using-llm-agents">#</a>
+  
+</h3>
+<p>A live, follow-along walkthrough of generating Neuron Kernel Interface (NKI) kernels for
+AWS Trainium using an agentic LLM pipeline.</p>
 </article>
  
       
@@ -528,8 +568,8 @@ https://github.com/alex-shpak/hugo-book
     <span>
     
       <a href="/llm_kernel_writing/docs/section-2/subsection-1/" class="flex align-center book-icon">
-        <span>2.1 Supervised Fine-Tuning on Kernel Corpora</span>
-        <img src="/llm_kernel_writing/svg/forward.svg" class="book-icon" alt="Next" title="2.1 Supervised Fine-Tuning on Kernel Corpora" />
+        <span>2.1 Inference-Time Scaling for Kernel Code Reasoning</span>
+        <img src="/llm_kernel_writing/svg/forward.svg" class="book-icon" alt="Next" title="2.1 Inference-Time Scaling for Kernel Code Reasoning" />
       </a>
     
     </span>
@@ -567,9 +607,10 @@ https://github.com/alex-shpak/hugo-book
     <li><a href="#overview"><strong>Overview</strong></a></li>
     <li><a href="#contents-of-this-section"><strong>Contents of this section</strong></a>
       <ul>
-        <li><a href="#21-supervised-fine-tuning-on-kernel-corpora">2.1 Supervised Fine-Tuning on Kernel Corpora</a></li>
-        <li><a href="#22-reinforcement-learning-from-execution-feedback">2.2 Reinforcement Learning from Execution Feedback</a></li>
-        <li><a href="#23-rl-for-kernel-optimization-and-reward-hacking">2.3 RL for Kernel Optimization and Reward Hacking</a></li>
+        <li><a href="#21-inference-time-scaling-for-kernel-code-reasoning">2.1 Inference-Time Scaling for Kernel Code Reasoning</a></li>
+        <li><a href="#22-evolution-based-approaches-for-iterative-kernel-refinement">2.2 Evolution-Based Approaches for Iterative Kernel Refinement</a></li>
+        <li><a href="#23-verification-and-cheating-detection">2.3 Verification and Cheating Detection</a></li>
+        <li><a href="#24-nki-kernel-generation-using-llm-agents">2.4 NKI Kernel Generation Using LLM Agents</a></li>
       </ul>
     </li>
   </ul>

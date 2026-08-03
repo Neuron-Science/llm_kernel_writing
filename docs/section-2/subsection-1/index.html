@@ -4,29 +4,34 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="
-  Supervised Fine-Tuning on Kernel Corpora
+  Inference-Time Scaling for Kernel Code Reasoning
   
   #
   
 
 
 
-Section 1 assembled the target of this tutorial. It laid out the accelerator hardware a kernel must run on (Section 1.1), showed how the compiler stack handles the common case while leaving a long tail of kernels to be written by hand (Section 1.2), and introduced the CUDA, Triton, and NKI languages those kernels are written in (Section 1.3) — closing on the point that the kernel is precisely the artifact we would now like an LLM to produce. This section takes up that problem: how to post-train a general-purpose model into a capable kernel generator.">
+
+
+  
+
+
+There are two ways to get a better kernel out of a language model: train a stronger model, or spend more compute at generation time running a fixed model harder. This section takes the second route, and this subsection frames the whole design space it opens up. Inference-time scaling is the practice of trading extra compute at generation time, more samples, more reasoning tokens, more search, for a better answer, holding the model fixed. It is the counterpart to the training-time scaling of Section 3: rather than post-train a stronger policy, we run a fixed policy harder. The subsections that follow instantiate this design space, structured evolutionary search in Section 2.2, resting throughout on the verifier that Section 2.3 hardens.">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#343a40">
 <meta name="color-scheme" content="light dark"><meta property="og:url" content="https://neuron-science.github.io/llm_kernel_writing/docs/section-2/subsection-1/">
   <meta property="og:site_name" content="Teaching LLMs to Write System Kernels">
-  <meta property="og:title" content="2.1 Supervised Fine-Tuning on Kernel Corpora">
-  <meta property="og:description" content="Supervised Fine-Tuning on Kernel Corpora # Section 1 assembled the target of this tutorial. It laid out the accelerator hardware a kernel must run on (Section 1.1), showed how the compiler stack handles the common case while leaving a long tail of kernels to be written by hand (Section 1.2), and introduced the CUDA, Triton, and NKI languages those kernels are written in (Section 1.3) — closing on the point that the kernel is precisely the artifact we would now like an LLM to produce. This section takes up that problem: how to post-train a general-purpose model into a capable kernel generator.">
+  <meta property="og:title" content="2.1 Inference-Time Scaling for Kernel Code Reasoning">
+  <meta property="og:description" content="Inference-Time Scaling for Kernel Code Reasoning # There are two ways to get a better kernel out of a language model: train a stronger model, or spend more compute at generation time running a fixed model harder. This section takes the second route, and this subsection frames the whole design space it opens up. Inference-time scaling is the practice of trading extra compute at generation time, more samples, more reasoning tokens, more search, for a better answer, holding the model fixed. It is the counterpart to the training-time scaling of Section 3: rather than post-train a stronger policy, we run a fixed policy harder. The subsections that follow instantiate this design space, structured evolutionary search in Section 2.2, resting throughout on the verifier that Section 2.3 hardens.">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="website">
-<title>2.1 Supervised Fine-Tuning on Kernel Corpora | Teaching LLMs to Write System Kernels</title>
+<title>2.1 Inference-Time Scaling for Kernel Code Reasoning | Teaching LLMs to Write System Kernels</title>
 <link rel="icon" href="/llm_kernel_writing/favicon.png" >
 <link rel="manifest" href="/llm_kernel_writing/manifest.json">
 <link rel="canonical" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-2/subsection-1/">
 <link rel="stylesheet" href="/llm_kernel_writing/book.min.27cffe658670f57112663ed746a421db277c2dd6549965c27f9ad0103cccd990.css" integrity="sha256-J8/&#43;ZYZw9XESZj7XRqQh2yd8LdZUmWXCf5rQEDzM2ZA=" crossorigin="anonymous">
   <script defer src="/llm_kernel_writing/fuse.min.js"></script>
-  <script defer src="/llm_kernel_writing/en.search.min.3a794c86b11580e135f99fb5a9d05275c7fdb605ecdf816dca53de45335cf6ca.js" integrity="sha256-OnlMhrEVgOE1&#43;Z&#43;1qdBSdcf9tgXs34FtylPeRTNc9so=" crossorigin="anonymous"></script>
+  <script defer src="/llm_kernel_writing/en.search.min.4ef56be7e65ddbf5c290f9e9540ecc218ceb2c95fac3ed7235d1512c035fb236.js" integrity="sha256-TvVr5&#43;Zd2/XCkPnpVA7MIYzrLJX6w&#43;1yNdFRLANfsjY=" crossorigin="anonymous"></script>
 <link rel="alternate" type="application/rss+xml" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-2/subsection-1/index.xml" title="Teaching LLMs to Write System Kernels" />
 <!--
 Made with Book Theme
@@ -206,7 +211,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-2/" class="">Post-Training LLMs for Kernel Generation</a>
+    <a href="/llm_kernel_writing/docs/section-2/" class="">Inference-Scaling for Kernel Generation</a>
   
 
           
@@ -219,25 +224,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-2/subsection-1/" class="active">2.1 Supervised Fine-Tuning on Kernel Corpora</a>
-  
-
-          
-  <ul>
-    
-  </ul>
-
-        </li>
-      
-    
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="/llm_kernel_writing/docs/section-2/subsection-2/" class="">2.2 Reinforcement Learning from Execution Feedback</a>
+    <a href="/llm_kernel_writing/docs/section-2/subsection-1/" class="active">2.1 Inference-Time Scaling for Kernel Code Reasoning</a>
   
 
           
@@ -255,7 +242,43 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-2/subsection-3/" class="">2.3 RL for Kernel Optimization and Reward Hacking</a>
+    <a href="/llm_kernel_writing/docs/section-2/subsection-2/" class="">2.2 Evolution-Based Approaches for Iterative Kernel Refinement</a>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/llm_kernel_writing/docs/section-2/subsection-3/" class="">2.3 Verification and Cheating Detection</a>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="/llm_kernel_writing/docs/section-2/subsection-4/" class="">2.4 NKI Kernel Generation Using LLM Agents</a>
   
 
           
@@ -278,7 +301,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/" class="">Advanced Agentic Systems</a>
+    <a href="/llm_kernel_writing/docs/section-3/" class="">Post-Training LLMs for Kernel Generation</a>
   
 
           
@@ -291,25 +314,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/subsection-1/" class="">3.1 Single-Turn and Multi-Turn RL for Kernel Optimization</a>
-  
-
-          
-  <ul>
-    
-  </ul>
-
-        </li>
-      
-    
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="/llm_kernel_writing/docs/section-3/subsection-2/" class="">3.2 Evolution-Based Approaches for Iterative Kernel Refinement</a>
+    <a href="/llm_kernel_writing/docs/section-3/subsection-1/" class="">3.1 Supervised Fine-Tuning on Kernel Corpora</a>
   
 
           
@@ -327,7 +332,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/subsection-3/" class="">3.3 Inference-Time Scaling for Kernel Code Reasoning</a>
+    <a href="/llm_kernel_writing/docs/section-3/subsection-2/" class="">3.2 Reinforcement Learning from Execution Feedback</a>
   
 
           
@@ -345,7 +350,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/subsection-4/" class="">3.4 Triton Kernel Generation Using LLM Agents</a>
+    <a href="/llm_kernel_writing/docs/section-3/subsection-3/" class="">3.3 Single-Turn and Multi-Turn RL for Kernel Optimization</a>
   
 
           
@@ -363,7 +368,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="/llm_kernel_writing/docs/section-3/subsection-5/" class="">3.5 NKI Kernel Generation Using LLM Agents</a>
+    <a href="/llm_kernel_writing/docs/section-3/subsection-4/" class="">3.4 Reward Design for Kernel RL</a>
   
 
           
@@ -415,7 +420,7 @@ https://github.com/alex-shpak/hugo-book
     <img src="/llm_kernel_writing/svg/menu.svg" class="book-icon" alt="Menu" />
   </label>
 
-  <h3>2.1 Supervised Fine-Tuning on Kernel Corpora</h3>
+  <h3>2.1 Inference-Time Scaling for Kernel Code Reasoning</h3>
 
   <label for="toc-control">
     
@@ -431,15 +436,14 @@ https://github.com/alex-shpak/hugo-book
   
 <nav id="TableOfContents">
   <ul>
-    <li><a href="#sft-data-curation-with-kernel-corpora">SFT Data Curation with Kernel Corpora</a>
-      <ul>
-        <li><a href="#sampling">Sampling</a></li>
-        <li><a href="#data-augmentation">Data augmentation</a></li>
-      </ul>
-    </li>
-    <li><a href="#training-on-the-kernel-corpus">Training on the kernel corpus</a></li>
-    <li><a href="#limitations">Limitations</a></li>
-    <li><a href="#further-reading">Further Reading</a></li>
+    <li><a href="#three-axes-of-test-time-compute">Three axes of test-time compute</a></li>
+    <li><a href="#width-parallel-sampling-and-best-of-n">Width: parallel sampling and Best-of-N</a></li>
+    <li><a href="#depth-sequential-refinement">Depth: sequential refinement</a></li>
+    <li><a href="#structured-search-width-times-depth">Structured search: width times depth</a></li>
+    <li><a href="#the-reasoning-token-axis-more-is-not-always-better">The reasoning-token axis: more is not always better</a></li>
+    <li><a href="#verification-is-the-enabler-and-the-bottleneck">Verification is the enabler and the bottleneck</a></li>
+    <li><a href="#takeaways">Takeaways</a></li>
+    <li><a href="#references">References</a></li>
   </ul>
 </nav>
 
@@ -452,29 +456,17 @@ https://github.com/alex-shpak/hugo-book
 
       
       
-  <article class="markdown book-article"><h1 id="supervised-fine-tuning-on-kernel-corpora">
-  <strong>Supervised Fine-Tuning on Kernel Corpora</strong>
+  <article class="markdown book-article"><h1 id="inference-time-scaling-for-kernel-code-reasoning">
+  <strong>Inference-Time Scaling for Kernel Code Reasoning</strong>
   
-  <a class="anchor" href="#supervised-fine-tuning-on-kernel-corpora">#</a>
+  <a class="anchor" href="#inference-time-scaling-for-kernel-code-reasoning">#</a>
   
 </h1>
-
-
-<p>Section 1 assembled the <em>target</em> of this tutorial. It laid out the accelerator hardware a kernel must run on (Section 1.1), showed how the compiler stack handles the common case while leaving a <em>long tail</em> of kernels to be written by hand (Section 1.2), and introduced the CUDA, Triton, and NKI languages those kernels are written in (Section 1.3) — closing on the point that the kernel is precisely the artifact we would now like an LLM to produce. This section takes up that problem: how to <em>post-train</em> a general-purpose model into a capable kernel generator.</p>
-<p>The gap to close is real. A pretrained LLM has read an enormous amount of general text and code, but it has never been trained specifically to be a <em>kernel-writing agent</em>. Asked to produce a CUDA, Triton, or NKI kernel for a given operator, hardware target, and set of constraints, a base model will often return code that is syntactically invalid or poorly designed — mixing APIs, inventing nonexistent intrinsics, or emitting broken launch configurations.</p>
-<p><strong>Supervised fine-tuning (SFT)</strong> is the first and most direct remedy: we assemble a corpus of high-quality <em>(task, kernel)</em> examples and train the model to imitate them via next-token prediction. This does two things at once. It grounds the model in the basic syntax and APIs of the target kernels — often enough on its own to yield valid, idiomatic code — and it reshapes the model&rsquo;s behavioral prior toward the right region of the output space. That prior is useful in itself, and it also gives later post-training (such as the reinforcement learning of Section 2.2) a much stronger starting point.</p>
-<h2 id="sft-data-curation-with-kernel-corpora">
-  SFT Data Curation with Kernel Corpora
-  
-  <a class="anchor" href="#sft-data-curation-with-kernel-corpora">#</a>
-  
-</h2>
-<p>Hand-written or agent-written kernels exist for the <em>long tail</em> of AI workloads, fused GEMM epilogues, FlashAttention-style online softmax, MoE routing, quantized/heterogeneous fusion. Using the existing kernel examples, the SFT data can be constructed as follows:</p>
 
 <link rel="stylesheet" href="/llm_kernel_writing/katex/katex.min.css" />
 <script defer src="/llm_kernel_writing/katex/katex.min.js"></script>
 
-<script defer src="/llm_kernel_writing/katex/auto-render.min.js" onload="renderMathInElement(document.body, {
+  <script defer src="/llm_kernel_writing/katex/auto-render.min.js" onload="renderMathInElement(document.body, {
   &#34;delimiters&#34;: [
     {&#34;left&#34;: &#34;$$&#34;, &#34;right&#34;: &#34;$$&#34;, &#34;display&#34;: true},
     {&#34;left&#34;: &#34;$&#34;, &#34;right&#34;: &#34;$&#34;, &#34;display&#34;: false},
@@ -484,524 +476,171 @@ https://github.com/alex-shpak/hugo-book
 }
 );"></script>
 
-<span>\[ \mathcal{D}_{SFT} = \big\{ (x^{(i)}, y^{(i)}) \big\}_{i=1}^{N}, \]</span>
-<p>where each <strong>prompt</strong> 
-<span>
-  \( x^{(i)} \)
-  </span>
 
- encodes everything the model is given as input, and each <strong>target</strong> 
-<span>
-  \( y^{(i)} \)
-  </span>
-
- is the desired output. For kernel generation, a prompt 
-<span>
-  \( x \)
-  </span>
-
- typically bundles together the operator specification (e.g., a reference PyTorch function), the hardware target and constraints (dtype, shapes, memory limits), and any instruction or few-shot framing; the target 
-<span>
-  \( y \)
-  </span>
-
- is a reference kernel (e.g., a Triton program) that correctly and efficiently implements the operator.</p>
-<p>For instance, <em>TritonRL</em>&rsquo;s task instruction explicitly invites the model to fuse operators and explore algorithmic improvements (naming examples such as combining a matmul with a following activation, or using an online-softmax formulation) and pins the output format (real compilable code, a fixed module name, no pseudocode or test harness), which both biases generation toward the fused long-tail kernels we care about and keeps completions parseable for automatic verification. Both 
-<span>
-  \( x \)
-  </span>
-
- and 
-<span>
-  \( y \)
-  </span>
-
- are token sequences drawn from a shared vocabulary 
-<span>
-  \( \mathcal{V} \)
-  </span>
-
-:</p>
-
-<span>\[ x = (x_1, \dots, x_{|x|}), \qquad y = (y_1, \dots, y_{|y|}), \qquad x_j, y_t \in \mathcal{V}. \]</span>
-<p>As a concrete example, consider a training pair 
-<span>
-  \( (x, y) \)
-  </span>
-
- for a <em>fused RMSNorm</em> kernel. <strong>Root-mean-square normalization (RMSNorm)</strong> is a normalization layer used throughout modern transformers: it rescales each feature vector by its root-mean-square magnitude, then applies a learned per-feature gain. Concretely, for one input row 
-<span>
-  \( a \in \mathbb{R}^{N} \)
-  </span>
-
- (the last dimension of the tensor) with a learnable weight 
-<span>
-  \( w \in \mathbb{R}^{N} \)
-  </span>
-
- and a small constant 
-<span>
-  \( \epsilon \)
-  </span>
-
- for numerical stability, the output 
-<span>
-  \( b \in \mathbb{R}^{N} \)
-  </span>
-
- is</p>
-
-<span>\[ \mathrm{RMS}(a) = \sqrt{\frac{1}{N}\sum_{j=1}^{N} a_j^{2} + \epsilon}, \qquad b_j = \frac{a_j}{\mathrm{RMS}(a)}\, w_j \quad (j = 1, \dots, N). \]</span>
-<p>Unlike LayerNorm, RMSNorm does not subtract the mean — it only divides by the RMS, which is why the reference below computes a reciprocal square root of the mean of squares and never centers the data.</p>
-<p>The <strong>fused</strong> qualifier refers to <em>how</em> this is executed on the accelerator. Written naively, the layer is a chain of separate operators — square, a reduction to form the mean, add 
-<span>
-  \( \epsilon \)
-  </span>
-
-, reciprocal-square-root, and two element-wise multiplies — and, as Section 1.3 discussed, running each as its own kernel would stream the row out to HBM and back between every step. RMSNorm has very low arithmetic intensity (a handful of FLOPs per element), so it is firmly memory-bound and those round-trips dominate its cost. A <em>fused</em> kernel performs the entire computation in one launch, loading 
-<span>
-  \( a \)
-  </span>
-
- into on-chip memory once, computing 
-<span>
-  \( \mathrm{RMS}(a) \)
-  </span>
-
- and the rescaling there, and writing only 
-<span>
-  \( b \)
-  </span>
-
- back — exactly the kind of long-tail fusion that motivates hand-written kernels.</p>
-<p>The training pair below encodes this task. The prompt 
-<span>
-  \( x \)
-  </span>
-
- specifies the operator, the reference semantics, and the hardware target; the target 
-<span>
-  \( y \)
-  </span>
-
- is the reference kernel the model is trained to reproduce.</p>
-<p><strong>Prompt 
-<span>
-  \( x \)
-  </span>
-
-:</strong></p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Write a Triton kernel that computes fused RMSNorm over the last dimension.
-</span></span><span style="display:flex;"><span>Input:  x of shape (M, N), fp16, on NVIDIA H100
-</span></span><span style="display:flex;"><span>Output: y of shape (M, N), fp16
-</span></span><span style="display:flex;"><span>Reference (PyTorch):
-</span></span><span style="display:flex;"><span>    def rmsnorm(x, w, eps=1e-6):
-</span></span><span style="display:flex;"><span>        rms = x.pow(2).mean(dim=-1, keepdim=True).add(eps).rsqrt()
-</span></span><span style="display:flex;"><span>        return x * rms * w
-</span></span></code></pre></div><p><strong>Target 
-<span>
-  \( y \)
-  </span>
-
-:</strong></p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> triton
-</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> triton.language <span style="color:#66d9ef">as</span> tl
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">@triton.jit</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">rmsnorm_kernel</span>(x_ptr, w_ptr, y_ptr, N, eps,
-</span></span><span style="display:flex;"><span>                   BLOCK_N: tl<span style="color:#f92672">.</span>constexpr):
-</span></span><span style="display:flex;"><span>    row <span style="color:#f92672">=</span> tl<span style="color:#f92672">.</span>program_id(<span style="color:#ae81ff">0</span>)
-</span></span><span style="display:flex;"><span>    cols <span style="color:#f92672">=</span> tl<span style="color:#f92672">.</span>arange(<span style="color:#ae81ff">0</span>, BLOCK_N)
-</span></span><span style="display:flex;"><span>    mask <span style="color:#f92672">=</span> cols <span style="color:#f92672">&lt;</span> N
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    x <span style="color:#f92672">=</span> tl<span style="color:#f92672">.</span>load(x_ptr <span style="color:#f92672">+</span> row <span style="color:#f92672">*</span> N <span style="color:#f92672">+</span> cols, mask<span style="color:#f92672">=</span>mask, other<span style="color:#f92672">=</span><span style="color:#ae81ff">0.0</span>)<span style="color:#f92672">.</span>to(tl<span style="color:#f92672">.</span>float32)
-</span></span><span style="display:flex;"><span>    rms <span style="color:#f92672">=</span> tl<span style="color:#f92672">.</span>rsqrt(tl<span style="color:#f92672">.</span>sum(x <span style="color:#f92672">*</span> x, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>) <span style="color:#f92672">/</span> N <span style="color:#f92672">+</span> eps)
-</span></span><span style="display:flex;"><span>    w <span style="color:#f92672">=</span> tl<span style="color:#f92672">.</span>load(w_ptr <span style="color:#f92672">+</span> cols, mask<span style="color:#f92672">=</span>mask, other<span style="color:#f92672">=</span><span style="color:#ae81ff">0.0</span>)<span style="color:#f92672">.</span>to(tl<span style="color:#f92672">.</span>float32)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>    y <span style="color:#f92672">=</span> (x <span style="color:#f92672">*</span> rms) <span style="color:#f92672">*</span> w
-</span></span><span style="display:flex;"><span>    tl<span style="color:#f92672">.</span>store(y_ptr <span style="color:#f92672">+</span> row <span style="color:#f92672">*</span> N <span style="color:#f92672">+</span> cols, y<span style="color:#f92672">.</span>to(tl<span style="color:#f92672">.</span>float16), mask<span style="color:#f92672">=</span>mask)
-</span></span></code></pre></div><p><strong>A brief description of the ground-truth Triton kernel</strong>: The fusion <em>is</em> the structure of the code. The whole square → reduce → reciprocal-square-root → rescale → gain chain lives in a single <code>@triton.jit</code> function, so it launches once. The row is pulled from HBM by exactly one <code>tl.load</code> at the top and the result written by exactly one <code>tl.store</code> at the bottom; in between, every intermediate, <code>x * x</code>, the reduced sum, <code>rms</code>, the gain <code>w</code>, the product <code>y</code>, is a value the compiler keeps in on-chip registers and passes straight to the next operation, never spilling it to HBM and reading it back.</p>
-<p>That &ldquo;written once, consumed immediately&rdquo; shape is what lets the intermediates stay in registers, and it has a name in compiler terms: <strong>SSA (static single assignment)</strong>, the intermediate form Triton and LLVM lower through (recall the Triton IR → LLVM IR → PTX → SASS path of Section 1.3). SSA&rsquo;s one rule is that every value is assigned exactly once; a chain that reuses a name, such as</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>t = a * a        →   t1 = a * a
-</span></span><span style="display:flex;"><span>t = t / N        →   t2 = t1 / N
-</span></span><span style="display:flex;"><span>t = t + eps      →   t3 = t2 + eps
-</span></span></code></pre></div><p>is rewritten into distinct versioned values <code>t1, t2, t3</code>. Because each value is defined once and its uses are explicit, the compiler can see that <code>t1</code>, <code>t2</code>, <code>t3</code> are produced and consumed entirely within the kernel and never need a memory address — so they are allocated to registers rather than materialized in HBM. (The Python-level names <code>x</code>, <code>rms</code>, <code>y</code> you write are just ordinary variables; SSA is what they <em>become</em> after lowering.) A separate but complementary detail visible in the code is the <code>.to(tl.float32)</code> / <code>.to(tl.float16)</code> pair: the reduction is accumulated in fp32 for numerical accuracy and only the final result is cast back to the fp16 output dtype — and keeping that fp32 working copy costs nothing precisely because it already lives in registers.</p>
-<p>An <strong>unfused implementation</strong> would instead be several kernels — square, mean, rsqrt, multiply — each reloading its input from HBM and writing its output back. For a chain of 
-<span>
-  \( k \)
-  </span>
-
- such ops over a row of 
-<span>
-  \( n \)
-  </span>
-
- bytes that is roughly 
-<span>
-  \( 2kn \)
-  </span>
-
- bytes of HBM traffic, versus about 
-<span>
-  \( 2n \)
-  </span>
-
- for the fused kernel (one read, one write) — the 
-<span>
-  \( k \)
-  </span>
-
--fold reduction from Section 1.3. Keeping the reduction and the rescale on-chip is what makes this memory-bound operator efficient, and it is the concrete payoff the prompt $x$ was asking for when it said <em>fused</em>. The one simplification here is that the kernel assumes a full row fits in one tile (
-<span>
-  \( \texttt{BLOCK\_N} \ge N \)
-  </span>
-
-, one program per row); a kernel for very large 
-<span>
-  \( N \)
-  </span>
-
- would tile the reduction across blocks and combine partial sums, but the fusion principle is unchanged.</p>
-<p>The corpus 
-<span>
-  \( \mathcal{D}_{SFT} \)
-  </span>
-
- is simply a collection of many such pairs spanning different operators, shapes, dtypes, and hardware targets.</p>
-<h3 id="sampling">
-  Sampling
+<p>There are two ways to get a better kernel out of a language model: train a stronger model, or spend more compute at generation time running a fixed model harder. This section takes the second route, and this subsection frames the whole design space it opens up. <strong>Inference-time scaling</strong> is the practice of trading extra compute at generation time, more samples, more reasoning tokens, more search, for a better answer, holding the model fixed. It is the counterpart to the <em>training-time</em> scaling of Section 3: rather than post-train a stronger policy, we run a fixed policy harder. The subsections that follow instantiate this design space, structured evolutionary search in Section 2.2, resting throughout on the verifier that Section 2.3 hardens.</p>
+<div style="text-align: center; margin: 2rem 0;">
+  <img src="inference_time_scaling.jpg"
+       alt="Two log-scale plots of benchmark accuracy versus compute: accuracy rises with inference-time compute on the left and with training-time compute on the right"
+       style="width: 85%; height: auto; object-fit: contain;" />
+  <p style="font-size: 0.9em; color: #666; margin-top: 0.4rem;">
+    Two routes to higher benchmark accuracy. <em>Left:</em> holding the model fixed and spending more compute at inference time. <em>Right:</em> spending more compute during training to produce a stronger model. This section studies the left-hand curve for kernel generation; Section 3 studies the right (credit: Sebastian Raschka).
+  </p>
+</div>
+<p>Kernel generation is an unusually good fit for inference-time scaling, for one structural reason: it has a <strong>cheap, automatic verifier</strong>. Compiling a kernel, checking its output against a reference, and timing it is fully automated, so unlike open-ended text generation, we can always <em>keep the best verified candidate</em> out of however many we produce. That single fact is what makes spending more compute pay off, and it is also what makes the verifier the true bottleneck, as the last part of this subsection argues and Section 2.3 develops in full.</p>
+<h2 id="three-axes-of-test-time-compute">
+  Three axes of test-time compute
   
-  <a class="anchor" href="#sampling">#</a>
+  <a class="anchor" href="#three-axes-of-test-time-compute">#</a>
   
-</h3>
-<p>SFT targets are drawn from two broad sources: <strong>expert examples</strong> (human-written or library/vendor kernels) and <strong>teacher models</strong> (a strong model prompted to synthesize kernels for each task). In both cases the raw samples are noisy, so the practical question is <em>how to sample and select</em> the pairs that go into the corpus.</p>
-<p>It is worth being precise about what &ldquo;sampling&rdquo; means for each source, because the word carries two related senses. There is no single canonical kernel for a task — many different Triton programs correctly and efficiently implement the same operator, differing in tiling, block sizes, and scheduling. For a <strong>teacher model</strong>, sampling is meant in its literal statistical sense: as Section 2.2 will make precise, an autoregressive model defines a probability distribution 
-<span>
-  \( \pi_{\text{teacher}}(y \mid x) \)
-  </span>
-
- over kernels 
-<span>
-  \( y \)
-  </span>
-
- given a task prompt 
-<span>
-  \( x \)
-  </span>
-
-, and to <em>sample</em> is to draw a concrete kernel from that distribution by generating tokens with randomness (a nonzero decoding temperature) rather than always taking the single highest-probability (greedy) continuation. Because the draw is stochastic, prompting the teacher on the same task twice yields two different kernels — which is precisely what lets us collect many distinct candidates per task. For <strong>expert examples</strong>, &ldquo;sampling&rdquo; is meant in the looser sense of selecting which existing kernels to pull into the corpus.</p>
-<p>Either way the raw draws are noisy: a stochastic teacher produces some kernels that do not compile or are subtly wrong, and mined corpora contain low-value or duplicated code. So the practical work has two parts — <em>sampling</em> (drawing candidates so they are diverse and plentiful) and <em>selection</em> (filtering the draws down to trustworthy training targets). Several complementary techniques address these:</p>
+</h2>
+<p>Test-time compute can be spent along three axes, and every system in this section is one choice among them:</p>
+<div style="text-align: center; margin: 2rem 0;">
+  <img src="three_axes_test_time_compute.svg"
+       alt="Three axes of test-time compute: width as the vertical axis (parallel samples, best-of-N), depth as the horizontal axis (sequential refinement turns), structured search in the corner where both are high, and reasoning length as an orthogonal fourth knob"
+       style="width: 85%; height: auto; object-fit: contain;" />
+  <p style="font-size: 0.9em; color: #666; margin-top: 0.4rem;">
+    Test-time compute spent along three axes. <em>Width</em> (vertical) draws parallel samples; <em>depth</em> (horizontal) refines one trajectory over feedback turns; <em>structured search</em> sits in the corner where both are high, combining width and depth and pruning by fitness (Section 2.2). Reasoning length is an orthogonal fourth knob: how many tokens the model emits per generation.
+  </p>
+</div>
 <ul>
-<li>
-<p><strong>Parallel sampling (for diversity).</strong> For each task, draw 
-<span>
-  \( K \)
-  </span>
-
- candidate kernels from the teacher via stochastic decoding rather than a single greedy decode, and <em>keep all valid candidates</em> rather than selecting one. Because there is no single canonical kernel for a task, different samples explore different tiling and scheduling strategies, so retaining several implementations per task broadens the corpus and prevents the model from collapsing onto a single style. This is why systems like <em>TritonRL</em> sample many candidate kernels per task (up to ten in their case), each paired with its own reasoning trace, rather than keeping a single generation. Concretely, <em>TritonRL</em> draws its tasks from <strong>KernelBook</strong> (a dataset of PyTorch reference implementations, not to be confused with the <em>KernelBench</em> evaluation benchmark), takes roughly 11.6K executable references, wraps each in an instruction to produce a Triton kernel, and prompts a frontier <em>teacher</em> model for up to ten completions per task; the surviving pairs distill that teacher&rsquo;s expertise into a much smaller 8B student. The teacher is itself a design choice: distilling the same task set from two different teachers (DeepSeek-R1 and GPT-OSS-120B) yields two distinct students of roughly 60K examples each.</p>
-<p>To make this concrete, the same fused RMSNorm task from above admits several valid but distinct kernels. Below are Triton sketches of three; they compute identical RMSNorm but differ in how the row is tiled and reduced.</p>
-<p><strong>(A) One row per program</strong> — the kernel from earlier: the whole row fits in one tile, reduced in a single pass. <code>row = tl.program_id(0)</code> assigns one program to each row, and <code>cols = tl.arange(0, BLOCK_N)</code> (with <code>BLOCK_N &gt;= N</code>) covers the entire row in a single tile, so the whole reduction is the one <code>tl.sum(x * x, axis=0)</code>; the row is read from HBM exactly once by the single <code>tl.load</code> and the result written by the single <code>tl.store</code>.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#a6e22e">@triton.jit</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">rmsnorm_A</span>(x_ptr, w_ptr, y_ptr, N, eps, BLOCK_N: tl<span style="color:#f92672">.</span>constexpr):
-</span></span><span style="display:flex;"><span>    row  <span style="color:#f92672">=</span> tl<span style="color:#f92672">.</span>program_id(<span style="color:#ae81ff">0</span>)              <span style="color:#75715e"># one program per row</span>
-</span></span><span style="display:flex;"><span>    cols <span style="color:#f92672">=</span> tl<span style="color:#f92672">.</span>arange(<span style="color:#ae81ff">0</span>, BLOCK_N)         <span style="color:#75715e"># BLOCK_N &gt;= N: whole row in one tile</span>
-</span></span><span style="display:flex;"><span>    mask <span style="color:#f92672">=</span> cols <span style="color:#f92672">&lt;</span> N
-</span></span><span style="display:flex;"><span>    x   <span style="color:#f92672">=</span> tl<span style="color:#f92672">.</span>load(x_ptr <span style="color:#f92672">+</span> row <span style="color:#f92672">*</span> N <span style="color:#f92672">+</span> cols, mask<span style="color:#f92672">=</span>mask, other<span style="color:#f92672">=</span><span style="color:#ae81ff">0.0</span>)<span style="color:#f92672">.</span>to(tl<span style="color:#f92672">.</span>float32)
-</span></span><span style="display:flex;"><span>    rms <span style="color:#f92672">=</span> tl<span style="color:#f92672">.</span>rsqrt(tl<span style="color:#f92672">.</span>sum(x <span style="color:#f92672">*</span> x, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>) <span style="color:#f92672">/</span> N <span style="color:#f92672">+</span> eps)   <span style="color:#75715e"># single-pass reduce</span>
-</span></span><span style="display:flex;"><span>    w   <span style="color:#f92672">=</span> tl<span style="color:#f92672">.</span>load(w_ptr <span style="color:#f92672">+</span> cols, mask<span style="color:#f92672">=</span>mask, other<span style="color:#f92672">=</span><span style="color:#ae81ff">0.0</span>)<span style="color:#f92672">.</span>to(tl<span style="color:#f92672">.</span>float32)
-</span></span><span style="display:flex;"><span>    tl<span style="color:#f92672">.</span>store(y_ptr <span style="color:#f92672">+</span> row <span style="color:#f92672">*</span> N <span style="color:#f92672">+</span> cols, (x <span style="color:#f92672">*</span> rms <span style="color:#f92672">*</span> w)<span style="color:#f92672">.</span>to(tl<span style="color:#f92672">.</span>float16), mask<span style="color:#f92672">=</span>mask)
-</span></span></code></pre></div><p><strong>(B) Blocked reduction</strong> — for a row too large to hold on-chip: loop over column chunks to accumulate the sum of squares, then loop again to normalize. The first <code>for off in range(0, N, BLOCK_N)</code> loop walks the row in <code>BLOCK_N</code>-wide chunks, and <code>acc += tl.sum(x * x, axis=0)</code> accumulates the running sum of squares across them before <code>rms = tl.rsqrt(acc / N + eps)</code> finalizes it; the second loop then re-loads each chunk and applies the normalization in the <code>tl.store</code>. Note that the row is therefore read from HBM <em>twice</em> — once per loop — which is the cost of not being able to hold it on-chip.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#a6e22e">@triton.jit</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">rmsnorm_B</span>(x_ptr, w_ptr, y_ptr, N, eps, BLOCK_N: tl<span style="color:#f92672">.</span>constexpr):
-</span></span><span style="display:flex;"><span>    row <span style="color:#f92672">=</span> tl<span style="color:#f92672">.</span>program_id(<span style="color:#ae81ff">0</span>)
-</span></span><span style="display:flex;"><span>    acc <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.0</span>                                          <span style="color:#75715e"># pass 1: sum of squares</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> off <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">0</span>, N, BLOCK_N):
-</span></span><span style="display:flex;"><span>        cols <span style="color:#f92672">=</span> off <span style="color:#f92672">+</span> tl<span style="color:#f92672">.</span>arange(<span style="color:#ae81ff">0</span>, BLOCK_N)
-</span></span><span style="display:flex;"><span>        mask <span style="color:#f92672">=</span> cols <span style="color:#f92672">&lt;</span> N
-</span></span><span style="display:flex;"><span>        x    <span style="color:#f92672">=</span> tl<span style="color:#f92672">.</span>load(x_ptr <span style="color:#f92672">+</span> row <span style="color:#f92672">*</span> N <span style="color:#f92672">+</span> cols, mask<span style="color:#f92672">=</span>mask, other<span style="color:#f92672">=</span><span style="color:#ae81ff">0.0</span>)<span style="color:#f92672">.</span>to(tl<span style="color:#f92672">.</span>float32)
-</span></span><span style="display:flex;"><span>        acc <span style="color:#f92672">+=</span> tl<span style="color:#f92672">.</span>sum(x <span style="color:#f92672">*</span> x, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>)
-</span></span><span style="display:flex;"><span>    rms <span style="color:#f92672">=</span> tl<span style="color:#f92672">.</span>rsqrt(acc <span style="color:#f92672">/</span> N <span style="color:#f92672">+</span> eps)
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> off <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">0</span>, N, BLOCK_N):                   <span style="color:#75715e"># pass 2: normalize + write</span>
-</span></span><span style="display:flex;"><span>        cols <span style="color:#f92672">=</span> off <span style="color:#f92672">+</span> tl<span style="color:#f92672">.</span>arange(<span style="color:#ae81ff">0</span>, BLOCK_N)
-</span></span><span style="display:flex;"><span>        mask <span style="color:#f92672">=</span> cols <span style="color:#f92672">&lt;</span> N
-</span></span><span style="display:flex;"><span>        x    <span style="color:#f92672">=</span> tl<span style="color:#f92672">.</span>load(x_ptr <span style="color:#f92672">+</span> row <span style="color:#f92672">*</span> N <span style="color:#f92672">+</span> cols, mask<span style="color:#f92672">=</span>mask, other<span style="color:#f92672">=</span><span style="color:#ae81ff">0.0</span>)<span style="color:#f92672">.</span>to(tl<span style="color:#f92672">.</span>float32)
-</span></span><span style="display:flex;"><span>        w    <span style="color:#f92672">=</span> tl<span style="color:#f92672">.</span>load(w_ptr <span style="color:#f92672">+</span> cols, mask<span style="color:#f92672">=</span>mask, other<span style="color:#f92672">=</span><span style="color:#ae81ff">0.0</span>)<span style="color:#f92672">.</span>to(tl<span style="color:#f92672">.</span>float32)
-</span></span><span style="display:flex;"><span>        tl<span style="color:#f92672">.</span>store(y_ptr <span style="color:#f92672">+</span> row <span style="color:#f92672">*</span> N <span style="color:#f92672">+</span> cols, (x <span style="color:#f92672">*</span> rms <span style="color:#f92672">*</span> w)<span style="color:#f92672">.</span>to(tl<span style="color:#f92672">.</span>float16), mask<span style="color:#f92672">=</span>mask)
-</span></span></code></pre></div><p><strong>(C) Multi-row block</strong> — one program handles <code>BLOCK_M</code> rows at once via a 2-D tile, reducing along the feature axis. <code>rows = pid * BLOCK_M + tl.arange(0, BLOCK_M)</code> selects a block of rows and <code>offs = rows[:, None] * N + cols[None, :]</code> builds a 2-D <code>(BLOCK_M, BLOCK_N)</code> tile of offsets, so the single <code>tl.load</code> brings in several rows at once; <code>tl.sum(x * x, axis=1)</code> reduces along the feature axis to give one RMS value <em>per row</em> (a <code>(BLOCK_M,)</code> vector), and <code>rms[:, None]</code> / <code>w[None, :]</code> broadcast that per-row scale and the shared gain back across the tile in one fused multiply.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#a6e22e">@triton.jit</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">rmsnorm_C</span>(x_ptr, w_ptr, y_ptr, M, N, eps,
-</span></span><span style="display:flex;"><span>              BLOCK_M: tl<span style="color:#f92672">.</span>constexpr, BLOCK_N: tl<span style="color:#f92672">.</span>constexpr):
-</span></span><span style="display:flex;"><span>    pid  <span style="color:#f92672">=</span> tl<span style="color:#f92672">.</span>program_id(<span style="color:#ae81ff">0</span>)
-</span></span><span style="display:flex;"><span>    rows <span style="color:#f92672">=</span> pid <span style="color:#f92672">*</span> BLOCK_M <span style="color:#f92672">+</span> tl<span style="color:#f92672">.</span>arange(<span style="color:#ae81ff">0</span>, BLOCK_M)       <span style="color:#75715e"># a block of rows</span>
-</span></span><span style="display:flex;"><span>    cols <span style="color:#f92672">=</span> tl<span style="color:#f92672">.</span>arange(<span style="color:#ae81ff">0</span>, BLOCK_N)                        <span style="color:#75715e"># BLOCK_N &gt;= N</span>
-</span></span><span style="display:flex;"><span>    m2d  <span style="color:#f92672">=</span> (rows[:, <span style="color:#66d9ef">None</span>] <span style="color:#f92672">&lt;</span> M) <span style="color:#f92672">&amp;</span> (cols[<span style="color:#66d9ef">None</span>, :] <span style="color:#f92672">&lt;</span> N)
-</span></span><span style="display:flex;"><span>    offs <span style="color:#f92672">=</span> rows[:, <span style="color:#66d9ef">None</span>] <span style="color:#f92672">*</span> N <span style="color:#f92672">+</span> cols[<span style="color:#66d9ef">None</span>, :]           <span style="color:#75715e"># 2-D tile of offsets</span>
-</span></span><span style="display:flex;"><span>    x    <span style="color:#f92672">=</span> tl<span style="color:#f92672">.</span>load(x_ptr <span style="color:#f92672">+</span> offs, mask<span style="color:#f92672">=</span>m2d, other<span style="color:#f92672">=</span><span style="color:#ae81ff">0.0</span>)<span style="color:#f92672">.</span>to(tl<span style="color:#f92672">.</span>float32)
-</span></span><span style="display:flex;"><span>    rms  <span style="color:#f92672">=</span> tl<span style="color:#f92672">.</span>rsqrt(tl<span style="color:#f92672">.</span>sum(x <span style="color:#f92672">*</span> x, axis<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>) <span style="color:#f92672">/</span> N <span style="color:#f92672">+</span> eps)   <span style="color:#75715e"># per-row reduce -&gt; (BLOCK_M,)</span>
-</span></span><span style="display:flex;"><span>    w    <span style="color:#f92672">=</span> tl<span style="color:#f92672">.</span>load(w_ptr <span style="color:#f92672">+</span> cols, mask<span style="color:#f92672">=</span>cols <span style="color:#f92672">&lt;</span> N, other<span style="color:#f92672">=</span><span style="color:#ae81ff">0.0</span>)<span style="color:#f92672">.</span>to(tl<span style="color:#f92672">.</span>float32)
-</span></span><span style="display:flex;"><span>    y    <span style="color:#f92672">=</span> x <span style="color:#f92672">*</span> rms[:, <span style="color:#66d9ef">None</span>] <span style="color:#f92672">*</span> w[<span style="color:#66d9ef">None</span>, :]               <span style="color:#75715e"># broadcast over rows</span>
-</span></span><span style="display:flex;"><span>    tl<span style="color:#f92672">.</span>store(y_ptr <span style="color:#f92672">+</span> offs, y<span style="color:#f92672">.</span>to(tl<span style="color:#f92672">.</span>float16), mask<span style="color:#f92672">=</span>m2d)
-</span></span></code></pre></div><p>The differences are summarized below:</p>
-<table>
-  <thead>
-      <tr>
-          <th>Variant</th>
-          <th>Program → data</th>
-          <th>Reduction</th>
-          <th>Grid size</th>
-          <th>Best when</th>
-          <th>Main trade-off</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td><strong>A</strong> one-row</td>
-          <td>one program per row</td>
-          <td>one <code>tl.sum</code> over the full row (single tile)</td>
-          <td>
-<span>
-  \( M \)
-  </span>
-
-</td>
-          <td>the row fits on-chip (
-<span>
-  \( \texttt{BLOCK\_N} \ge N \)
-  </span>
-
-)</td>
-          <td>simplest; a single HBM read, but fails once 
+<li><strong>Width (parallel sampling).</strong> Draw 
 <span>
   \( N \)
   </span>
 
- is too large</td>
-      </tr>
-      <tr>
-          <td><strong>B</strong> blocked</td>
-          <td>one program per row</td>
-          <td>loop over column chunks, accumulate</td>
-          <td>
-<span>
-  \( M \)
-  </span>
-
-</td>
-          <td>
+ independent kernels from the same prompt and return the best verified one (Best-of-
 <span>
   \( N \)
   </span>
 
- too large for one tile</td>
-          <td>handles any 
+). The more you draw, the likelier <em>some</em> sample is correct [1].</li>
+<li><strong>Depth (sequential refinement).</strong> Spend the budget refining <em>one</em> trajectory over turns, each conditioned on execution feedback. This is the inference-time face of multi-turn, agentic refinement; the RL that <em>trains</em> a policy to do it well is developed in Section 3.3.</li>
+<li><strong>Structured search.</strong> Combine width and depth: maintain several candidates, refine them, and prune by fitness. Beam search, tree search, and evolution (Section 2.2) all live here.</li>
+</ul>
+<p>A fourth, orthogonal knob is the <strong>reasoning length</strong> per generation: how many chain-of-thought tokens the model emits before committing to code. We treat it separately below because, for kernels, more is not always better.</p>
+<p>The general lesson from test-time-compute research is that <em>how</em> the budget is spent matters as much as how much: allocating compute optimally (choosing between more samples and more refinement based on difficulty) can beat naively scaling either axis, and can even substitute for a larger model [2, 3]. The rest of this subsection instantiates that lesson for kernels.</p>
+<h2 id="width-parallel-sampling-and-best-of-n">
+  Width: parallel sampling and Best-of-N
+  
+  <a class="anchor" href="#width-parallel-sampling-and-best-of-n">#</a>
+  
+</h2>
+<p>The simplest scaling is to sample many kernels and keep the fastest correct one. MKEvolve&rsquo;s <strong>Parallel Scaling</strong> baseline does exactly this, drawing 160 independent kernels per problem [4], and it is the standard reference point every other method is measured against. Its behavior exposes both the appeal and the limit of pure width.</p>
+<p>The appeal is <strong>coverage</strong>, the chance that at least one sample is correct. On MultiKernelBench [5], a multi-platform benchmark of 285 tasks across CUDA, AscendC (Huawei NPU), and Pallas (TPU), the best model under <em>greedy</em> one-shot decoding solves only 164 of 855 platform-task instances, but moving to 
+<span>
+  \( N = 5 \)
+  </span>
+
+ sampled generations raises Claude Sonnet 4 to 200 total passes, with CUDA Pass@5 reaching 55.8% [5]. ConCuR [6] shows the same lift on KernelBench, reported with the 
+<span>
+  \( \text{Fast}_p \)
+  </span>
+
+ metric: the fraction of problems solved with a kernel at least 
+<span>
+  \( p \)
+  </span>
+
+ times as fast as <code>torch.compile</code>. Going from Pass@1 to Pass@10, its KernelCoder-32B model rises from 58% to 91% executable and from 17% to 32% 
+<span>
+  \( \text{Fast}_1 \)
+  </span>
+
+ on Level 1, and from 59% to 95% executable on Level 2 [6]. More draws find more correct kernels.</p>
+<p>The limit is that width has <strong>diminishing and uneven returns</strong>. On MultiKernelBench the same models that reach 47% CUDA Pass@1 manage only single-digit rates on AscendC and Pallas no matter how they are decoded, because the base model was barely exposed to those backends during training [5], and no amount of sampling conjures a capability the policy lacks. Width raises coverage but not the <em>ceiling</em>, which is why the systems below invest in depth and search instead. A cautionary corollary appears in robust benchmarking: because each additional sample is another chance to stumble onto an evaluator exploit, pure width <em>amplifies</em> reward hacking, which we return to below.</p>
+<p>Parallel sampling is also the natural substrate for the population methods of Section 2.2. A beam search&rsquo;s per-round expansion, or an evolutionary generation&rsquo;s offspring, is a batch of parallel samples that is then <em>pruned by fitness</em> rather than merely deduplicated, which is what lets structured search convert raw width into directed progress [7].</p>
+<h2 id="depth-sequential-refinement">
+  Depth: sequential refinement
+  
+  <a class="anchor" href="#depth-sequential-refinement">#</a>
+  
+</h2>
+<p>The alternative to sampling wide is refining deep: spend the budget on successive turns of one trajectory, each reading the compiler error, correctness diff, or profile of the last. A kernel engineer works this way, compile, read the error, profile the result, revise, and an agent given the same tools does too, so depth is the inference-time analogue of that loop: the model emits a kernel, the environment runs it and returns feedback, and the next turn is conditioned on that feedback rather than starting from scratch. Its power is that it <em>reuses information a fresh sample throws away</em>; its cost is a growing context and the question of which turn actually earned the final reward, the two issues that make training a policy to refine well a problem in its own right (Section 3.3). The central empirical finding, from Kevin [8], is that under a <em>fixed</em> compute budget, investing in iterative refinement across turns <strong>outperforms</strong> drawing the same number of independent single-shot samples, because feedback is more informative than one-shot diversity [8]. Depth uses information that width discards.</p>
+<p>Depth is not automatically better, though: it needs the feedback to be trustworthy and <em>representative</em>. Astra [9] makes this concrete by decomposing refinement into separate testing, profiling, planning, and coding agents that share a trajectory log over 5 rounds; the multi-agent form reached 1.32x average speedup on production SGLang CUDA kernels versus 1.08x for an otherwise identical monolithic agent, and the monolith even <em>regressed</em> to a slowdown on one kernel when unrepresentative test inputs biased its profiling [9]. Deeper refinement amplifies whatever the feedback says, so a bad measurement compounds.</p>
+<h2 id="structured-search-width-times-depth">
+  Structured search: width times depth
+  
+  <a class="anchor" href="#structured-search-width-times-depth">#</a>
+  
+</h2>
+<p>Real systems rarely pick a single axis; they combine them and let a fitness function prune. KernelEvolve [10] illustrates the pattern explicitly with a two-phase schedule: a <strong>draft phase</strong> (roughly the first 10 steps) of independent parallel sampling <em>without</em> feedback, followed by a <strong>tree-expansion phase</strong> (steps ~10 to 50) where each node ingests execution feedback and the search deepens under a selection policy (greedy, MCTS with UCT, or evolutionary) [10]. Width seeds diversity; depth then exploits the best seeds. This is the same width-times-depth structure as the beam searches of Section 2.2 (Autocomp, AccelOpt), and MKEvolve&rsquo;s topology evolution [4], differing only in what gets pruned and what memory persists across steps.</p>
+<p>The payoff of structuring the search, rather than scaling one axis blindly, is efficiency. MKEvolve reaches better kernels than a 160-sample beam search while spending <strong>15% to 35% fewer LLM tokens</strong>, precisely because refining subkernels concentrates compute where it helps instead of regenerating whole kernels [4]. AccelOpt [11] makes the cost argument even sharper: open-source models running its search-plus-memory loop matched Claude Sonnet 4 kernel quality at roughly <strong>26x lower cost</strong> [11]. Well-structured search converts a fixed compute budget into more improvement per token.</p>
+<h2 id="the-reasoning-token-axis-more-is-not-always-better">
+  The reasoning-token axis: more is not always better
+  
+  <a class="anchor" href="#the-reasoning-token-axis-more-is-not-always-better">#</a>
+  
+</h2>
+<p>Reasoning models spend test-time compute a fourth way, by emitting long chains of thought before the code. It is tempting to assume longer reasoning yields better kernels, but the kernel evidence points the other way. ConCuR [6] measured it directly and found that <strong>shorter correct reasoning traces correlate with higher kernel-generation accuracy</strong>, while speedup is essentially <em>uncorrelated</em> with reasoning length (Pearson 
+<span>
+  \( r \approx -0.047 \)
+  </span>
+
+) [6]. Curating training data toward the shortest correct-and-fast trace per problem, just 4,892 examples, produced an open-source model competitive with far larger reasoning models on KernelBench [6]. The token budget is better spent on <em>width or depth of search</em> than on <em>length of monologue</em>.</p>
+<p>Reasoning length is still useful as a <strong>difficulty signal</strong>. ConCuR proposes Average Reasoning Length as a per-task difficulty metric (Easy under 4000 tokens, Medium 4000 to 8500, Hard above), which is exactly the kind of estimate an inference-scaling controller needs to allocate its budget: sample wider and refine deeper on the tasks a difficulty proxy flags as hard, and stop early on the easy ones [6]. This closes the loop back to the &ldquo;compute-optimal allocation&rdquo; idea [2]: the win is not more compute everywhere, but more compute where it moves the needle.</p>
+<h2 id="verification-is-the-enabler-and-the-bottleneck">
+  Verification is the enabler and the bottleneck
+  
+  <a class="anchor" href="#verification-is-the-enabler-and-the-bottleneck">#</a>
+  
+</h2>
+<p>Every axis above rests on the same foundation: a verifier good enough that &ldquo;the best of 
 <span>
   \( N \)
   </span>
 
-, but re-reads the row (two passes over HBM)</td>
-      </tr>
-      <tr>
-          <td><strong>C</strong> multi-row</td>
-          <td>one program per 
+&rdquo; or &ldquo;the fittest survivor&rdquo; actually <em>is</em> the best kernel. Scaling inference compute scales the search&rsquo;s contact with that verifier, so any gap in it is found and exploited faster the harder we search: the more candidates we generate, the more likely one of them games the check rather than solving the task. This is <strong>reward hacking</strong>, and because it is the failure mode that all of the axes above share, the next-but-one subsection (Section 2.3) is devoted to it: the taxonomy of how kernels cheat a checker, the verification pipeline that catches them, and the anti-cheating benchmarks that keep measured speedups honest. Here we only sketch why it is inseparable from scaling.</p>
+<p>The robust-kbench study [7] quantifies the danger. On benchmark tasks with exploitable evaluators, generated kernels reported fake speedups as large as 50x to 120x (for example by hardcoding a softmax output to 1.0), and after excluding the contaminated tasks the average measured speedup collapsed from <strong>3.13x to 1.49x</strong> [7]. Its defenses are exactly what inference-time scaling needs to stay honest: cheap LLM verifiers that reject bad kernels before expensive hardware runs, plus anti-cheating filters (diverse initializations, multiple input configurations, forward <em>and</em> backward passes, and rejection of degenerate near-constant outputs) [7]. FlashInfer-Bench [12] adds the deployment-grounded version, scoring candidates on real serving traces and injecting the winner into a live SGLang or vLLM engine so the measured speedup is end-to-end rather than an isolated micro-benchmark [12].</p>
+<p>This is why the benchmarks themselves are load-bearing for inference-time scaling, not incidental. Each one hardens a different failure mode of &ldquo;just search harder&rdquo;:</p>
+<ul>
+<li><strong>KernelBench</strong> [13] defines the core protocol, correctness within tolerance plus the 
 <span>
-  \( \texttt{BLOCK\_M} \)
+  \( \text{Fast}_p \)
   </span>
 
- rows</td>
-          <td><code>tl.sum(..., axis=1)</code> on a 2-D tile</td>
-          <td>
-<span>
-  \( \lceil M / \texttt{BLOCK\_M} \rceil \)
-  </span>
-
-</td>
-          <td>
+ speedup metric over <code>torch.compile</code>, that the systems in this section report against.</li>
+<li><strong>MultiKernelBench</strong> [5] extends it across three hardware backends, exposing that search gains on CUDA do not transfer to under-represented backends without more than sampling.</li>
+<li><strong>robust-kbench</strong> [7] closes the correctness and timing loopholes that scaled sampling would otherwise exploit (Section 2.3).</li>
+<li><strong>FlashInfer-Bench</strong> [12] grounds evaluation in production LLM-serving workloads and live substitution, so the search optimizes what actually ships.</li>
+</ul>
+<p>The through-line of this subsection, and of the section, is that inference-time compute buys better kernels <em>only in proportion to how trustworthy the verifier is</em>. Width, depth, search, and reasoning length are all levers on the same machine, and a leaky evaluator turns every one of them into a lever for cheating rather than for speed.</p>
+<h2 id="takeaways">
+  Takeaways
+  
+  <a class="anchor" href="#takeaways">#</a>
+  
+</h2>
+<ul>
+<li>Inference-time scaling trades test-time compute for kernel quality along three axes, <strong>width</strong> (parallel Best-of-
 <span>
   \( N \)
   </span>
 
- small, many rows</td>
-          <td>better occupancy and load amortization; more registers per program</td>
-      </tr>
-  </tbody>
-</table>
-</li>
-<li>
-<p><strong>Rejection sampling (for quality).</strong> Pass the candidates through automatic verifiers and discard those that fail, keeping only kernels that clear three successive bars. Each stage catches a distinct failure a stochastic teacher will produce; taking the RMSNorm task as the running example:</p>
+), <strong>depth</strong> (sequential, feedback-conditioned refinement, whose training is Section 3.3), and <strong>structured search</strong> (beam/tree/evolution, Section 2.2), plus an orthogonal <strong>reasoning-length</strong> knob.</li>
+<li>Width raises <em>coverage</em> cheaply but not the capability ceiling and has uneven, diminishing returns; depth exploits feedback that width discards but amplifies bad measurements; structured search combines both and, when well-organized, reaches better kernels for <strong>fewer tokens</strong> (MKEvolve&rsquo;s 15-35% saving, AccelOpt&rsquo;s 26x cost cut).</li>
+<li>For kernels, <strong>longer reasoning is not always better</strong> (shorter correct traces correlate with higher accuracy, and speedup is uncorrelated with trace length); reasoning length is better used as a difficulty signal for compute-optimal budget allocation.</li>
+<li>All of it depends on a <strong>trustworthy verifier</strong>: scaling search scales exposure to evaluator exploits, so the verification pipeline and anti-cheating benchmarks (robust-kbench, FlashInfer-Bench) of Section 2.3 are what let inference-time compute buy real speed instead of reward hacking.</li>
+</ul>
+<h2 id="references">
+  References
+  
+  <a class="anchor" href="#references">#</a>
+  
+</h2>
 <ol>
-<li><strong>Compiles.</strong> The candidate must build at all. Suppose a teacher forgets to mark <code>BLOCK_N: tl.constexpr</code>. Then <code>BLOCK_N</code> becomes an ordinary runtime argument (like <code>N</code> or <code>eps</code>), a value not known until the kernel is called. But <code>tl.arange(0, BLOCK_N)</code> uses that argument as the <em>length</em> of a tile, and in Triton a tile&rsquo;s length is part of its tensor type: the compiler must know it at compile time to specialize the kernel. A runtime-valued length is therefore an error that Triton raises <em>before</em> generating any code, and the candidate is rejected immediately. (This is exactly why <code>BLOCK_N</code> is <code>constexpr</code> while <code>N</code> is not: <code>N</code> is only ever used as a <em>value</em> — in <code>cols &lt; N</code> and the address arithmetic — whereas <code>BLOCK_N</code> sets a <em>shape</em>.)</li>
-<li><strong>Correct</strong> against the reference within numerical tolerance. This is where <em>subtly-wrong</em> kernels are caught — code that compiles and looks plausible but computes the wrong thing. Two classic cases: a kernel that subtracts the mean (computing LayerNorm rather than RMSNorm — recall RMSNorm never centers the data), or one that <strong>accumulates the sum of squares in fp16 instead of fp32</strong> and drifts outside tolerance. Both pass stage 1 but fail here.</li>
-<li><strong>Clears a performance/speedup bar</strong> (optional). A kernel can be correct yet slow. One that leaves intermediates in HBM instead of fusing them on-chip, or picks a tiny <code>BLOCK_N</code> that starves occupancy, survives stages 1–2 but is cut here for missing the speedup threshold.</li>
-</ol>
-<p>Filtering on these bars raises the quality floor of the corpus and is the main defense against training on subtly-wrong kernels (e.g., <em>CUDA Agent</em> filters candidates on correctness and speedup relative to reference implementations).</p>
-</li>
-<li>
-<p><strong>Source hygiene for expert examples.</strong> When mining existing corpora, prefer kernels that genuinely exercise the target programming model. Code that leaves the real computation to high-level framework ops teaches little about low-level kernel writing and is better filtered out or regenerated by a teacher. This takes two guises. The first is a mined <em>target</em> that is not a kernel at all — plain framework code such as <code>return x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + eps) * w</code>, which belongs in the <em>prompt</em> as the reference but must never be used as the target <code>y</code>. The second, more insidious because it is kernel-shaped and slips past naive &ldquo;does it use <code>@triton.jit</code>?&rdquo; filters, keeps a real-looking <code>@triton.jit</code> function but does the actual work in the <em>host wrapper</em> that the test calls. Note that the <code>torch</code> op cannot go <em>inside</em> the kernel — a <code>@triton.jit</code> body is traced and lowered to Triton IR, and it operates on tile handles, not <code>torch.Tensor</code>s, so a <code>torch</code> call there simply fails to compile. The cheat therefore lives one level up:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#a6e22e">@triton.jit</span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">rmsnorm_kernel</span>(x_ptr, y_ptr, N, BLOCK_N: tl<span style="color:#f92672">.</span>constexpr):
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># A sham kernel: it compiles and runs, but does NOT compute RMSNorm.</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># There is no sum-of-squares, no rsqrt, and no gain -- it just copies</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># the row through unchanged, so y == x.</span>
-</span></span><span style="display:flex;"><span>    row  <span style="color:#f92672">=</span> tl<span style="color:#f92672">.</span>program_id(<span style="color:#ae81ff">0</span>)
-</span></span><span style="display:flex;"><span>    cols <span style="color:#f92672">=</span> tl<span style="color:#f92672">.</span>arange(<span style="color:#ae81ff">0</span>, BLOCK_N)
-</span></span><span style="display:flex;"><span>    mask <span style="color:#f92672">=</span> cols <span style="color:#f92672">&lt;</span> N
-</span></span><span style="display:flex;"><span>    x <span style="color:#f92672">=</span> tl<span style="color:#f92672">.</span>load(x_ptr <span style="color:#f92672">+</span> row <span style="color:#f92672">*</span> N <span style="color:#f92672">+</span> cols, mask<span style="color:#f92672">=</span>mask)
-</span></span><span style="display:flex;"><span>    tl<span style="color:#f92672">.</span>store(y_ptr <span style="color:#f92672">+</span> row <span style="color:#f92672">*</span> N <span style="color:#f92672">+</span> cols, x, mask<span style="color:#f92672">=</span>mask)   <span style="color:#75715e"># write input straight to output</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">rmsnorm</span>(x, w, eps<span style="color:#f92672">=</span><span style="color:#ae81ff">1e-6</span>):        <span style="color:#75715e"># host wrapper — this is what the test calls</span>
-</span></span><span style="display:flex;"><span>    scratch <span style="color:#f92672">=</span> torch<span style="color:#f92672">.</span>empty_like(x)
-</span></span><span style="display:flex;"><span>    BLOCK_N <span style="color:#f92672">=</span> triton<span style="color:#f92672">.</span>next_power_of_2(x<span style="color:#f92672">.</span>shape[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>])    <span style="color:#75715e"># arange length must be a power of two</span>
-</span></span><span style="display:flex;"><span>    rmsnorm_kernel[(x<span style="color:#f92672">.</span>shape[<span style="color:#ae81ff">0</span>],)](x, scratch, x<span style="color:#f92672">.</span>shape[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>], BLOCK_N<span style="color:#f92672">=</span>BLOCK_N)
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># scratch now just holds a copy of x -- it is discarded, never returned:</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> torch<span style="color:#f92672">.</span>nn<span style="color:#f92672">.</span>functional<span style="color:#f92672">.</span>rms_norm(x, (x<span style="color:#f92672">.</span>shape[<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>],), w, eps)  <span style="color:#75715e"># real work, done by PyTorch</span>
-</span></span></code></pre></div><p>The wrapper does launch the kernel, so a check like &ldquo;is a Triton kernel actually invoked?&rdquo; passes — but its result (<code>scratch</code>) is discarded and the returned value comes entirely from the <code>torch</code> op. This <em>passes</em> a correctness check — the test calls <code>rmsnorm</code>, which returns the exact PyTorch result — yet the kernel demonstrates none of the tiling, on-chip reduction, or fusion the model is supposed to learn; the entire point has been handed back to the framework op the kernel was meant to replace. The same anti-pattern appears in RL settings as <em>reward hacking</em> (Section 2.3), where a model routes around a unit test with a <code>torch</code> call instead of writing a real kernel; in an SFT corpus it is just as corrosive, teaching the model that wrapping a framework call is an acceptable &ldquo;kernel.&rdquo; Such examples should be filtered out (or regenerated by a teacher) so the corpus rewards genuine low-level implementations. Catching the kernel-shaped variant takes more than a <code>@triton.jit</code> grep: <em>TritonRL</em> pairs a rule-based linter (which flags kernels that fall back on high-level framework ops) with an LLM judge that checks the code genuinely implements the operator. The stakes are concrete: kernel models fine-tuned on a signal that lacks such a functionality check have been observed to emit <em>more</em> functionally invalid kernels than their base model, because the unfiltered sham examples actively teach the shortcut.</p>
-</li>
-<li>
-<p><strong>Deduplication and difficulty balancing.</strong> Even after the filters above, the <em>distribution</em> of the surviving pairs matters, because the SFT loss is an average over examples — every extra copy of a pattern silently upweights it. Two skews are worth correcting.</p>
-<ul>
-<li>
-<p><strong>Deduplication.</strong> Parallel sampling and corpus mining both produce many near-identical kernels: a teacher drawn 
-<span>
-  \( K \)
-  </span>
-
- times will often return the <em>same</em> implementation with only cosmetic differences (renamed variables, reordered lines, a different literal like <code>BLOCK_N=512</code> vs. <code>1024</code>, added comments), and scraped repos contain forks and copy-paste clones of popular kernels. Keeping all of them teaches the model that one pattern is far more probable than it should be. The fix is to deduplicate on <em>normalized</em> code — strip comments and whitespace and canonicalize identifiers, then compare by exact hash or by a near-duplicate similarity measure (e.g. token- or AST-level Jaccard/MinHash) — collapsing each cluster of clones to one representative. The distinction is what counts as &ldquo;the same&rdquo;: the A/B/C RMSNorm variants above are genuinely different algorithms and should all be <em>kept</em>, whereas two samples of variant A that differ only in block size or variable names are duplicates and should collapse to one.</p>
-</li>
-<li>
-<p><strong>Difficulty balancing.</strong> Mined corpora are dominated by easy kernels — there are vastly more elementwise <code>add</code>/<code>relu</code>/copy examples than fused-attention or MoE-routing ones — and rejection sampling <em>worsens</em> the skew, because easy tasks yield far more surviving candidates than hard ones (a teacher lands a correct elementwise kernel almost every time, a fused long-tail kernel rarely). Left uncorrected, the model becomes fluent at trivial kernels and weak exactly on the long tail where hand-written kernels matter most (Section 1.3). The remedy is to label each task by difficulty — for instance the KernelBench tiers of single-operator (Level 1), operator-fusion (Level 2), and full-architecture (Level 3) kernels — and balance the corpus across those tiers and across operator categories, up-weighting the scarce hard cases (or ordering them into a curriculum) rather than letting the easy majority dominate the gradient. That said, harder is not always better: in <em>TritonRL</em>&rsquo;s RL stage, training <em>exclusively</em> on single-operator (Level 1) tasks gave the best correctness and match-or-beat-reference rate on both single-operator and fusion (Level 2) evaluations, since fusion tasks succeed so rarely that they contribute little learnable signal while single-operator skill appears to transfer upward. The practical rule is to up-weight hard cases only while they still produce a usable training signal, not to over-index on tasks the model almost never solves.</p>
-</li>
-</ul>
-</li>
-</ul>
-<p>The pairs that survive this sampling-and-selection process form the SFT corpus — a scalable source of <em>execution-grounded</em> supervision, which is often the only practical route to a corpus when few high-quality human-written kernels exist.</p>
-<h3 id="data-augmentation">
-  Data augmentation
-  
-  <a class="anchor" href="#data-augmentation">#</a>
-  
-</h3>
-<p>Sampling and selection give us a corpus of trustworthy <em>(task, kernel)</em> pairs, but each pair is still a bare input–output example: a task on one side, a kernel on the other. Before training, that raw supervision can be <em>enriched</em> — augmenting what each example teaches and how broadly the corpus covers the space — along three axes.</p>
-<ul>
-<li>
-<p><strong>Reasoning augmentation.</strong> Instead of pairing a task only with its final kernel, each target is annotated with an explicit <em>reasoning trace</em> — a chain-of-thought that spells out the optimization decisions behind the code (tiling and block-size choices, memory-hierarchy staging such as shared-memory/SBUF interleaving, masking of boundary tiles, accumulation strategy, and so on). Such traces are typically <em>distilled</em> from a strong reasoning teacher: the teacher is prompted to both explain and implement the kernel, and the explanation is kept as part of the target 
-<span>
-  \( y \)
-  </span>
-
-. Training on <em>(task, reasoning + kernel)</em> pairs teaches the model not merely to emit correct syntax, but to absorb the <em>optimization knowledge</em> itself, so that at inference time it reproduces the reasoning before committing to an implementation.</p>
-<p>For the RMSNorm task from earlier, the augmented target 
-<span>
-  \( y \)
-  </span>
-
- would prepend a trace like the following before the same kernel code:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>&lt;reasoning&gt;
-</span></span><span style="display:flex;"><span>RMSNorm reduces over the last dim (N), so assign one program per row
-</span></span><span style="display:flex;"><span>(program_id(0)) and reduce along the columns.
-</span></span><span style="display:flex;"><span>The op is memory-bound, so fuse everything into one kernel: load the row
-</span></span><span style="display:flex;"><span>once, keep the sum-of-squares and rescale on-chip, write the row once.
-</span></span><span style="display:flex;"><span>Choose BLOCK_N as the next power of two &gt;= N and mask cols &lt; N for the tail.
-</span></span><span style="display:flex;"><span>Accumulate x*x in fp32 for numerical stability, then cast the result to fp16.
-</span></span><span style="display:flex;"><span>&lt;/reasoning&gt;
-</span></span><span style="display:flex;"><span>@triton.jit
-</span></span><span style="display:flex;"><span>def rmsnorm_kernel(x_ptr, w_ptr, y_ptr, N, eps, BLOCK_N: tl.constexpr):
-</span></span><span style="display:flex;"><span>    ...   # the kernel shown earlier
-</span></span></code></pre></div><p>The trace makes the <em>why</em> behind each line explicit — the one-program-per-row mapping, the fuse-to-stay-on-chip decision, the power-of-two <code>BLOCK_N</code> with masking, the fp32 accumulation — rather than leaving the model to reverse-engineer those choices from code alone.</p>
-</li>
-<li>
-<p><strong>Task augmentation.</strong> Coverage matters: a model exposed to a narrow set of tasks generalizes poorly to the long tail. The task pool is therefore diversified along two axes — <em>across operators</em> (different kernels and fusion patterns) and <em>within an operator</em> by varying its <strong>configuration</strong>, most importantly the input shapes and dtypes. Presenting the same operator under many shape/config regimes exposes the model to a broader range of performance scenarios (different memory-vs-compute trade-offs, tiling regimes, and occupancy constraints), which is essential for producing kernels that hold up across realistic workloads rather than a single benchmarked shape. These varied configurations can be generated automatically: <em>TritonRL</em> synthesizes extra input-generating functions with a teacher model, keeps up to five <em>execution-validated</em> shape variants per base task, and reports that this input augmentation improved one of its two distilled students by roughly 12% in correctness and 6% in the rate of matching or beating the reference on single-operator tasks, along with better robustness to unseen shapes.</p>
-<p>Starting from the single RMSNorm task we have been using — <code>(M, N) = (4096, 1024)</code>, fp16, on an H100 — augmentation expands it in both directions:</p>
-<ul>
-<li><em>Across operators:</em> spin off related tasks — LayerNorm, fused RMSNorm + residual add, a <code>SiLU</code>/<code>GELU</code> activation, softmax — so the model sees a family of patterns rather than one.</li>
-<li><em>Within the operator:</em> hold RMSNorm fixed but vary the configuration — <code>N ∈ {256, 1024, 8192}</code>, <code>M ∈ {128, 4096}</code>, dtype <code>∈ {fp16, bf16, fp32}</code>, target <code>∈ {H100, A100}</code>.</li>
-</ul>
-<p>This second axis matters precisely because it changes the <em>right</em> implementation, connecting back to the A/B/C variants above: a small <code>N</code> favors the multi-row kernel (C), a large <code>N</code> that overflows on-chip memory forces the blocked reduction (B), and a mid-size <code>N</code> suits the one-row kernel (A). A corpus that contains RMSNorm only at <code>N = 1024</code> would teach variant A and nothing else; varying the shape is what exposes the model to the full space of trade-offs.</p>
-</li>
-<li>
-<p><strong>Metadata augmentation.</strong> Beyond the task and kernel themselves, each example can be annotated with auxiliary <em>information about the kernel</em> — structured labels or tags describing properties the model cannot easily infer from the code alone (e.g., a difficulty label, the target hardware/backend, or the operator category). Such annotations can either condition generation (the label becomes part of the prompt 
-<span>
-  \( x \)
-  </span>
-
-) or organize training, for instance by balancing the corpus across categories or ordering examples into a curriculum.</p>
-<p>The target-backend tag is a good example, and it matters because the same task maps to very different kernels across backends (Section 1.3): our RMSNorm task is a Triton program on an NVIDIA GPU but an NKI program on Trainium. Tagging each pair with its backend and surfacing that tag in the prompt,</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Backend: NKI (AWS Trainium)      # &lt;- metadata tag added to the prompt x
-</span></span><span style="display:flex;"><span>Write a kernel that computes fused RMSNorm over the last dimension.
-</span></span><span style="display:flex;"><span>...
-</span></span></code></pre></div><p>lets one model serve every backend while generating the right dialect on demand, instead of silently blending CUDA, Triton, and NKI syntax. The same tag also organizes training: because backends are unevenly represented (abundant CUDA/Triton data, scarce NKI — the low-resource-DSL problem from Section 1.3), the corpus can be balanced or up-weighted by backend so the plentiful targets do not drown out the scarce ones.</p>
-</li>
-</ul>
-<h2 id="training-on-the-kernel-corpus">
-  Training on the kernel corpus
-  
-  <a class="anchor" href="#training-on-the-kernel-corpus">#</a>
-  
-</h2>
-<p>With the corpus 
-<span>
-  \( \mathcal{D}_{SFT} \)
-  </span>
-
- assembled and enriched, the training step is the standard SFT recipe of Section 1.5, now with kernels as the targets. We fine-tune an autoregressive policy 
-<span>
-  \( \pi_\theta \)
-  </span>
-
- by maximum likelihood, minimizing the token-level negative log-likelihood of each reference kernel 
-<span>
-  \( y^{(i)} \)
-  </span>
-
- given its task prompt 
-<span>
-  \( x^{(i)} \)
-  </span>
-
-:</p>
-
-<span>\[ \mathcal{L}_{\text{SFT}}(\theta) \;=\; -\,\frac{1}{N}\sum_{i=1}^{N} \sum_{t=1}^{|y^{(i)}|} \log \pi_\theta\!\big(y^{(i)}_t \mid x^{(i)}, \, y^{(i)}_{\lt t}\big). \]</span>
-<p>As in Section 1.5, the loss is applied only to the kernel (completion) tokens under a loss mask, and it is teacher-forced: every position conditions on the <em>ground-truth</em> prefix rather than the model&rsquo;s own past tokens. For kernels, the effect is exactly the two-fold grounding described at the start of this section, i.e., the model absorbs the target DSL&rsquo;s syntax and API surface (the <code>@triton.jit</code> / <code>nl.load</code> idioms, valid launch configurations) and shifts its prior toward the region of well-formed, idiomatic kernels. The reasoning-augmented targets from above train it to reproduce the optimization reasoning before committing to code.</p>
-<h2 id="limitations">
-  Limitations
-  
-  <a class="anchor" href="#limitations">#</a>
-  
-</h2>
-<p>We have now seen SFT end to end: curate a corpus of <em>(task, kernel)</em> pairs, then train the model to maximize their likelihood token by token. It is a powerful and often indispensable first stage. But note that objective actually optimizes the probability of reproducing <em>reference tokens</em>, and it becomes clear that the very property that makes SFT simple and stable is also what bounds it. Three limitations follow directly, and together they set up why a second, reward-driven stage is needed.</p>
-<ul>
-<li>
-<p><strong>Bounded by the demonstrations.</strong> SFT maximizes the likelihood of the reference kernels, so the trained model can at best reproduce the behavior it was shown — it has no mechanism to discover kernels <em>better</em> than those in its corpus. Its quality is capped by the strength of the teacher (or human experts) that produced the targets and by the curation filters; systematic mistakes or suboptimal schedules present in the data are absorbed faithfully rather than corrected.</p>
-<p><em>Example: if every RMSNorm target in the corpus uses <code>BLOCK_N = 1024</code>, the model learns that block size even where 512 or 2048 would run faster — it cannot invent a better schedule it never saw.</em></p>
-</li>
-<li>
-<p><strong>Not optimized for the target environments.</strong> The loss rewards matching the reference <em>tokens</em>, not the objective that actually matters for a kernel — how fast it runs on the specific hardware it is written for. Kernel performance is dictated by low-level, device-specific factors (memory-hierarchy staging, tiling and block sizes, occupancy, coalesced access, tensor-core utilization), and the <em>only</em> faithful measure of them is running the kernel and timing it. SFT never sees this signal: it is trained purely on static code, so it has no way to tell a hardware-optimal kernel from a merely reference-like one, and cannot tune its output toward the target device&rsquo;s actual performance characteristics. At best it imitates whatever degree of optimization happened to be present in the corpus.</p>
-<p><em>Example: two RMSNorm kernels that differ only in tiling can be 2× apart in latency, yet to the token-matching loss they look almost identical — nothing pushes the model toward the faster one.</em></p>
-</li>
-<li>
-<p><strong>Data scarcity.</strong> The whole approach presumes a sizable corpus of high-quality <em>(task, kernel)</em> pairs. For mature targets (e.g., Triton on NVIDIA GPUs) such data can be mined or distilled at scale, but for newer or niche backends with few existing kernels — such as NKI kernels for AWS Trainium — references are scarce and even strong teachers produce mostly invalid candidates, leaving too little surviving after filtering to train on.</p>
-<p><em>Example: the same RMSNorm task that yields thousands of usable Triton pairs may yield only a handful of valid NKI ones — too few to fine-tune on.</em></p>
-</li>
-</ul>
-<p>In short, SFT is the right way to <em>ground</em> a model in a kernel language: it teaches valid syntax, correct APIs, and idiomatic structure, and it moves the model&rsquo;s prior into the neighborhood of good kernels — a strong and usually necessary starting point. What it cannot do is push <em>past</em> the corpus. Because its only signal is token-level imitation of fixed references, it can neither discover kernels faster than the ones it was shown nor optimize toward the metric that ultimately matters — measured performance on real hardware. Closing that gap requires a different kind of signal: instead of asking &ldquo;does this match the reference tokens?&rdquo;, we compile and run each generated kernel and reward it for <em>actually being correct and fast</em>. That is exactly the shift from imitation to <strong>reinforcement learning from execution feedback</strong>, the subject of Section 2.2, where the model learns from its own rollouts against a hardware-grounded reward rather than from a static corpus.</p>
-<h2 id="further-reading">
-  Further Reading
-  
-  <a class="anchor" href="#further-reading">#</a>
-  
-</h2>
-<p><strong>SFT-based kernel generation.</strong></p>
-<ol>
-<li>Meta AI. <em>KernelLLM: Fine-tuning Llama for Triton Kernel Generation.</em> Hugging Face, 2025. <a href="https://huggingface.co/facebook/KernelLLM">huggingface.co/facebook/KernelLLM</a></li>
-<li>S. Li, Z. Wang, Y. He, Y. Li, Q. Shi, J. Li, Y. Hu, W. Che, X. Han, Z. Liu, and M. Sun. <em>AutoTriton: Automatic Triton Programming with Reinforcement Learning in LLMs.</em> arXiv:2507.05687, 2025. <a href="https://arxiv.org/abs/2507.05687">arxiv.org/abs/2507.05687</a></li>
-<li>J. Woo, S. Zhu, A. Nie, Z. Jia, Y. Wang, and Y. Park. <em>TritonRL: Training LLMs to Think and Code Triton Without Cheating.</em> arXiv:2510.17891, 2025. <a href="https://arxiv.org/abs/2510.17891">arxiv.org/abs/2510.17891</a></li>
-<li>W. Dai, H. Wu, Q. Yu, H. Gao, J. Li, C. Jiang, W. Lou, Y. Song, H. Yu, J. Chen, W. Ma, Y. Zhang, J. Liu, M. Wang, X. Liu, and H. Zhou. <em>CUDA Agent: Large-Scale Agentic RL for High-Performance CUDA Kernel Generation.</em> arXiv:2602.24286, 2026. <a href="https://arxiv.org/abs/2602.24286">arxiv.org/abs/2602.24286</a></li>
-</ol>
-<p><strong>Datasets and benchmarks.</strong></p>
-<ol start="5">
-<li>S. Paliskara and M. Saroufim. <em>KernelBook.</em> Hugging Face Datasets (GPUMODE/KernelBook), 2025. <a href="https://huggingface.co/datasets/GPUMODE/KernelBook">huggingface.co/datasets/GPUMODE/KernelBook</a></li>
-<li>A. Ouyang, S. Guo, S. Arora, A. L. Zhang, W. Hu, C. Ré, and A. Mirhoseini. <em>KernelBench: Can LLMs Write Efficient GPU Kernels?</em> arXiv:2502.10517, 2025. <a href="https://arxiv.org/abs/2502.10517">arxiv.org/abs/2502.10517</a></li>
-<li>J. Li, X. Han, et al. <em>TritonBench: Benchmarking Large Language Model Capabilities for Generating Triton Operators.</em> arXiv:2502.14752, 2025. <a href="https://arxiv.org/abs/2502.14752">arxiv.org/abs/2502.14752</a></li>
+<li>B. Brown, J. Juravsky, R. Ehrlich, R. Clark, Q. V. Le, C. Ré, and A. Mirhoseini. <em>Large Language Monkeys: Scaling Inference Compute with Repeated Sampling.</em> arXiv:2407.21787, 2024. <a href="https://arxiv.org/abs/2407.21787">arxiv.org/abs/2407.21787</a></li>
+<li>C. Snell, J. Lee, K. Xu, and A. Kumar. <em>Scaling LLM Test-Time Compute Optimally Can Be More Effective Than Scaling Model Parameters.</em> arXiv:2408.03314, 2024. <a href="https://arxiv.org/abs/2408.03314">arxiv.org/abs/2408.03314</a></li>
+<li>NVIDIA Developer Blog. <em>Automating GPU Kernel Generation with DeepSeek-R1 and Inference-Time Scaling.</em> 2025. <a href="https://developer.nvidia.com/blog/automating-gpu-kernel-generation-with-deepseek-r1-and-inference-time-scaling/">developer.nvidia.com/blog/automating-gpu-kernel-generation-with-deepseek-r1-and-inference-time-scaling</a></li>
+<li>J. Yoo, R. Saha, S. Zhu, T. Yu, W. Tang, and Y. Park. <em>MKEvolve: A Modular Multi-Agent Framework for Kernel Code Generation.</em> arXiv:2607.20501, 2026 (ICML 2026 Workshop on Compositional Learning). <a href="https://arxiv.org/abs/2607.20501">arxiv.org/abs/2607.20501</a></li>
+<li>Z. Wen, Y. Zhang, Z. Li, Z. Liu, L. Xie, and T. Zhang. <em>MultiKernelBench: A Multi-Platform Benchmark for Kernel Generation.</em> arXiv:2507.17773, 2025. <a href="https://arxiv.org/abs/2507.17773">arxiv.org/abs/2507.17773</a></li>
+<li>L. Kong, J. Wei, H. Shen, and H. Wang. <em>ConCuR: Conciseness Makes State-of-the-Art Kernel Generation.</em> arXiv:2510.07356, 2025. <a href="https://arxiv.org/abs/2510.07356">arxiv.org/abs/2510.07356</a></li>
+<li>R. T. Lange, Q. Sun, A. Prasad, M. Faldor, Y. Tang, and D. Ha. <em>Towards Robust Agentic CUDA Kernel Benchmarking, Verification, and Optimization.</em> arXiv:2509.14279, 2025. <a href="https://arxiv.org/abs/2509.14279">arxiv.org/abs/2509.14279</a></li>
+<li>C. Baronio, P. Marsella, B. Pan, S. Guo, and S. Alberti. <em>Kevin: Multi-Turn RL for Generating CUDA Kernels.</em> arXiv:2507.11948, 2025. <a href="https://arxiv.org/abs/2507.11948">arxiv.org/abs/2507.11948</a></li>
+<li>A. Wei, T. Sun, Y. Seenichamy, H. Song, A. Ouyang, A. Mirhoseini, K. Wang, and A. Aiken. <em>Astra: A Multi-Agent System for GPU Kernel Performance Optimization.</em> arXiv:2509.07506, 2025. <a href="https://arxiv.org/abs/2509.07506">arxiv.org/abs/2509.07506</a></li>
+<li>G. Liao, H. Qin, Y. Wang, A. Golden, M. Kuchnik, et al. <em>KernelEvolve: Scaling Agentic Kernel Coding for Heterogeneous AI Accelerators at Meta.</em> arXiv:2512.23236, 2026. <a href="https://arxiv.org/abs/2512.23236">arxiv.org/abs/2512.23236</a></li>
+<li>G. Zhang, S. Zhu, A. Wei, Z. Song, A. Nie, Z. Jia, N. Vijaykumar, Y. Wang, and K. Olukotun. <em>AccelOpt: A Self-Improving LLM Agentic System for AI Accelerator Kernel Optimization.</em> arXiv:2511.15915, 2025. <a href="https://arxiv.org/abs/2511.15915">arxiv.org/abs/2511.15915</a></li>
+<li>S. Xing, Y. Zhai, A. Jiang, Y. Dong, Y. Wu, Z. Ye, C. Ruan, Y. Huang, Y. Zhang, L. Yin, et al. <em>FlashInfer-Bench: Building the Virtuous Cycle for AI-driven LLM Systems.</em> arXiv:2601.00227, 2026. <a href="https://arxiv.org/abs/2601.00227">arxiv.org/abs/2601.00227</a></li>
+<li>A. Ouyang, S. Guo, S. Arora, A. L. Zhang, W. Hu, C. Ré, and A. Mirhoseini. <em>KernelBench: Can LLMs Write Efficient GPU Kernels?</em> ICML 2025. <a href="https://openreview.net/forum?id=yeoN1iQT1x">openreview.net/forum?id=yeoN1iQT1x</a></li>
 </ol>
 </article>
  
@@ -1028,16 +667,16 @@ https://github.com/alex-shpak/hugo-book
     <span>
     
       <a href="/llm_kernel_writing/docs/section-2/" class="flex align-center book-icon">
-        <img src="/llm_kernel_writing/svg/backward.svg" class="book-icon" alt="Previous" title="Post-Training LLMs for Kernel Generation" />
-        <span>Post-Training LLMs for Kernel Generation</span>
+        <img src="/llm_kernel_writing/svg/backward.svg" class="book-icon" alt="Previous" title="Inference-Scaling for Kernel Generation" />
+        <span>Inference-Scaling for Kernel Generation</span>
       </a>
     
     </span>
     <span>
     
       <a href="/llm_kernel_writing/docs/section-2/subsection-2/" class="flex align-center book-icon">
-        <span>2.2 Reinforcement Learning from Execution Feedback</span>
-        <img src="/llm_kernel_writing/svg/forward.svg" class="book-icon" alt="Next" title="2.2 Reinforcement Learning from Execution Feedback" />
+        <span>2.2 Evolution-Based Approaches for Iterative Kernel Refinement</span>
+        <img src="/llm_kernel_writing/svg/forward.svg" class="book-icon" alt="Next" title="2.2 Evolution-Based Approaches for Iterative Kernel Refinement" />
       </a>
     
     </span>
@@ -1072,15 +711,14 @@ https://github.com/alex-shpak/hugo-book
   
 <nav id="TableOfContents">
   <ul>
-    <li><a href="#sft-data-curation-with-kernel-corpora">SFT Data Curation with Kernel Corpora</a>
-      <ul>
-        <li><a href="#sampling">Sampling</a></li>
-        <li><a href="#data-augmentation">Data augmentation</a></li>
-      </ul>
-    </li>
-    <li><a href="#training-on-the-kernel-corpus">Training on the kernel corpus</a></li>
-    <li><a href="#limitations">Limitations</a></li>
-    <li><a href="#further-reading">Further Reading</a></li>
+    <li><a href="#three-axes-of-test-time-compute">Three axes of test-time compute</a></li>
+    <li><a href="#width-parallel-sampling-and-best-of-n">Width: parallel sampling and Best-of-N</a></li>
+    <li><a href="#depth-sequential-refinement">Depth: sequential refinement</a></li>
+    <li><a href="#structured-search-width-times-depth">Structured search: width times depth</a></li>
+    <li><a href="#the-reasoning-token-axis-more-is-not-always-better">The reasoning-token axis: more is not always better</a></li>
+    <li><a href="#verification-is-the-enabler-and-the-bottleneck">Verification is the enabler and the bottleneck</a></li>
+    <li><a href="#takeaways">Takeaways</a></li>
+    <li><a href="#references">References</a></li>
   </ul>
 </nav>
 
