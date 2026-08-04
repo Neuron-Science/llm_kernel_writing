@@ -26,7 +26,7 @@ Section 2.1 placed structured search at the apex of the three axes, width times 
 <link rel="canonical" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-2/subsection-2/">
 <link rel="stylesheet" href="/llm_kernel_writing/book.min.27cffe658670f57112663ed746a421db277c2dd6549965c27f9ad0103cccd990.css" integrity="sha256-J8/&#43;ZYZw9XESZj7XRqQh2yd8LdZUmWXCf5rQEDzM2ZA=" crossorigin="anonymous">
   <script defer src="/llm_kernel_writing/fuse.min.js"></script>
-  <script defer src="/llm_kernel_writing/en.search.min.4ef56be7e65ddbf5c290f9e9540ecc218ceb2c95fac3ed7235d1512c035fb236.js" integrity="sha256-TvVr5&#43;Zd2/XCkPnpVA7MIYzrLJX6w&#43;1yNdFRLANfsjY=" crossorigin="anonymous"></script>
+  <script defer src="/llm_kernel_writing/en.search.min.39acd0eac4d06e0fde286fb080a38753f78a7e53cab50527a79c554472851b7d.js" integrity="sha256-OazQ6sTQbg/eKG&#43;wgKOHU/eKflPKtQUnp5xVRHKFG30=" crossorigin="anonymous"></script>
 <link rel="alternate" type="application/rss+xml" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-2/subsection-2/index.xml" title="Teaching LLMs to Write System Kernels" />
 <!--
 Made with Book Theme
@@ -470,17 +470,35 @@ https://github.com/alex-shpak/hugo-book
   </span>
 
  of candidate programs:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>   ┌──────────────────────────────────────────────────────────────────┐
-</span></span><span style="display:flex;"><span>   │                         population  P_t                          │
-</span></span><span style="display:flex;"><span>   │            (candidate kernels + their fitness scores)            │
-</span></span><span style="display:flex;"><span>   └───────────────┬────────────────────────────────────▲─────────────┘
-</span></span><span style="display:flex;"><span>                   │                                    │
-</span></span><span style="display:flex;"><span>       ① select parents / inspirations          ⑤ survival: keep fittest
-</span></span><span style="display:flex;"><span>                   │                                    │
-</span></span><span style="display:flex;"><span>                   ▼                                    │
-</span></span><span style="display:flex;"><span>       ② vary:  LLM proposes offspring    ──▶    ③ evaluate: compile,
-</span></span><span style="display:flex;"><span>          (mutation / crossover / agent)            check, time       ──▶  ④ fitness
-</span></span></code></pre></div><ol>
+<div style="text-align: center; margin: 2rem 0;">
+  <img src="evolutionary_loop.svg"
+       alt="The evolutionary loop: one five-part cycle over a population P_t. A population box (candidate kernels and their fitness scores) feeds a vertical column of five numbered stages: select parents and inspirations; vary, where an LLM proposes offspring by mutation or crossover and the operator may itself be an agent; evaluate, compile-check-time each candidate against a reference; fitness, correctness-gated speedup, F(y) = speedup(y) if correct else 0, so a fast but wrong kernel is worthless; and survival, keep the fittest. A return arrow carries the survivors back to the population as the next generation, closing the loop. A trajectory is just a population of size one, and the design freedom lives in the selection, operator, and population-structure stages."
+       style="width: 62%; height: auto; object-fit: contain;" />
+  <p style="font-size: 0.9em; color: #666; margin-top: 0.4rem;">
+    The evolutionary loop. A population 
+<span>
+  \( P_t \)
+  </span>
+
+ of candidate kernels feeds five numbered stages that cycle back into it: <strong>select</strong> parents, <strong>vary</strong> them (an LLM proposes offspring, by mutation or crossover), <strong>evaluate</strong> (<em>compile · check · time</em>), score a <strong>fitness</strong> (highlighted, the one concrete payoff: correctness-gated speedup 
+<span>
+  \( F(y) = \mathrm{speedup}(y) \)
+  </span>
+
+ if correct, else 
+<span>
+  \( 0 \)
+  </span>
+
+), and let the fittest <strong>survive</strong> into the next generation. A refinement trajectory is just the special case 
+<span>
+  \( |P_t| = 1 \)
+  </span>
+
+, and the design freedom (◆) lives in three of the stages: selection, the operator, and population structure.
+  </p>
+</div>
+<ol>
 <li><strong>Selection.</strong> Choose which population members seed the next round (the fittest, a diverse sample, or both).</li>
 <li><strong>Variation.</strong> An LLM turns the selected parents into new candidates, by editing one (mutation) or combining several (crossover). This is where the language model does its work.</li>
 <li><strong>Evaluation.</strong> Run each candidate: compile, check correctness against a reference, and time it.</li>
@@ -555,20 +573,25 @@ https://github.com/alex-shpak/hugo-book
   </span>
 
  over a shared substrate.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>  BEAM SEARCH (keep top-B)          TREE SEARCH (adaptive, +explore)     EVOLUTIONARY (crossover + diversity)
-</span></span><span style="display:flex;"><span>  ───────────────────────          ────────────────────────────────     ────────────────────────────────────
-</span></span><span style="display:flex;"><span>        [seed]                            [seed]                               [ ● ● ● ● ● ]  diverse population
-</span></span><span style="display:flex;"><span>       /  |  \                           /      \                              (kept spread out via
-</span></span><span style="display:flex;"><span>     m1  m2  m3   ← mutate each        best    2nd-best                         MAP-Elites niches / islands)
-</span></span><span style="display:flex;"><span>      |   |   |                        /  \       \        ← expand the             │        │
-</span></span><span style="display:flex;"><span>    ▓▓▓  ░░░  ▓▓▓  ← score, keep      n1  n2      n3          most promising    parent_A  parent_B
-</span></span><span style="display:flex;"><span>    top-B, drop the rest              /            (UCT: value + explore            └───┬────┘
-</span></span><span style="display:flex;"><span>        │                            n4             bonus, revisit ancestors)           │  ⊗ crossover (n-ary)
-</span></span><span style="display:flex;"><span>   [ ▓▓▓ ▓▓▓ ]  next frontier        │                                                  ▼
-</span></span><span style="display:flex;"><span>   (B near-best; no diversity,     budget flows to good                       child + mutate → evaluate
-</span></span><span style="display:flex;"><span>    unary: one parent → child)     subtrees, not a fixed frontier            (stochastic survival keeps
-</span></span><span style="display:flex;"><span>                                    (unary: one node at a time)                diverse elites, not just top-B)
-</span></span></code></pre></div><p>Reading left to right, each strategy relaxes a constraint of the one before it: beam search is strict top-
+<div style="text-align: center; margin: 2rem 0;">
+  <img src="beam_tree_evolutionary.svg"
+       alt="Beam, tree, and evolutionary search as the same population loop with two knobs turned differently: the operator (how many parents feed one mutation) and selection (how it prunes). Left, beam search, a unary operator with strict top-B survival: a seed branches to three mutated children, the best B are kept and the rest dropped. Middle, tree search (MCTS/UCT), a unary operator with adaptive node choice plus an exploration bonus: budget flows into the promising subtree while under-tried branches stay alive rather than being pruned. Right, evolutionary, an n-ary operator with diversity-preserving selection: a spread-out diverse population feeds two parents into a crossover node that produces a mutated offspring. Reading left to right, each strategy relaxes a constraint of the one before it."
+       style="width: 88%; height: auto; object-fit: contain;" />
+  <p style="font-size: 0.9em; color: #666; margin-top: 0.4rem;">
+    The same population loop with two knobs set differently — the <strong>operator</strong> (how many parents feed one mutation) and <strong>selection</strong> (how it prunes). <strong>Beam search</strong> is a unary operator with strict top-
+<span>
+  \( B \)
+  </span>
+
+ survival (keep the best 
+<span>
+  \( B \)
+  </span>
+
+, drop the rest). <strong>Tree search</strong> (MCTS/UCT) keeps the unary operator but spends budget adaptively on the promising subtree (highlighted) while under-tried branches stay alive. <strong>Evolutionary</strong> adds what neither has: an <em>n-ary</em> operator that <strong>recombines</strong> several parents (crossover, highlighted) and diversity-preserving selection. Reading left to right, each strategy relaxes a constraint of the one before it.
+  </p>
+</div>
+<p>Reading left to right, each strategy relaxes a constraint of the one before it: beam search is strict top-
 <span>
   \( B \)
   </span>
@@ -711,6 +734,27 @@ https://github.com/alex-shpak/hugo-book
 </h2>
 <p>The systems above, and most LLM kernel generators, treat the kernel as a <strong>single monolithic artifact</strong> optimized end-to-end. This has two costs. First, it is <em>inefficient</em>: repeatedly re-optimizing an entire kernel wastes improvement effort and tokens, because most useful changes are <em>local</em> and touch only a small part of the computation. Second, monolithic kernels are <em>opaque</em>: a single end-to-end correctness or speedup number cannot say <em>which part</em> is wrong or slow, which makes the result hard for both engineers and LLMs to debug, reuse, or adapt.</p>
 <p>The response is to <strong>decompose</strong> the problem: split the model into subproblems, solve each as its own subkernel, and compose the results into an end-to-end implementation. <strong>KernelFalcon</strong> [14] established this recipe for LLM kernel generation, fusing a PyTorch model into a typed JSON compute-graph of subgraphs, generating each subkernel with a pool of parallel workers under execution-based verification, and stitching the verified pieces back together with the LLM. <strong>MKEvolve</strong> [1] builds directly on that decompose-generate-compose lineage but makes two changes: it treats the decomposition itself as a first-class object that is <em>evolved</em> rather than fixed once, and it makes composition and verification <em>programmatic</em> rather than model-driven. A kernel is represented not as one file but as a <em>codebase</em>: a set of files, each implementing a subproblem derived from the original PyTorch module, plus a single top-level module that orchestrates the subkernels into a functionally identical implementation. The search then runs at <em>two</em> levels at once: over the subkernel implementations, and over the decomposition topology (how many subproblems there are and where the boundaries fall). Three choices instantiate the loop above:</p>
+<div style="text-align: center; margin: 2rem 0;"><img src="mkevolve_topology_speedup.svg" alt="MKEvolve kernel synthesis on the KernelBench L3 ConvolutionalVisionTransformer task over five outer-loop iterations. Left panel (a): the subproblem decomposition topology evolves; subkernel 4, the Transformer Encoder, fails, is decomposed into Self-Attention (4a) and Feed-forward (4b), and is then fused into a single Transformer Block subkernel (4c). Right panel (b): per-subkernel and end-to-end (E2E) speedup relative to torch.compile as the number of generated kernels grows from 32 to 160; the dashed E2E curve rises from failure to about 0.53 once subproblem 4 is decomposed, then climbs toward 1.0 after 4a and 4b are fused into 4c." style="width: 100%; height: auto; object-fit: contain;" /><p style="margin-top: 0.5rem; font-style: italic; color: #475569;">MKEvolve on the KernelBench L3 Conv-ViT task (Figure 1 of [1]): the decomposition topology and the end-to-end speedup co-evolve. A failing subproblem (the Transformer Encoder, 
+<span>
+  \( 4 \)
+  </span>
+
+) splits into Self-Attention (
+<span>
+  \( 4a \)
+  </span>
+
+) and Feed-forward (
+<span>
+  \( 4b \)
+  </span>
+
+), which are later fused into a Transformer Block (
+<span>
+  \( 4c \)
+  </span>
+
+); the dashed E2E curve tracks that structural change, rising from failure toward `torch.compile` parity.</p></div>
 <ul>
 <li><strong>Two-level search.</strong> An inner beam search optimizes each subkernel (reward = speedup over <code>torch.compile</code>, incorrect kernels get 0), while every few iterations an outer step reshapes the topology, splitting a failing subproblem in two or fusing subproblems into a larger one, and the LLM budget is steered toward the slow or incorrect pieces rather than spread evenly.</li>
 <li><strong>Programmatic composition.</strong> Verified subkernels are plugged into the end-to-end kernel by a <em>deterministic</em> orchestrator, not stitched by the model, so the composed program is correct-by-construction from its parts. This is what makes subkernels <em>swappable</em> (adapt to a related model by replacing one subkernel) and failures <em>traceable</em> (a wrong output localizes to a specific subkernel). Subkernels are held to the anti-cheating and strict-correctness standard of Section 2.3, reusing the TritonRL cheating detector [8] and the KernelBench evaluation pipeline [9].</li>

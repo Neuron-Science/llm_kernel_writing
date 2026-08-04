@@ -26,7 +26,7 @@ Section 3.2 set up reinforcement learning for kernels in its simplest form. This
 <link rel="canonical" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-3/">
 <link rel="stylesheet" href="/llm_kernel_writing/book.min.27cffe658670f57112663ed746a421db277c2dd6549965c27f9ad0103cccd990.css" integrity="sha256-J8/&#43;ZYZw9XESZj7XRqQh2yd8LdZUmWXCf5rQEDzM2ZA=" crossorigin="anonymous">
   <script defer src="/llm_kernel_writing/fuse.min.js"></script>
-  <script defer src="/llm_kernel_writing/en.search.min.4ef56be7e65ddbf5c290f9e9540ecc218ceb2c95fac3ed7235d1512c035fb236.js" integrity="sha256-TvVr5&#43;Zd2/XCkPnpVA7MIYzrLJX6w&#43;1yNdFRLANfsjY=" crossorigin="anonymous"></script>
+  <script defer src="/llm_kernel_writing/en.search.min.39acd0eac4d06e0fde286fb080a38753f78a7e53cab50527a79c554472851b7d.js" integrity="sha256-OazQ6sTQbg/eKG&#43;wgKOHU/eKflPKtQUnp5xVRHKFG30=" crossorigin="anonymous"></script>
 <link rel="alternate" type="application/rss+xml" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-3/index.xml" title="Teaching LLMs to Write System Kernels" />
 <!--
 Made with Book Theme
@@ -489,14 +489,40 @@ https://github.com/alex-shpak/hugo-book
   
 </h2>
 <p>Section 2.1 described sequential refinement as an inference-time knob: run a fixed policy over several feedback-conditioned turns, each reading the compiler error, correctness diff, or profile of the last. <strong>Multi-turn RL</strong> is the training-time counterpart, recovering the information single-turn RL throws away by <em>training</em> the policy to act well over those turns rather than merely running it over them. This is the standard setup for <strong>tool-use agents</strong> [6] that interleave reasoning with tool calls — issuing web searches, running code, or invoking a compiler and profiler; kernel refinement is one such case, where the tools are the compiler and the hardware (<em>Kevin</em> [1], <em>CUDA Agent</em> [3]; <em>RAGEN/StarPO</em> [4], <em>Search-R1</em> [5]). A recurring empirical finding is that, under a fixed compute budget, investing in iterative refinement over turns outperforms drawing many independent single-shot samples, because feedback across turns is more informative than one-shot diversity [1].</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>        ┌──── context grows each turn:  x, (y_1, f_1), …, (y_{t-1}, f_{t-1}) ────┐
-</span></span><span style="display:flex;"><span>        │                                                                       │
-</span></span><span style="display:flex;"><span>        ▼                                                                       │
-</span></span><span style="display:flex;"><span>   [ policy π_θ ] ──▶ answer y_t ──▶ [ execute ] ──▶ feedback f_t ──────────────┘
-</span></span><span style="display:flex;"><span>                                      (compiler error · correctness · profiling)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>   after T turns  ──▶  final answer&#39;s outcome = reward r  ──▶  policy-gradient update
-</span></span></code></pre></div><p>Here each turn feeds the previous attempts and their feedback back into the policy, so the model revises rather than restarts; the reward is applied once the trajectory ends (single-turn RL is just the special case 
+<div style="text-align: center; margin: 2rem 0;">
+  <img src="multi_turn_loop.svg"
+       alt="The multi-turn RL loop: the history h_t (the prompt plus every earlier attempt and its feedback) grows each turn and feeds the policy pi_theta, which samples the next answer y_t; the environment executes it (compile, check, time) and returns feedback f_t, which is appended to the history and the cycle repeats; after T turns the final answer's outcome becomes the reward r, which drives a policy-gradient update"
+       style="width: 52%; height: auto; object-fit: contain;" />
+  <p style="font-size: 0.9em; color: #666; margin-top: 0.4rem;">
+    The multi-turn RL loop. The history 
+<span>
+  \( h_t \)
+  </span>
+
+ grows each turn and conditions the policy, which samples the next attempt 
+<span>
+  \( y_t \)
+  </span>
+
+; the <em>oracle</em> (highlighted) executes it, <em>compile · check · time</em>, and its feedback 
+<span>
+  \( f_t \)
+  </span>
+
+ is appended to the history and the cycle repeats, so the model revises rather than restarts. After 
+<span>
+  \( T \)
+  </span>
+
+ turns the final answer's outcome becomes the reward that drives a policy-gradient update. Single-turn RL is the special case 
+<span>
+  \( T = 1 \)
+  </span>
+
+.
+  </p>
+</div>
+<p>Here each turn feeds the previous attempts and their feedback back into the policy, so the model revises rather than restarts; the reward is applied once the trajectory ends (single-turn RL is just the special case 
 <span>
   \( T = 1 \)
   </span>
@@ -570,6 +596,14 @@ https://github.com/alex-shpak/hugo-book
 
  — so the entire trajectory is judged by the last kernel it produces. Handing out <strong>per-turn (process) rewards</strong> instead is the alternative, and how a single terminal reward is then spread back over the turns is exactly the credit-assignment question below.</p>
 <p>Training over multi-turn trajectories raises two recurring issues beyond the single-turn case — keeping the growing context manageable, and assigning credit across turns.</p>
+<div style="text-align: center; margin: 2rem 0;">
+  <img src="context_and_credit.svg"
+       alt="The two issues that running the multi-turn loop raises. Context: each turn appends the attempt and its bulky feedback, so the history balloons to 50k-100k tokens, handled by a cascaded toolkit (compress observations, then window, then summarize older turns) that keeps the durable artifacts (the best kernel so far and why it fell short); this arises whether a fixed policy is run or a policy is trained. Credit assignment (only when training on the loop): the reward lands only at the trajectory's end and must be pushed back over a granularity ladder from token-level (process reward model or Monte-Carlo, costly) through turn-level (reward-to-go plus GAE, where kernel RL systems sit) to trajectory-level (one score, coarsest)."
+       style="width: 60%; height: auto; object-fit: contain;" />
+  <p style="font-size: 0.9em; color: #666; margin-top: 0.4rem;">
+    The two issues that running the loop raises. <strong>Context</strong> bites whether a fixed policy is run or a policy is trained: each turn appends the attempt and its bulky feedback, so the history balloons, and a cascaded toolkit — <em>compress observations, then window, then summarize older turns</em> — keeps it bounded while preserving the durable artifacts (the best kernel so far and why it fell short). <strong>Credit assignment</strong> arises only when <em>training</em> on the loop: a reward that lands only at the end must be pushed back over a granularity ladder — <em>token</em> → <em>turn</em> → <em>trajectory</em> — and kernel RL systems sit at the turn level. Both are detailed below.
+  </p>
+</div>
 <h3 id="context-management">
   Context management
   
@@ -603,6 +637,29 @@ https://github.com/alex-shpak/hugo-book
 </ul>
 <p>Finer credit assignment lowers the variance of the learning signal but adds cost and its own estimation error, so kernel systems in practice sit mostly at the turn levels.</p>
 <p><strong>A second axis: attribution by token class.</strong> The granularity ladder above subdivides a trajectory <em>temporally</em>, by token, by turn, or as a whole. An orthogonal move is to subdivide a <em>single</em> response by the <strong>role</strong> of its tokens. TritonRL&rsquo;s <strong>hierarchical reward decomposition (HRD)</strong> [14] does this for kernels: it splits one response into a high-level <em>planning</em> span (the reasoning trace) and a low-level <em>coding</em> span (the emitted kernel) and gives each span its own reward and its own group-relative advantage, rather than one scalar for the whole response. Because it decomposes a <em>single</em> response, it applies even to a single attempt (TritonRL is single-turn) and sits off the token/turn/trajectory ladder rather than at a point on it, directly addressing the within-response credit problem noted at the start of this section.</p>
+<div style="text-align: center; margin: 2rem 0;">
+  <img src="token_class_attribution.svg"
+       alt="Attribution by token class, TritonRL's hierarchical reward decomposition. It is a different cut from the credit-assignment ladder above: that ladder splits a trajectory by time (token, turn, trajectory), whereas this splits one response by the role of its tokens. One response is divided into a planning span (the reasoning trace) and a coding span (the emitted kernel), each with its own group-relative advantage; the two spans are rewarded asymmetrically, the plan tokens receiving the speedup reward and the code tokens the correctness reward, because the code is written conditioned on the plan so charging the code for a slow plan would punish a faithful build of a bad strategy. Rewarding both spans for speedup instead lowers the match-or-beat rate from 36 to 33 percent. The two spans co-evolve under one weighted objective, J of theta equals the expectation of alpha times J-plan plus J-code, with alpha around 0.1."
+       style="width: 60%; height: auto; object-fit: contain;" />
+  <p style="font-size: 0.9em; color: #666; margin-top: 0.4rem;">
+    Attribution by token class. The credit-assignment ladder above cuts a trajectory <em>by time</em> (
+<span>
+  \( \text{token} \to \text{turn} \to \text{trajectory} \)
+  </span>
+
+); HRD instead cuts a <em>single</em> response <em>by the role</em> of its tokens — a <strong>planning</strong> span and a <strong>coding</strong> span, each with its own group-relative advantage. The mapping is deliberately <em>crossed</em>: the plan takes the <strong>speedup</strong> reward and the code the <strong>correctness</strong> reward, since the code is written conditioned on the plan, so charging the code for a slow plan would punish a faithful build of a bad strategy. Rewarding both spans for speedup instead drops the match-or-beat rate 
+<span>
+  \( 36\% \to 33\% \)
+  </span>
+
+. The two spans co-evolve under one weighted objective with 
+<span>
+  \( \alpha \approx 0.1 \)
+  </span>
+
+.
+  </p>
+</div>
 <p>The two spans are rewarded <em>asymmetrically</em> (Section 3.4): the plan tokens receive the speedup reward and the code tokens the correctness reward. The asymmetry is deliberate. Because the code is written <em>conditioned on</em> the plan, charging the code for a slow plan would punish a faithful implementation of an inherently suboptimal strategy, so correctness-only on the code decouples that confound while the speedup pressure lands on the plan, where the strategy is actually chosen. Rewarding both spans for speedup instead lowers the match-or-beat-reference rate from 36% to 33% on single-operator tasks [14]. The two spans then co-evolve under one weighted objective,</p>
 
 <span>\[ \mathcal{J}(\theta) = \mathbb{E}\big[\, \alpha\, \mathcal{J}^{\text{plan}}(\theta) + \mathcal{J}^{\text{code}}(\theta) \,\big], \]</span>

@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="632" viewBox="0 0 512 632" role="img" aria-label="The hardened verifier pipeline: a submission runs inside an isolated sandbox (harness isolation, which blocks tampering with the evaluator), then passes a chain of gates: compile, robust correctness on I random held-out inputs (blocks faking correctness), genuine-kernel via coverage plus static linter plus LLM judge (blocks not writing a real kernel), and robust timing via median-of-buckets and a 2x speedup clip (blocks faking speed); only a submission that clears every gate is paid a speed score, and any gate that fails caps the score at zero or correct-only with no speed credit">
+  <!-- The hardened verifier pipeline, from the Section 2.3 mitigation ASCII:
+       a submission runs inside an isolated SANDBOX (harness isolation), then
+       passes a vertical chain of gates, compile -> robust correctness ->
+       genuine-kernel -> robust timing, and only a submission that clears every
+       gate is paid a speed score; any gate failing caps the score. Each gate is
+       annotated with the exploit family it blocks, so the four gates map one-to-
+       one onto the four cheat families catalogued above. This matches the slide
+       figure exactly (same sandbox boundary and gate ordering); the through-line
+       caption lives in the page's figure caption rather than inside the SVG.
+       Slate marks the flow and gates, orange the cheat each gate blocks, teal the
+       honest payoff (score), red the capped-fail outcome. -->
+  <rect x="0" y="0" width="512" height="632" fill="#eef2f6"/>
+
+  <!-- ================= Submission (input) ================= -->
+  <rect x="150" y="20" width="212" height="40" rx="10" ry="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/>
+  <text x="256" y="45" text-anchor="middle" font-family="Helvetica, Arial, sans-serif"
+        font-size="14" fill="#334155">submission (candidate kernel)</text>
+  <line x1="256" y1="60" x2="256" y2="78" stroke="#64748b" stroke-width="2.5"/>
+  <polygon points="256,84 249,74 263,74" fill="#64748b"/>
+
+  <!-- ================= Sandbox (outer, harness isolation) ================= -->
+  <rect x="22" y="88" width="468" height="404" rx="16" ry="16"
+        fill="#f1f5f9" stroke="#475569" stroke-width="2.5" stroke-dasharray="9 7"/>
+  <circle cx="52" cy="118" r="15" fill="#475569"/>
+  <text x="52" y="124" text-anchor="middle" font-family="Helvetica, Arial, sans-serif"
+        font-size="16" font-weight="bold" fill="#ffffff">1</text>
+  <text x="78" y="116" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="bold" fill="#334155">harness isolation (sandbox)</text>
+  <text x="50" y="139" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#64748b">can't patch the timer, reach the reference, or read a stale buffer</text>
+  <text x="50" y="158" font-family="Helvetica, Arial, sans-serif" font-size="12" font-style="italic" fill="#9a3412">blocks tampering with the evaluator</text>
+  <line x1="44" y1="170" x2="468" y2="170" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <!-- compile (entry gate) -->
+  <rect x="44" y="182" width="424" height="44" rx="10" ry="10" fill="#f8fafc" stroke="#64748b" stroke-width="2.5"/>
+  <text x="62" y="203" font-family="Helvetica, Arial, sans-serif" font-size="15.5" font-weight="bold" fill="#334155">compile</text>
+  <text x="62" y="219" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#64748b">does it build?</text>
+  <line x1="256" y1="226" x2="256" y2="236" stroke="#64748b" stroke-width="2.5"/>
+  <polygon points="256,242 249,232 263,232" fill="#64748b"/>
+
+  <!-- 2. robust correctness -->
+  <rect x="44" y="244" width="424" height="68" rx="10" ry="10" fill="#f8fafc" stroke="#64748b" stroke-width="2.5"/>
+  <circle cx="76" cy="278" r="15" fill="#64748b"/>
+  <text x="76" y="284" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#ffffff">2</text>
+  <text x="102" y="270" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="bold" fill="#334155">robust correctness</text>
+  <text x="102" y="289" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#64748b">I random held-out inputs (TritonRL I = 5)</text>
+  <text x="102" y="307" font-family="Helvetica, Arial, sans-serif" font-size="12" font-style="italic" fill="#9a3412">blocks faking correctness</text>
+  <line x1="256" y1="312" x2="256" y2="322" stroke="#64748b" stroke-width="2.5"/>
+  <polygon points="256,328 249,318 263,318" fill="#64748b"/>
+
+  <!-- 3. genuine-kernel -->
+  <rect x="44" y="330" width="424" height="68" rx="10" ry="10" fill="#f8fafc" stroke="#64748b" stroke-width="2.5"/>
+  <circle cx="76" cy="364" r="15" fill="#64748b"/>
+  <text x="76" y="370" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#ffffff">3</text>
+  <text x="102" y="356" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="bold" fill="#334155">genuine-kernel</text>
+  <text x="102" y="375" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#64748b">coverage &#961; = t<tspan dy="3" font-size="9">kernel</tspan><tspan dy="-3"> / t</tspan><tspan dy="3" font-size="9">total</tspan><tspan dy="-3"> + static linter + LLM judge</tspan></text>
+  <text x="102" y="393" font-family="Helvetica, Arial, sans-serif" font-size="12" font-style="italic" fill="#9a3412">blocks not writing a real kernel</text>
+  <line x1="256" y1="398" x2="256" y2="408" stroke="#64748b" stroke-width="2.5"/>
+  <polygon points="256,414 249,404 263,404" fill="#64748b"/>
+
+  <!-- 4. robust timing -->
+  <rect x="44" y="416" width="424" height="68" rx="10" ry="10" fill="#f8fafc" stroke="#64748b" stroke-width="2.5"/>
+  <circle cx="76" cy="450" r="15" fill="#64748b"/>
+  <text x="76" y="456" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#ffffff">4</text>
+  <text x="102" y="442" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="bold" fill="#334155">robust timing</text>
+  <text x="102" y="461" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#64748b">median-of-buckets &#183; clip speedup at 2&#215;</text>
+  <text x="102" y="479" font-family="Helvetica, Arial, sans-serif" font-size="12" font-style="italic" fill="#9a3412">blocks faking speed</text>
+
+  <!-- sandbox exit -> score -->
+  <line x1="256" y1="492" x2="256" y2="508" stroke="#0d9488" stroke-width="2.5"/>
+  <polygon points="256,514 249,504 263,504" fill="#0d9488"/>
+
+  <!-- ================= Score (teal, the honest payoff) ================= -->
+  <rect x="96" y="516" width="320" height="56" rx="12" ry="12" fill="#ccfbf1" stroke="#0d9488" stroke-width="2.5"/>
+  <circle cx="126" cy="544" r="15" fill="#0d9488"/>
+  <text x="126" y="550" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#ffffff">5</text>
+  <text x="152" y="539" font-family="Helvetica, Arial, sans-serif" font-size="16.5" font-weight="bold" fill="#0f766e">score (+ penalties)</text>
+  <text x="152" y="558" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#0f766e">speed credited only if every gate passed</text>
+
+  <!-- ================= Fail outcome (red) ================= -->
+  <rect x="44" y="586" width="424" height="34" rx="9" ry="9" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+  <text x="256" y="608" text-anchor="middle" font-family="Helvetica, Arial, sans-serif"
+        font-size="12.5" fill="#991b1b"><tspan font-weight="bold">any gate fails &#8594; score capped</tspan>  (0, or correct-only, no speed credit)</text>
+</svg>

@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="628" viewBox="0 0 512 628" role="img" aria-label="Attribution by token class: TritonRL's hierarchical reward decomposition. It is a different cut from the credit-assignment ladder above: that ladder splits a trajectory by time (token, turn, trajectory), whereas this splits one response by the role of its tokens (a planning span versus a coding span). One response is divided into a planning span (the reasoning trace) and a coding span (the emitted kernel), each with its own group-relative advantage. The two spans are rewarded asymmetrically: the plan tokens receive the speedup reward and the code tokens the correctness reward. The asymmetry is deliberate: the code is written conditioned on the plan, so charging the code for a slow plan would punish a faithful implementation of a bad strategy; correctness-only on the code decouples that confound while the speedup pressure lands on the plan, where the strategy is chosen. Rewarding both spans for speedup instead lowers the match-or-beat rate from 36 to 33 percent. The two spans co-evolve under one weighted objective, J of theta equals the expectation of alpha times J-plan plus J-code, with alpha around 0.1 so the plan drifts slowly enough for the code policy to keep pace. Because it cuts by role rather than time, it applies even to a single turn (TritonRL is single-turn).">
+  <!-- Section 3.3 figure: attribution by token class (TritonRL's HRD),
+       the "second axis" that closes the credit-assignment discussion.
+       TOP banner = the orthogonality: the credit ladder above cuts a trajectory
+       by TIME (token/turn/trajectory); HRD cuts ONE response by the ROLE of its
+       tokens (plan/code).
+       MIDDLE = one response split into a planning span and a coding span, each
+       mapped to its own reward and its own group-relative advantage; the mapping
+       is asymmetric (plan -> speedup, code -> correctness).
+       The orange box carries the rationale for that asymmetry, and the footer
+       box the one weighted objective the two spans co-evolve under.
+       Web-adapted from the slide figure: no title band (the caption carries it),
+       and the layout is free-height for a contained <img> (no cover-crop).
+       Palette matches the sibling figures: slate = the response/flow, teal = the
+       reward payoff and the highlighted (role) cut, orange = the why-it-matters
+       caveat. -->
+  <rect x="0" y="0" width="512" height="628" fill="#eef2f6"/>
+
+  <!-- ============================================================= -->
+  <!-- Banner: two orthogonal ways to cut credit -->
+  <!-- ============================================================= -->
+  <rect x="14" y="16" width="484" height="80" rx="12" ry="12" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="30" y="40" font-family="Helvetica, Arial, sans-serif" font-size="12.5" font-weight="bold" fill="#334155">TWO ORTHOGONAL CUTS</text>
+  <text x="30" y="64" font-family="Helvetica, Arial, sans-serif" font-size="11.5" fill="#94a3b8"><tspan font-weight="bold">by TIME</tspan> (the credit ladder above): token &#183; turn &#183; trajectory</text>
+  <text x="30" y="86" font-family="Helvetica, Arial, sans-serif" font-size="11.5" fill="#0f766e"><tspan font-weight="bold">by ROLE</tspan> (HRD, here): planning span &#183; coding span</text>
+
+  <!-- ================= one response, split into two spans ================= -->
+  <text x="256" y="122" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11.5" font-style="italic" fill="#64748b">one response  y<tspan dy="3" font-size="8">t</tspan><tspan dy="-3">, split into two spans by token role</tspan></text>
+
+  <rect x="36" y="132" width="440" height="64" rx="10" ry="10" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+  <line x1="256" y1="132" x2="256" y2="196" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="146" y="158" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#334155">PLANNING span</text>
+  <text x="146" y="177" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#64748b">the reasoning trace</text>
+  <text x="366" y="158" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#334155">CODING span</text>
+  <text x="366" y="177" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#64748b">the emitted kernel</text>
+
+  <!-- arrows span -> reward -->
+  <line x1="146" y1="196" x2="146" y2="212" stroke="#0d9488" stroke-width="2.4"/>
+  <polygon points="146,216 140,206 152,206" fill="#0d9488"/>
+  <line x1="366" y1="196" x2="366" y2="212" stroke="#0d9488" stroke-width="2.4"/>
+  <polygon points="366,216 360,206 372,206" fill="#0d9488"/>
+
+  <!-- ================= two rewards (asymmetric mapping) ================= -->
+  <rect x="36" y="218" width="200" height="90" rx="10" ry="10" fill="#ccfbf1" stroke="#0d9488" stroke-width="2.2"/>
+  <text x="136" y="242" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" font-weight="bold" fill="#0f766e">SPEEDUP reward</text>
+  <text x="136" y="260" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#0f766e">on the plan tokens</text>
+  <text x="136" y="283" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#0f766e">its own group-</text>
+  <text x="136" y="297" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#0f766e">relative advantage</text>
+
+  <rect x="276" y="218" width="200" height="90" rx="10" ry="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="2.2"/>
+  <text x="376" y="242" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" font-weight="bold" fill="#0f766e">CORRECTNESS reward</text>
+  <text x="376" y="260" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#0f766e">on the code tokens</text>
+  <text x="376" y="283" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#0f766e">its own group-</text>
+  <text x="376" y="297" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#0f766e">relative advantage</text>
+
+  <!-- ================= why the mapping is crossed (rationale) ================= -->
+  <rect x="36" y="326" width="440" height="118" rx="10" ry="10" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="56" y="350" font-family="Helvetica, Arial, sans-serif" font-size="12.5" font-weight="bold" fill="#9a3412">why this pairing, and not the obvious one?</text>
+  <text x="56" y="371" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#c2410c">the code is written conditioned on the plan, so charging the code</text>
+  <text x="56" y="387" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#c2410c">for a slow plan would punish a faithful build of a bad strategy.</text>
+  <text x="56" y="403" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#c2410c">correctness-only on the code decouples that; the speedup pressure</text>
+  <text x="56" y="419" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#c2410c">lands on the plan, where the strategy is actually chosen.</text>
+  <text x="56" y="437" font-family="Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#9a3412">both spans for speedup instead: match-or-beat 36% &#8594; 33%</text>
+
+  <!-- ================= one weighted objective ================= -->
+  <rect x="36" y="462" width="440" height="88" rx="10" ry="10" fill="#f1f5f9" stroke="#0d9488" stroke-width="2"/>
+  <text x="256" y="486" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#334155">the two spans co-evolve under one objective</text>
+  <text x="256" y="516" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="17" fill="#0f766e">J(&#952;) = E[ &#945; &#183; J<tspan dy="4" font-size="10">plan</tspan><tspan dy="-4"> + J</tspan><tspan dy="4" font-size="10">code</tspan><tspan dy="-4"> ]</tspan></text>
+  <text x="256" y="539" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#64748b">&#945; &#8776; 0.1: the plan drifts slowly enough for the code policy to keep pace</text>
+
+  <!-- ================= footer tie-in ================= -->
+  <text x="256" y="584" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#64748b">it cuts by role, not by time, so it applies even to a single turn</text>
+  <text x="256" y="606" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#64748b">(TritonRL is single-turn)</text>
+</svg>

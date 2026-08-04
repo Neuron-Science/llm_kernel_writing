@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="576" viewBox="0 0 512 576" role="img" aria-label="The evolutionary loop: one five-part cycle over a population P_t, not a single trajectory. A population box at the top holds the candidate kernels and their fitness scores. From it the loop flows downward through five numbered stages: 1, select parents and inspirations (the fittest, a diverse sample, or both); 2, vary, an LLM proposes offspring by editing one candidate (mutation) or combining several (crossover), and the operator may itself be an agent; 3, evaluate, compile, check, and time each candidate against a reference; 4, fitness, correctness-gated speedup, F of y equals speedup of y if correct and zero otherwise, so a fast but wrong kernel is worthless; 5, survival, keep the fittest, register the offspring and decide who stays. A return arrow carries the survivors back up to the population as the next generation, closing the loop. The takeaway: a refinement trajectory is just a population of size one, the special case where the population has a single member. The design freedom lives in three of the stages: selection, the operator (variation), and population structure (survival).">
+  <!-- Section 2.2 figure: the evolutionary loop, rendered from the five-part
+       ASCII it replaces in this subsection.
+       A POPULATION hub at the top feeds a vertical column of five numbered stages
+       (select -> vary -> evaluate -> fitness -> survival), and a teal return arrow
+       up the left channel closes the loop (survivors -> next generation).
+       FITNESS is highlighted teal (the one concrete payoff: correctness-gated
+       speedup). Slate diamonds mark the three stages where the design freedom
+       lives (selection / operator / population structure). The footer states the
+       tie to the depth axis of Section 2.1: a trajectory is a population of size one.
+       Web-adapted from the slide figure: no title band (the caption carries it)
+       and the layout is free-height for a contained <img> (no cover-crop).
+       Palette matches the sibling figures: slate = the loop/flow, teal = the
+       fitness payoff and the closing return. -->
+  <rect x="0" y="0" width="512" height="576" fill="#eef2f6"/>
+
+  <!-- ================= population hub ================= -->
+  <rect x="70" y="16" width="372" height="54" rx="10" ry="10" fill="#e2e8f0" stroke="#334155" stroke-width="2.5"/>
+  <text x="256" y="41" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#334155">POPULATION  P<tspan dy="4" font-size="10">t</tspan></text>
+  <text x="256" y="60" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#64748b">candidate kernels + their fitness scores</text>
+
+  <!-- arrow population -> select -->
+  <line x1="256" y1="72" x2="256" y2="81" stroke="#64748b" stroke-width="2.2"/>
+  <polygon points="256,85 250,79 262,79" fill="#64748b"/>
+
+  <!-- ================= (1) select ================= -->
+  <rect x="70" y="86" width="372" height="52" rx="10" ry="10" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+  <text x="90" y="118" font-family="Helvetica, Arial, sans-serif" font-size="19" fill="#475569">&#9312;</text>
+  <text x="116" y="110" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#334155">SELECT parents / inspirations</text>
+  <text x="116" y="128" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#64748b">the fittest, a diverse sample, or both</text>
+  <polygon points="452,100 457,105 452,110 447,105" fill="#475569"/>
+
+  <line x1="256" y1="140" x2="256" y2="149" stroke="#64748b" stroke-width="2.2"/>
+  <polygon points="256,153 250,147 262,147" fill="#64748b"/>
+
+  <!-- ================= (2) vary ================= -->
+  <rect x="70" y="154" width="372" height="66" rx="10" ry="10" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+  <text x="90" y="192" font-family="Helvetica, Arial, sans-serif" font-size="19" fill="#475569">&#9313;</text>
+  <text x="116" y="178" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#334155">VARY: an LLM proposes offspring</text>
+  <text x="116" y="195" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#64748b">edit one (mutation) or combine several (crossover)</text>
+  <text x="116" y="211" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#64748b">the operator may itself be an agent</text>
+  <polygon points="452,168 457,173 452,178 447,173" fill="#475569"/>
+
+  <line x1="256" y1="222" x2="256" y2="231" stroke="#64748b" stroke-width="2.2"/>
+  <polygon points="256,235 250,229 262,229" fill="#64748b"/>
+
+  <!-- ================= (3) evaluate ================= -->
+  <rect x="70" y="236" width="372" height="52" rx="10" ry="10" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+  <text x="90" y="268" font-family="Helvetica, Arial, sans-serif" font-size="19" fill="#475569">&#9314;</text>
+  <text x="116" y="260" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#334155">EVALUATE: compile &#183; check &#183; time</text>
+  <text x="116" y="278" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#64748b">run each candidate against a reference</text>
+
+  <line x1="256" y1="290" x2="256" y2="299" stroke="#64748b" stroke-width="2.2"/>
+  <polygon points="256,303 250,297 262,297" fill="#64748b"/>
+
+  <!-- ================= (4) fitness (highlighted) ================= -->
+  <rect x="70" y="304" width="372" height="74" rx="10" ry="10" fill="#ccfbf1" stroke="#0d9488" stroke-width="2.4"/>
+  <text x="90" y="346" font-family="Helvetica, Arial, sans-serif" font-size="19" fill="#0f766e">&#9315;</text>
+  <text x="116" y="328" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#0f766e">FITNESS: correctness-gated speedup</text>
+  <text x="116" y="350" font-family="Helvetica, Arial, sans-serif" font-size="12.5" fill="#0f766e">F(y) = speedup(y) if correct, else 0</text>
+  <text x="116" y="369" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#0f766e">a fast but wrong kernel is worthless</text>
+
+  <line x1="256" y1="380" x2="256" y2="389" stroke="#64748b" stroke-width="2.2"/>
+  <polygon points="256,393 250,387 262,387" fill="#64748b"/>
+
+  <!-- ================= (5) survival ================= -->
+  <rect x="70" y="394" width="372" height="52" rx="10" ry="10" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+  <text x="90" y="426" font-family="Helvetica, Arial, sans-serif" font-size="19" fill="#475569">&#9316;</text>
+  <text x="116" y="418" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#334155">SURVIVAL: keep the fittest</text>
+  <text x="116" y="436" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#64748b">register offspring, decide who stays</text>
+  <polygon points="452,408 457,413 452,418 447,413" fill="#475569"/>
+
+  <!-- ================= return arrow: survivors -> next generation ================= -->
+  <path d="M 70 420 L 34 420 L 34 43 L 64 43" fill="none" stroke="#0d9488" stroke-width="2.4"/>
+  <polygon points="70,43 64,37 64,49" fill="#0d9488"/>
+  <text transform="rotate(-90 26 234)" x="26" y="234" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" font-weight="bold" fill="#0f766e">survivors &#8594; next generation</text>
+
+  <!-- ================= takeaway: a trajectory is a population of size one ================= -->
+  <rect x="40" y="468" width="432" height="58" rx="10" ry="10" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="256" y="494" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11.5" font-style="italic" fill="#475569">a refinement trajectory = a population of size one</text>
+  <text x="256" y="514" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#64748b">so the depth axis is just the special case |P<tspan dy="3" font-size="8">t</tspan><tspan dy="-3">| = 1</tspan></text>
+
+  <!-- ================= design-freedom legend ================= -->
+  <polygon points="74,547 79,552 74,557 69,552" fill="#475569"/>
+  <text x="88" y="556" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#64748b">design freedom: selection &#183; the operator &#183; population structure</text>
+</svg>

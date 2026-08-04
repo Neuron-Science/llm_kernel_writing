@@ -31,7 +31,7 @@ Every method in this section rests on the same foundation: a verifier good enoug
 <link rel="canonical" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-2/subsection-3/">
 <link rel="stylesheet" href="/llm_kernel_writing/book.min.27cffe658670f57112663ed746a421db277c2dd6549965c27f9ad0103cccd990.css" integrity="sha256-J8/&#43;ZYZw9XESZj7XRqQh2yd8LdZUmWXCf5rQEDzM2ZA=" crossorigin="anonymous">
   <script defer src="/llm_kernel_writing/fuse.min.js"></script>
-  <script defer src="/llm_kernel_writing/en.search.min.4ef56be7e65ddbf5c290f9e9540ecc218ceb2c95fac3ed7235d1512c035fb236.js" integrity="sha256-TvVr5&#43;Zd2/XCkPnpVA7MIYzrLJX6w&#43;1yNdFRLANfsjY=" crossorigin="anonymous"></script>
+  <script defer src="/llm_kernel_writing/en.search.min.39acd0eac4d06e0fde286fb080a38753f78a7e53cab50527a79c554472851b7d.js" integrity="sha256-OazQ6sTQbg/eKG&#43;wgKOHU/eKflPKtQUnp5xVRHKFG30=" crossorigin="anonymous"></script>
 <link rel="alternate" type="application/rss+xml" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-2/subsection-3/index.xml" title="Teaching LLMs to Write System Kernels" />
 <!--
 Made with Book Theme
@@ -573,20 +573,15 @@ https://github.com/alex-shpak/hugo-book
   
 </h2>
 <p>Mitigation hardens the <em>pipeline</em> that turns a submission into a verified score. Rather than one check, a robust verifier runs the submission in an isolated sandbox and passes it through a chain of gates (compile, correctness, genuineness, timing) where any failure caps the score before speed is ever credited:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>                              submission
-</span></span><span style="display:flex;"><span>                                   │
-</span></span><span style="display:flex;"><span>                                   ▼   
-</span></span><span style="display:flex;"><span>          ┌──────────── ① sandbox (harness isolation) ────────────┐
-</span></span><span style="display:flex;"><span>          │  cannot patch the timer / synchronize, reach the      │
-</span></span><span style="display:flex;"><span>          │  reference, or read a non-zeroed output buffer        │
-</span></span><span style="display:flex;"><span>          └────────────────────────┬──────────────────────────────┘
-</span></span><span style="display:flex;"><span>                                   ▼
-</span></span><span style="display:flex;"><span>   compile ──▶ ② correctness ──▶ ③ genuine-kernel ──▶ ④ timing ──▶ ⑤ score
-</span></span><span style="display:flex;"><span>                  (I random          (coverage ρ,       (median-      (+ penalties)
-</span></span><span style="display:flex;"><span>                   inputs)            verifier)       of-buckets)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>   any gate fails  ⇒  score capped (0, or correct-only with no speed credit)
-</span></span></code></pre></div><p>Each gate hardens one of the <em>signals</em> from the first section into a defense: robust correctness hardens the <strong>Correctness</strong> signal, kernel-coverage the <strong>Genuineness</strong> and <strong>Performance</strong> signals, and median-of-buckets timing the <strong>Robustness</strong> signal. Taking them in the order of the pipeline:</p>
+<div style="text-align: center; margin: 2rem 0;">
+  <img src="verification_pipeline.svg"
+       alt="The hardened verifier pipeline: a submission runs inside an isolated sandbox (harness isolation, which blocks tampering with the evaluator), then passes a chain of gates: compile, robust correctness on I random held-out inputs (blocks faking correctness), genuine-kernel via coverage plus static linter plus LLM judge (blocks not writing a real kernel), and robust timing via median-of-buckets and a 2x speedup clip (blocks faking speed); only a submission that clears every gate is paid a speed score, and any gate that fails caps the score at zero or correct-only with no speed credit"
+       style="width: 62%; height: auto; object-fit: contain;" />
+  <p style="font-size: 0.9em; color: #666; margin-top: 0.4rem;">
+    The hardened verifier pipeline. Everything runs inside a <em>sandbox</em>, so the submission cannot tamper with the evaluator; it then clears a chain of gates, compile, robust correctness, genuine-kernel, robust timing, and each gate blocks one of the four cheat families above. Speed is credited only once every gate passes (highlighted); any gate that fails caps the score before speed is ever credited.
+  </p>
+</div>
+<p>Each gate hardens one of the <em>signals</em> from the first section into a defense: robust correctness hardens the <strong>Correctness</strong> signal, kernel-coverage the <strong>Genuineness</strong> and <strong>Performance</strong> signals, and median-of-buckets timing the <strong>Robustness</strong> signal. Taking them in the order of the pipeline:</p>
 <ol>
 <li>
 <p><strong>Harness isolation</strong> <em>(the sandbox, vs. tampering with the evaluator)</em>. None of the checks below matter if the policy can rewrite them, so the whole pipeline runs sandboxed: the submission cannot patch the timer or <code>synchronize</code>, reach 

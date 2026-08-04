@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="648" viewBox="0 0 512 648" role="img" aria-label="The two recurring issues that running the multi-turn loop raises. Top: context; each turn appends the attempt and its bulky feedback so the history balloons to 50k to 100k tokens, handled by a cascaded toolkit (compress observations, then window, then summarize older turns) that keeps the durable artifacts: the best kernel so far and why it fell short. This arises whether a fixed policy is run or a policy is trained. Bottom: credit assignment, which arises only when training; the reward lands only at the trajectory's end and must be pushed back over a granularity ladder from token-level (process reward model or Monte-Carlo, costly) through turn-level (reward-to-go plus GAE, where kernel RL systems sit) to trajectory-level (one score, coarsest).">
+  <!-- Section 3.3 overview figure: the two issues that running the multi-turn
+       loop raises, introduced together just before the Context management and
+       Credit assignment subsections detail them.
+       TOP panel = context: an orange "context balloons" problem box feeds a
+       cascaded toolkit (compress -> window -> summarize) that funnels into a
+       teal "keep durable artifacts" box; this bites whether a fixed policy is
+       run (inference) or a policy is trained.
+       BOTTOM panel = credit assignment (arises only when training): a
+       granularity ladder (token / turn / trajectory) down a finer-to-coarser
+       axis, with the turn level marked teal (where kernel RL systems sit).
+       Web-adapted from the slide figure: no title band (the caption carries it)
+       and the "Part 3 preview" framing dropped, since the website covers credit
+       assignment in full in this same section. Palette matches the sibling
+       figures: slate = flow, orange = the bulky-feedback problem, teal = the
+       kept artifact and the highlighted choice. -->
+  <rect x="0" y="0" width="512" height="648" fill="#eef2f6"/>
+
+  <!-- ============================================================= -->
+  <!-- TOP PANEL: context -->
+  <!-- ============================================================= -->
+  <rect x="14" y="16" width="484" height="290" rx="14" ry="14" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <!-- header + badge -->
+  <text x="30" y="44" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#334155">&#9312; CONTEXT</text>
+  <rect x="300" y="28" width="184" height="22" rx="11" ry="11" fill="#fff7ed" stroke="#ea580c" stroke-width="1.6"/>
+  <text x="392" y="43" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#9a3412">when running or training</text>
+  <text x="30" y="64" font-family="Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#64748b">keep the growing history manageable</text>
+
+  <!-- problem box (orange) -->
+  <rect x="36" y="76" width="440" height="40" rx="10" ry="10" fill="#fff7ed" stroke="#ea580c" stroke-width="2.2"/>
+  <text x="256" y="93" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13.5" font-weight="bold" fill="#9a3412">context balloons: 50k to 100k tokens</text>
+  <text x="256" y="109" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#c2410c">each turn appends the attempt + its bulky feedback</text>
+
+  <!-- arrow problem -> cascade -->
+  <line x1="256" y1="116" x2="256" y2="126" stroke="#64748b" stroke-width="2.2"/>
+  <polygon points="256,130 250,124 262,124" fill="#64748b"/>
+  <text x="300" y="126" font-family="Helvetica, Arial, sans-serif" font-size="10" font-style="italic" fill="#64748b">cascaded toolkit</text>
+
+  <!-- cascade stage 1: compress -->
+  <rect x="66" y="130" width="380" height="32" rx="8" ry="8" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+  <text x="80" y="150" font-family="Helvetica, Arial, sans-serif" font-size="12.5" font-weight="bold" fill="#334155">compress observations</text>
+  <text x="436" y="150" text-anchor="end" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#64748b">top bottleneck, not raw log</text>
+
+  <!-- arrow -->
+  <line x1="256" y1="162" x2="256" y2="169" stroke="#64748b" stroke-width="2.2"/>
+  <polygon points="256,172 250,166 262,166" fill="#64748b"/>
+
+  <!-- cascade stage 2: window -->
+  <rect x="66" y="172" width="380" height="32" rx="8" ry="8" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+  <text x="80" y="192" font-family="Helvetica, Arial, sans-serif" font-size="12.5" font-weight="bold" fill="#334155">window</text>
+  <text x="436" y="192" text-anchor="end" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#64748b">keep recent turns only</text>
+
+  <!-- arrow -->
+  <line x1="256" y1="204" x2="256" y2="211" stroke="#64748b" stroke-width="2.2"/>
+  <polygon points="256,214 250,208 262,208" fill="#64748b"/>
+
+  <!-- cascade stage 3: summarize -->
+  <rect x="66" y="214" width="380" height="32" rx="8" ry="8" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+  <text x="80" y="234" font-family="Helvetica, Arial, sans-serif" font-size="12.5" font-weight="bold" fill="#334155">summarize older turns</text>
+  <text x="436" y="234" text-anchor="end" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#64748b">last resort</text>
+
+  <!-- arrow cascade -> keep (teal) -->
+  <line x1="256" y1="246" x2="256" y2="253" stroke="#0d9488" stroke-width="2.4"/>
+  <polygon points="256,256 250,250 262,250" fill="#0d9488"/>
+
+  <!-- keep durable artifacts (teal) -->
+  <rect x="36" y="256" width="440" height="44" rx="10" ry="10" fill="#ccfbf1" stroke="#0d9488" stroke-width="2.2"/>
+  <text x="256" y="275" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13.5" font-weight="bold" fill="#0f766e">keep durable artifacts</text>
+  <text x="256" y="291" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#0f766e">the best kernel so far + why it fell short</text>
+
+  <!-- ============================================================= -->
+  <!-- BOTTOM PANEL: credit assignment -->
+  <!-- ============================================================= -->
+  <rect x="14" y="320" width="484" height="312" rx="14" ry="14" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <!-- header + badge -->
+  <text x="30" y="348" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#334155">&#9313; CREDIT ASSIGNMENT</text>
+  <rect x="288" y="332" width="196" height="22" rx="11" ry="11" fill="#ecfeff" stroke="#0d9488" stroke-width="1.6"/>
+  <text x="386" y="347" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#0f766e">only when training on the loop</text>
+  <text x="30" y="368" font-family="Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#64748b">reward lands only at the end &#8594; push it back to the turns that earned it</text>
+
+  <!-- finer/coarser axis -->
+  <polygon points="36,380 31,390 41,390" fill="#94a3b8"/>
+  <line x1="36" y1="390" x2="36" y2="570" stroke="#94a3b8" stroke-width="2"/>
+  <polygon points="36,576 31,566 41,566" fill="#94a3b8"/>
+  <text transform="rotate(-90 26 414)" x="26" y="414" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#64748b">finer, costlier</text>
+  <text transform="rotate(-90 26 546)" x="26" y="546" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#64748b">coarser, cheaper</text>
+
+  <!-- token-level row -->
+  <rect x="54" y="384" width="428" height="54" rx="9" ry="9" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.8"/>
+  <text x="70" y="406" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#334155">TOKEN-LEVEL</text>
+  <text x="70" y="425" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#64748b">PRM / Monte-Carlo  &#183;  most informative but costly  &#183;  rarely needed here</text>
+
+  <!-- turn-level row (marked, teal) -->
+  <rect x="54" y="446" width="428" height="70" rx="9" ry="9" fill="#ccfbf1" stroke="#0d9488" stroke-width="3"/>
+  <text x="70" y="468" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#0f766e">TURN-LEVEL</text>
+  <text x="182" y="468" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#0f766e">reward-to-go + GAE</text>
+  <text x="70" y="485" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#0f766e">an early revision that enabled a later win gets credited for it</text>
+  <rect x="70" y="492" width="308" height="18" rx="9" ry="9" fill="#0d9488"/>
+  <text x="224" y="505" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" font-weight="bold" fill="#ffffff">where kernel RL sits: Kevin &#183; Dr. Kernel &#183; CUDA Agent</text>
+
+  <!-- trajectory-level row -->
+  <rect x="54" y="524" width="428" height="52" rx="9" ry="9" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.8"/>
+  <text x="70" y="546" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#334155">TRAJECTORY-LEVEL</text>
+  <text x="70" y="565" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#64748b">one score for the whole rollout  &#183;  lowest variance, coarsest</text>
+
+  <!-- footer tie-in -->
+  <text x="256" y="608" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" font-style="italic" fill="#64748b">a further axis below: attribution by token class</text>
+</svg>

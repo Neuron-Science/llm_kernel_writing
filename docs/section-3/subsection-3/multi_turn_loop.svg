@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="550" viewBox="0 0 512 550" role="img" aria-label="The multi-turn RL loop, from the Section 3.3 ASCII: the history h_t (prompt plus every earlier attempt and its feedback) grows each turn and feeds the policy pi_theta, which samples the next answer y_t; the environment executes it (compile, check, time) and returns feedback f_t, which is appended to the history and the cycle repeats; after T turns the final answer's outcome becomes the reward r, which drives a policy-gradient update">
+  <!-- The multi-turn RL loop, from the Section 3.3 ASCII cycle:
+       context/history h_t grows each turn -> policy pi_theta -> answer y_t ->
+       execute (compile . check . time) -> feedback f_t -> appended back to the
+       history, and the cycle repeats. After T turns the final answer's outcome
+       is the reward r, which drives a policy-gradient update. A vertical cycle
+       with a return arrow up the left side, matching the Section 3.2 loop
+       figure's layout. Slate marks the flow, teal the automatic oracle (execute)
+       and the verified reward, orange the execution feedback fed back in.
+       The through-line caption lives in the page's figure caption. -->
+  <rect x="0" y="0" width="512" height="550" fill="#eef2f6"/>
+
+  <!-- ================= 1. context / history h_t ================= -->
+  <rect x="96" y="28" width="340" height="60" rx="12" ry="12" fill="#f8fafc" stroke="#64748b" stroke-width="2.5"/>
+  <circle cx="124" cy="58" r="15" fill="#64748b"/>
+  <text x="124" y="64" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#ffffff">1</text>
+  <text x="150" y="54" font-family="Helvetica, Arial, sans-serif" font-size="15.5" font-weight="bold" fill="#334155">context / history  h<tspan dy="3" font-size="11">t</tspan></text>
+  <text x="150" y="74" font-family="Helvetica, Arial, sans-serif" font-size="11.5" fill="#64748b">x, (y&#8321;, f&#8321;), &#8230;, (y&#8348;&#8331;&#8321;, f&#8348;&#8331;&#8321;)</text>
+
+  <!-- arrow 1 -> 2 -->
+  <line x1="266" y1="90" x2="266" y2="106" stroke="#64748b" stroke-width="2.5"/>
+  <polygon points="266,112 259,102 273,102" fill="#64748b"/>
+
+  <!-- ================= 2. policy pi_theta -> answer y_t ================= -->
+  <rect x="96" y="116" width="340" height="60" rx="12" ry="12" fill="#f8fafc" stroke="#64748b" stroke-width="2.5"/>
+  <circle cx="124" cy="146" r="15" fill="#64748b"/>
+  <text x="124" y="152" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#ffffff">2</text>
+  <text x="150" y="142" font-family="Helvetica, Arial, sans-serif" font-size="15.5" font-weight="bold" fill="#334155">policy &#960;<tspan dy="3" font-size="11">&#952;</tspan><tspan dy="-3">  &#8594;  answer y</tspan><tspan dy="3" font-size="11">t</tspan></text>
+  <text x="150" y="162" font-family="Helvetica, Arial, sans-serif" font-size="11.5" fill="#64748b">sample  y&#8348; ~ &#960;&#952;(&#183; | h&#8348;)  &#8212; revise, don't restart</text>
+
+  <!-- arrow 2 -> 3 -->
+  <line x1="266" y1="178" x2="266" y2="194" stroke="#64748b" stroke-width="2.5"/>
+  <polygon points="266,200 259,190 273,190" fill="#64748b"/>
+
+  <!-- ================= 3. execute: the oracle (teal) ================= -->
+  <rect x="96" y="204" width="340" height="68" rx="12" ry="12" fill="#ccfbf1" stroke="#0d9488" stroke-width="2.5"/>
+  <circle cx="124" cy="238" r="15" fill="#0d9488"/>
+  <text x="124" y="244" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#ffffff">3</text>
+  <text x="150" y="232" font-family="Helvetica, Arial, sans-serif" font-size="15.5" font-weight="bold" fill="#0f766e">execute</text>
+  <text x="150" y="251" font-family="Helvetica, Arial, sans-serif" font-size="13.5" font-weight="bold" fill="#0f766e">compile &#183; check &#183; time</text>
+  <text x="150" y="267" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#0f766e">on the target hardware</text>
+
+  <!-- arrow 3 -> 4 -->
+  <line x1="266" y1="274" x2="266" y2="290" stroke="#64748b" stroke-width="2.5"/>
+  <polygon points="266,296 259,286 273,286" fill="#64748b"/>
+
+  <!-- ================= 4. feedback f_t (orange) ================= -->
+  <rect x="96" y="300" width="340" height="58" rx="12" ry="12" fill="#fff7ed" stroke="#ea580c" stroke-width="2.5"/>
+  <circle cx="124" cy="329" r="15" fill="#ea580c"/>
+  <text x="124" y="335" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#ffffff">4</text>
+  <text x="150" y="325" font-family="Helvetica, Arial, sans-serif" font-size="15.5" font-weight="bold" fill="#9a3412">feedback  f<tspan dy="3" font-size="11">t</tspan></text>
+  <text x="150" y="345" font-family="Helvetica, Arial, sans-serif" font-size="11.5" fill="#c2410c">compiler error &#183; correctness &#183; profiling</text>
+
+  <!-- ================= return arrow: append to history, repeat ================= -->
+  <path d="M 96 329 H 44 V 58 H 92" fill="none" stroke="#ea580c" stroke-width="2.5"/>
+  <polygon points="96,58 86,53 86,63" fill="#ea580c"/>
+  <text transform="rotate(-90 31 193)" x="31" y="193" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-style="italic" fill="#9a3412">append &#183; context grows each turn</text>
+
+  <!-- ================= after T turns -> reward ================= -->
+  <line x1="266" y1="360" x2="266" y2="378" stroke="#64748b" stroke-width="2.5"/>
+  <polygon points="266,384 259,374 273,374" fill="#64748b"/>
+  <text x="286" y="375" font-family="Helvetica, Arial, sans-serif" font-size="11.5" font-style="italic" fill="#64748b">after T turns</text>
+
+  <!-- ================= 5. reward r (teal outcome) ================= -->
+  <rect x="96" y="388" width="340" height="58" rx="12" ry="12" fill="#f0fdfa" stroke="#0d9488" stroke-width="2.5"/>
+  <circle cx="124" cy="417" r="15" fill="#0d9488"/>
+  <text x="124" y="423" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#ffffff">5</text>
+  <text x="150" y="413" font-family="Helvetica, Arial, sans-serif" font-size="15.5" font-weight="bold" fill="#0f766e">final outcome  &#8594;  reward r</text>
+  <text x="150" y="433" font-family="Helvetica, Arial, sans-serif" font-size="11.5" fill="#0f766e">outcome: only y<tspan dy="3" font-size="9">T</tspan><tspan dy="-3"> scored  &#183;  process: per-turn r</tspan><tspan dy="3" font-size="9">t</tspan></text>
+
+  <!-- arrow 5 -> 6 -->
+  <line x1="266" y1="448" x2="266" y2="464" stroke="#64748b" stroke-width="2.5"/>
+  <polygon points="266,470 259,460 273,460" fill="#64748b"/>
+
+  <!-- ================= 6. policy-gradient update ================= -->
+  <rect x="96" y="474" width="340" height="56" rx="12" ry="12" fill="#f8fafc" stroke="#64748b" stroke-width="2.5"/>
+  <circle cx="124" cy="502" r="15" fill="#64748b"/>
+  <text x="124" y="508" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#ffffff">6</text>
+  <text x="150" y="498" font-family="Helvetica, Arial, sans-serif" font-size="15.5" font-weight="bold" fill="#334155">policy-gradient update</text>
+  <text x="150" y="517" font-family="Helvetica, Arial, sans-serif" font-size="11.5" fill="#64748b">reinforce toward higher trajectory return</text>
+</svg>

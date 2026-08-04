@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="430" viewBox="0 0 960 430" role="img" aria-label="Beam, tree, and evolutionary search as the same population loop with two knobs turned differently: the operator (how many parents feed one mutation) and selection (how it prunes). Left, beam search, a unary operator with strict top-B survival: a seed branches to three mutated children, the best B are kept (filled) and the rest dropped (faded, crossed out). Middle, tree search (MCTS/UCT), a unary operator with adaptive node choice plus an exploration bonus: budget flows into the promising subtree (highlighted teal) while under-tried branches stay alive rather than being pruned. Right, evolutionary, an n-ary operator with diversity-preserving selection: a spread-out diverse population feeds two parents into a crossover node (highlighted teal) that produces a mutated offspring. Reading left to right, each strategy relaxes a constraint of the one before it.">
+  <!-- Section 2.2 figure: beam / tree / evolutionary search, rendered from the
+       three-column ASCII it replaces in this subsection.
+       Landscape (three columns, left -> right) to match the "reading left to right"
+       prose and to sit as a contained <img> (no cover-crop). The ONE idea: these
+       are the same population loop with two knobs turned differently - the operator
+       (unary vs n-ary) and selection (top-B / adaptive / diversity) - and each
+       column relaxes a constraint of the one to its left.
+       Web-adapted from the slide figure: no title band beyond a compact header
+       (the caption carries the framing) and free landscape layout.
+       Palette matches the sibling figures: slate = the shared loop structure;
+       teal = the NEW capability each strategy adds over the previous one (tree:
+       adaptive exploration into the promising subtree; evolutionary: n-ary
+       crossover). Beam is the baseline, so it carries no teal. -->
+  <rect x="0" y="0" width="960" height="430" fill="#eef2f6"/>
+
+  <!-- ================= header ================= -->
+  <text x="480" y="32" text-anchor="middle" font-family="Helvetica, Arial, sans-serif"
+        font-size="20" font-weight="bold" letter-spacing="0.5" fill="#0f766e">SAME LOOP, TWO KNOBS</text>
+  <text x="480" y="55" text-anchor="middle" font-family="Helvetica, Arial, sans-serif"
+        font-size="12.5" font-style="italic" fill="#64748b">operator: how many parents per mutation  ·  selection: how it prunes</text>
+
+  <!-- ============================================================= -->
+  <!-- COLUMN 1 - BEAM SEARCH: unary operator, strict top-B -->
+  <!-- ============================================================= -->
+  <rect x="16" y="72" width="296" height="312" rx="14" ry="14" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="36" y="100" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#334155">BEAM SEARCH</text>
+  <text x="36" y="120" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#64748b">unary  ·  strict top-B, no diversity</text>
+
+  <!-- seed -> three mutated children; keep two, drop one -->
+  <line x1="164" y1="182" x2="112" y2="210" stroke="#64748b" stroke-width="2"/>
+  <line x1="164" y1="182" x2="164" y2="210" stroke="#64748b" stroke-width="2"/>
+  <line x1="164" y1="182" x2="216" y2="210" stroke="#64748b" stroke-width="2"/>
+  <circle cx="164" cy="168" r="14" fill="#e2e8f0" stroke="#475569" stroke-width="2.5"/>
+  <circle cx="110" cy="224" r="15" fill="#cbd5e1" stroke="#475569" stroke-width="2.5"/>
+  <circle cx="164" cy="224" r="15" fill="#cbd5e1" stroke="#475569" stroke-width="2.5"/>
+  <circle cx="218" cy="224" r="15" fill="#eef2f6" stroke="#94a3b8" stroke-width="2" stroke-dasharray="4 3"/>
+  <line x1="209" y1="215" x2="227" y2="233" stroke="#94a3b8" stroke-width="2"/>
+  <line x1="227" y1="215" x2="209" y2="233" stroke="#94a3b8" stroke-width="2"/>
+  <text x="164" y="290" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11.5" fill="#475569">keep the best B, drop the rest</text>
+  <text x="164" y="310" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#94a3b8">the frontier fills with near-copies</text>
+
+  <!-- ============================================================= -->
+  <!-- COLUMN 2 - TREE SEARCH (MCTS/UCT): unary, adaptive + explore -->
+  <!-- ============================================================= -->
+  <rect x="332" y="72" width="296" height="312" rx="14" ry="14" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="352" y="100" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#334155">TREE SEARCH  (MCTS / UCT)</text>
+  <text x="352" y="120" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#64748b">unary  ·  adaptive node choice + exploration bonus</text>
+
+  <!-- root -> two nodes; budget invests deeper into the promising (teal) subtree -->
+  <line x1="470" y1="178" x2="426" y2="197" stroke="#64748b" stroke-width="2"/>
+  <line x1="470" y1="178" x2="514" y2="197" stroke="#0d9488" stroke-width="2.2"/>
+  <line x1="516" y1="223" x2="492" y2="245" stroke="#0d9488" stroke-width="2.2"/>
+  <line x1="516" y1="223" x2="540" y2="245" stroke="#0d9488" stroke-width="2.2"/>
+  <circle cx="470" cy="164" r="14" fill="#e2e8f0" stroke="#475569" stroke-width="2.5"/>
+  <circle cx="424" cy="210" r="13" fill="#cbd5e1" stroke="#475569" stroke-width="2.5"/>
+  <circle cx="516" cy="210" r="13" fill="#ccfbf1" stroke="#0d9488" stroke-width="2.5"/>
+  <circle cx="490" cy="256" r="11" fill="#ccfbf1" stroke="#0d9488" stroke-width="2.5"/>
+  <circle cx="540" cy="256" r="11" fill="#ccfbf1" stroke="#0d9488" stroke-width="2.5"/>
+  <text x="480" y="300" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="bold" fill="#0f766e">budget flows to the promising subtree</text>
+  <text x="480" y="318" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#64748b">the under-tried branch stays alive, not pruned</text>
+
+  <!-- ============================================================= -->
+  <!-- COLUMN 3 - EVOLUTIONARY: n-ary (crossover), diversity-preserving -->
+  <!-- ============================================================= -->
+  <rect x="648" y="72" width="296" height="312" rx="14" ry="14" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="668" y="100" font-family="Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#334155">EVOLUTIONARY</text>
+  <text x="668" y="120" font-family="Helvetica, Arial, sans-serif" font-size="10.5" fill="#64748b">n-ary: mutation + crossover  ·  diversity-preserving</text>
+
+  <!-- diverse population kept spread out -->
+  <text x="724" y="150" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#64748b">diverse population</text>
+  <rect x="668" y="158" width="112" height="92" rx="10" ry="10" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-dasharray="5 4"/>
+  <circle cx="692" cy="182" r="7" fill="#cbd5e1" stroke="#64748b" stroke-width="1.3"/>
+  <circle cx="728" cy="174" r="7" fill="#94a3b8" stroke="#64748b" stroke-width="1.3"/>
+  <circle cx="756" cy="192" r="7" fill="#64748b" stroke="#475569" stroke-width="1.3"/>
+  <circle cx="700" cy="222" r="7" fill="#e2e8f0" stroke="#64748b" stroke-width="1.3"/>
+  <circle cx="740" cy="230" r="6" fill="#cbd5e1" stroke="#64748b" stroke-width="1.3"/>
+  <circle cx="720" cy="204" r="6" fill="#94a3b8" stroke="#64748b" stroke-width="1.3"/>
+
+  <!-- two parents recombine (teal = the new capability) -->
+  <line x1="782" y1="188" x2="833" y2="192" stroke="#0d9488" stroke-width="2.2"/>
+  <polygon points="835,193 826,187 827,197" fill="#0d9488"/>
+  <line x1="782" y1="216" x2="833" y2="201" stroke="#0d9488" stroke-width="2.2"/>
+  <polygon points="835,200 826,196 828,206" fill="#0d9488"/>
+  <circle cx="852" cy="196" r="17" fill="#ccfbf1" stroke="#0d9488" stroke-width="2.5"/>
+  <text x="852" y="203" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="19" font-weight="bold" fill="#0f766e">&#8855;</text>
+  <text x="879" y="192" font-family="Helvetica, Arial, sans-serif" font-size="10" font-weight="bold" fill="#0f766e">crossover</text>
+  <text x="879" y="206" font-family="Helvetica, Arial, sans-serif" font-size="9.5" fill="#64748b">(n-ary)</text>
+
+  <!-- offspring + mutate -->
+  <line x1="852" y1="213" x2="852" y2="255" stroke="#475569" stroke-width="2"/>
+  <polygon points="852,262 846,253 858,253" fill="#475569"/>
+  <circle cx="852" cy="286" r="14" fill="#cbd5e1" stroke="#475569" stroke-width="2.5"/>
+  <path d="M 853 272 A 14 14 0 1 1 838 278" fill="none" stroke="#475569" stroke-width="1.8"/>
+  <polygon points="838,278 835,269 844,272" fill="#475569"/>
+  <text x="852" y="320" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" fill="#64748b">offspring, then mutate</text>
+
+  <!-- ================= takeaway ================= -->
+  <text x="480" y="410" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12.5" font-style="italic" fill="#475569">reading left to right, each strategy relaxes a constraint of the one before it</text>
+</svg>
