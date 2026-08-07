@@ -26,7 +26,7 @@ Section 1 assembled the target of this tutorial. It laid out the accelerator har
 <link rel="canonical" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-1/">
 <link rel="stylesheet" href="/llm_kernel_writing/book.min.27cffe658670f57112663ed746a421db277c2dd6549965c27f9ad0103cccd990.css" integrity="sha256-J8/&#43;ZYZw9XESZj7XRqQh2yd8LdZUmWXCf5rQEDzM2ZA=" crossorigin="anonymous">
   <script defer src="/llm_kernel_writing/fuse.min.js"></script>
-  <script defer src="/llm_kernel_writing/en.search.min.39acd0eac4d06e0fde286fb080a38753f78a7e53cab50527a79c554472851b7d.js" integrity="sha256-OazQ6sTQbg/eKG&#43;wgKOHU/eKflPKtQUnp5xVRHKFG30=" crossorigin="anonymous"></script>
+  <script defer src="/llm_kernel_writing/en.search.min.fce3d3d5f32fa1e015f1be3781528e193ccddb4790cf95e788ad0e7d8a649036.js" integrity="sha256-/OPT1fMvoeAV8b43gVKOGTzN20eQz5XniK0OfYpkkDY=" crossorigin="anonymous"></script>
 <link rel="alternate" type="application/rss+xml" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-1/index.xml" title="Teaching LLMs to Write System Kernels" />
 <!--
 Made with Book Theme
@@ -882,6 +882,19 @@ https://github.com/alex-shpak/hugo-book
   
 </h3>
 <p>Sampling and selection give us a corpus of trustworthy <em>(task, kernel)</em> pairs, but each pair is still a bare input–output example: a task on one side, a kernel on the other. Before training, that raw supervision can be <em>enriched</em> — augmenting what each example teaches and how broadly the corpus covers the space — along three axes.</p>
+<div style="text-align: center; margin: 2rem 0;">
+  <img src="part3-fig-sft-augmentation.svg"
+       alt="How one seed pair is multiplied into many. The seed is the single RMSNorm task and its kernel, and three augmentation axes fan out from it. One, reasoning: prepend a derivation — one program per row, reduce along the columns, memory-bound so fuse, BLOCK_N the next power of two, mask the tail, accumulate in fp32 — leaving the kernel unchanged, so the model reasons before it commits. Two, task and config: sweep across operators such as LayerNorm, softmax and RMSNorm-plus-residual, and within the operator sweep N, M, dtype and target, turning one pair into k pairs where the shape picks the variant. Three, metadata: tag the same pair with backend, difficulty and category, and put the tag in the prompt so generation can be conditioned and scarce backends up-weighted."
+       style="width: 100%; height: auto; object-fit: contain;" />
+  <p style="font-size: 0.9em; color: #666; margin-top: 0.4rem;">
+    The three augmentation axes fanning out from one seed pair: prepending a reasoning trace, sweeping the task and its config into 
+<span>
+  \( k \)
+  </span>
+
+ pairs, and tagging the pair with metadata the prompt can condition on.
+  </p>
+</div>
 <ul>
 <li>
 <p><strong>Reasoning augmentation.</strong> Instead of pairing a task only with its final kernel, each target is annotated with an explicit <em>reasoning trace</em> — a chain-of-thought that spells out the optimization decisions behind the code (tiling and block-size choices, memory-hierarchy staging such as shared-memory/SBUF interleaving, masking of boundary tiles, accumulation strategy, and so on). Such traces are typically <em>distilled</em> from a strong reasoning teacher: the teacher is prompted to both explain and implement the kernel, and the explanation is kept as part of the target 

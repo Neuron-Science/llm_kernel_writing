@@ -26,7 +26,7 @@ Section 3.2 set up reinforcement learning for kernels in its simplest form. This
 <link rel="canonical" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-3/">
 <link rel="stylesheet" href="/llm_kernel_writing/book.min.27cffe658670f57112663ed746a421db277c2dd6549965c27f9ad0103cccd990.css" integrity="sha256-J8/&#43;ZYZw9XESZj7XRqQh2yd8LdZUmWXCf5rQEDzM2ZA=" crossorigin="anonymous">
   <script defer src="/llm_kernel_writing/fuse.min.js"></script>
-  <script defer src="/llm_kernel_writing/en.search.min.39acd0eac4d06e0fde286fb080a38753f78a7e53cab50527a79c554472851b7d.js" integrity="sha256-OazQ6sTQbg/eKG&#43;wgKOHU/eKflPKtQUnp5xVRHKFG30=" crossorigin="anonymous"></script>
+  <script defer src="/llm_kernel_writing/en.search.min.fce3d3d5f32fa1e015f1be3781528e193ccddb4790cf95e788ad0e7d8a649036.js" integrity="sha256-/OPT1fMvoeAV8b43gVKOGTzN20eQz5XniK0OfYpkkDY=" crossorigin="anonymous"></script>
 <link rel="alternate" type="application/rss+xml" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-3/index.xml" title="Teaching LLMs to Write System Kernels" />
 <!--
 Made with Book Theme
@@ -466,6 +466,19 @@ https://github.com/alex-shpak/hugo-book
   <a class="anchor" href="#single-turn-rl-one-attempt-per-task">#</a>
   
 </h2>
+<div style="text-align: center; margin: 2rem 0;">
+  <img src="part3-fig-single-turn-loss.svg"
+       alt="What single-turn RL throws away. On the left one kernel of about 400 tokens, seven lines, of which exactly one is a bug: the variance is summed in fp16 instead of fp32. In the middle everything the environment measured — compile ok, correctness failed with max absolute error 3e-1 at row 4095, runtime 41 microseconds against a 74 microsecond reference, memory bandwidth utilization 63 percent, model flops utilization 21 percent, DMA stall 12 percent, occupancy 50 percent, 8 register spills, and the launch config. On the right all of that collapses into a single scalar, r equals minus 0.5, which is then pushed back identically into every one of the 400 tokens. One bad line out of seven, all seven get the same score; the rich line-level diagnostics are dropped the moment r is computed."
+       style="width: 100%; height: auto; object-fit: contain;" />
+  <p style="font-size: 0.9em; color: #666; margin-top: 0.4rem;">
+    Everything the environment measured collapses into one scalar 
+<span>
+  \( r \)
+  </span>
+
+ that is pushed back identically into all ~400 tokens, so the single buggy line and the six good ones receive the same score.
+  </p>
+</div>
 <p>In the <strong>single-turn</strong> setting of Section 3.2, the policy gets exactly one attempt at each task: given a prompt 
 <span>
   \( x \)
@@ -490,36 +503,31 @@ https://github.com/alex-shpak/hugo-book
 </h2>
 <p>Section 2.1 described sequential refinement as an inference-time knob: run a fixed policy over several feedback-conditioned turns, each reading the compiler error, correctness diff, or profile of the last. <strong>Multi-turn RL</strong> is the training-time counterpart, recovering the information single-turn RL throws away by <em>training</em> the policy to act well over those turns rather than merely running it over them. This is the standard setup for <strong>tool-use agents</strong> [6] that interleave reasoning with tool calls — issuing web searches, running code, or invoking a compiler and profiler; kernel refinement is one such case, where the tools are the compiler and the hardware (<em>Kevin</em> [1], <em>CUDA Agent</em> [3]; <em>RAGEN/StarPO</em> [4], <em>Search-R1</em> [5]). A recurring empirical finding is that, under a fixed compute budget, investing in iterative refinement over turns outperforms drawing many independent single-shot samples, because feedback across turns is more informative than one-shot diversity [1].</p>
 <div style="text-align: center; margin: 2rem 0;">
-  <img src="multi_turn_loop.svg"
-       alt="The multi-turn RL loop: the history h_t (the prompt plus every earlier attempt and its feedback) grows each turn and feeds the policy pi_theta, which samples the next answer y_t; the environment executes it (compile, check, time) and returns feedback f_t, which is appended to the history and the cycle repeats; after T turns the final answer's outcome becomes the reward r, which drives a policy-gradient update"
-       style="width: 52%; height: auto; object-fit: contain;" />
+  <img src="part3-fig-multi-turn-loop.svg"
+       alt="Multi-turn RL on the running RMSNorm example, with the same policy sampling at every turn. Turn one: the history is just the spec, the model sums x times x in fp16, the feedback says wrong — it needs fp32 — and the reward is 0. Turn two: the history is the spec plus turn one's kernel and its feedback, the model switches to fp32, the feedback says correct but slow at 0.8 times, and the reward is still 0. Turn T: the history carries turn two as well, the model enlarges BLOCK_N, the feedback says correct at 1.8 times, and the reward is 1.0. The feedback from each turn is what conditions the next. The whole trajectory is then optimized as one unit: maximize the expected sum of rewards in a single GRPO step, since the turns are not independent episodes."
+       style="width: 100%; height: auto; object-fit: contain;" />
   <p style="font-size: 0.9em; color: #666; margin-top: 0.4rem;">
-    The multi-turn RL loop. The history 
+    Multi-turn RL on the running RMSNorm task. The history 
 <span>
   \( h_t \)
   </span>
 
- grows each turn and conditions the policy, which samples the next attempt 
+ grows each turn and conditions the <em>same</em> policy 
 <span>
-  \( y_t \)
+  \( \pi_\theta \)
   </span>
 
-; the <em>oracle</em> (highlighted) executes it, <em>compile · check · time</em>, and its feedback 
+ at every turn, so each attempt starts from the last one's feedback rather than from scratch: fp16 accumulation is named as the fault and switched to fp32, which is then correct but <em>slow</em>, and a larger <code>BLOCK_N</code> finally reaches 1.8×. The rewards are outcome rewards — 
 <span>
-  \( f_t \)
+  \( r_t = 0 \)
   </span>
 
- is appended to the history and the cycle repeats, so the model revises rather than restarts. After 
+ until the last turn — and the whole chain is optimized as one unit, a single policy-gradient step over the trajectory rather than 
 <span>
   \( T \)
   </span>
 
- turns the final answer's outcome becomes the reward that drives a policy-gradient update. Single-turn RL is the special case 
-<span>
-  \( T = 1 \)
-  </span>
-
-.
+ independent episodes.
   </p>
 </div>
 <p>Here each turn feeds the previous attempts and their feedback back into the policy, so the model revises rather than restarts; the reward is applied once the trajectory ends (single-turn RL is just the special case 
@@ -596,6 +604,7 @@ https://github.com/alex-shpak/hugo-book
 
  — so the entire trajectory is judged by the last kernel it produces. Handing out <strong>per-turn (process) rewards</strong> instead is the alternative, and how a single terminal reward is then spread back over the turns is exactly the credit-assignment question below.</p>
 <p>Training over multi-turn trajectories raises two recurring issues beyond the single-turn case — keeping the growing context manageable, and assigning credit across turns.</p>
+<!-- 
 <div style="text-align: center; margin: 2rem 0;">
   <img src="context_and_credit.svg"
        alt="The two issues that running the multi-turn loop raises. Context: each turn appends the attempt and its bulky feedback, so the history balloons to 50k-100k tokens, handled by a cascaded toolkit (compress observations, then window, then summarize older turns) that keeps the durable artifacts (the best kernel so far and why it fell short); this arises whether a fixed policy is run or a policy is trained. Credit assignment (only when training on the loop): the reward lands only at the trajectory's end and must be pushed back over a granularity ladder from token-level (process reward model or Monte-Carlo, costly) through turn-level (reward-to-go plus GAE, where kernel RL systems sit) to trajectory-level (one score, coarsest)."
@@ -603,7 +612,7 @@ https://github.com/alex-shpak/hugo-book
   <p style="font-size: 0.9em; color: #666; margin-top: 0.4rem;">
     The two issues that running the loop raises. <strong>Context</strong> bites whether a fixed policy is run or a policy is trained: each turn appends the attempt and its bulky feedback, so the history balloons, and a cascaded toolkit — <em>compress observations, then window, then summarize older turns</em> — keeps it bounded while preserving the durable artifacts (the best kernel so far and why it fell short). <strong>Credit assignment</strong> arises only when <em>training</em> on the loop: a reward that lands only at the end must be pushed back over a granularity ladder — <em>token</em> → <em>turn</em> → <em>trajectory</em> — and kernel RL systems sit at the turn level. Both are detailed below.
   </p>
-</div>
+</div> -->
 <h3 id="context-management">
   Context management
   
@@ -611,6 +620,14 @@ https://github.com/alex-shpak/hugo-book
   
 </h3>
 <p>Every turn appends the previous attempt and its (often long) feedback — compiler diagnostics, correctness diffs, full profiler dumps — to the prompt. Left unchecked the context explodes within a few turns (a handful of full reasoning traces can reach tens of thousands of tokens), so multi-turn RL borrows the standard toolkit that long-horizon agents use to keep it bounded:</p>
+<div style="text-align: center; margin: 2rem 0;">
+  <img src="part3-fig-context-management.svg"
+       alt="The context bill across four turns, before and after compression. Before, every turn is kept in full, four equal blocks that total about 40 thousand tokens. After compressing, windowing or summarizing the older turns, turns one through three shrink to stubs while the newest turn is kept at full fidelity, for a total of about 13 thousand tokens — roughly a third, with the detail retained exactly where the policy is about to act."
+       style="width: 100%; height: auto; object-fit: contain;" />
+  <p style="font-size: 0.9em; color: #666; margin-top: 0.4rem;">
+    Compressing the older turns to stubs while keeping the newest at full fidelity cuts the four-turn context from roughly 40k to 13k tokens, retaining the detail exactly where the policy is about to act.
+  </p>
+</div>
 <ul>
 <li><strong>Truncation / windowing.</strong> Keep only the most recent few turns and drop older ones outright. Simplest, but on its own it discards information that later turns may still need.</li>
 <li><strong>Summarization (compaction).</strong> Replace older turns — or just their verbose reasoning — with a short, model-generated summary, while keeping the durable artifacts (the kernel and its evaluation result). This preserves continuity far better than plain truncation and is the common choice: for example, <em>Kevin</em> discards each turn&rsquo;s full chain-of-thought but has the model <em>summarize</em> the changes it made, carrying that summary plus the kernel and feedback forward (without it, the context reaches 50–100k tokens within a few turns) [1]. End-to-end summarization has also been studied as a general multi-turn-RL technique [7].</li>
@@ -625,6 +642,14 @@ https://github.com/alex-shpak/hugo-book
   
 </h3>
 <p>Credit assignment is a core problem in <em>any</em> long-horizon or multi-turn RL — for kernels, but equally for general code and math reasoning: when the reward lands only at the <em>end</em> of a trajectory (you must finish and run a kernel to score it), that terminal signal has to be propagated back to the tokens, turns, and decisions that actually earned it. The main design axis is the <strong>granularity</strong> of the attribution, from finest to coarsest:</p>
+<div style="text-align: center; margin: 2rem 0;">
+  <img src="part3-fig-credit-ladder.svg"
+       alt="Three granularities of credit assignment on the same three-turn trajectory, whose outcome rewards are 0, 0 and 1.0 — so the reward lands only on the last turn. Trajectory level: one advantage of plus 1.0 for the whole chain, so the wrong fp16 turn is reinforced exactly as much as the turn that fixed it. Turn level: the discounted reward-to-go G is 0.81, 0.90 and 1.00, standardized over the group to give advantages of plus 0.8, plus 1.0 and plus 1.1 — which credits the turn that actually helped. Token level: one advantage per token, so the phrase in fp32 inside turn two carries 0.9 while its neighbours carry almost nothing; the most informative and the costliest, since it needs Monte-Carlo rollouts or a process reward model."
+       style="width: 100%; height: auto; object-fit: contain;" />
+  <p style="font-size: 0.9em; color: #666; margin-top: 0.4rem;">
+    The three granularities on one three-turn trajectory rewarded only at the end: the trajectory-level advantage reinforces the faulty fp16 turn as much as the turn that fixed it, the turn-level reward-to-go separates them, and the token level pins the credit on the phrase <code>in fp32</code> itself.
+  </p>
+</div>
 <ul>
 <li><strong>Token-level.</strong> The finest grain assigns credit per token, by estimating each step&rsquo;s value with Monte-Carlo rollouts [11] or with a learned <strong>process reward model</strong> that scores intermediate steps, trained on human step labels [12] or on automatically generated ones [13]. It is the most informative but far the most expensive, and seldom needed for kernels.</li>
 <li><strong>Turn-level.</strong> Each turn gets its own advantage, usually from a <strong>reward-to-go</strong> — a discounted sum of the current and future turns&rsquo; rewards, 

@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1060" height="288" viewBox="0 0 1060 288" role="img" aria-label="Two ways to keep the training band alive. On the left, static difficulty mixing as in TritonRL: the easy, medium and hard proportions are fixed once up front, and the ratio never moves even as the policy improves — so what was medium becomes easy and the mix silently drifts out of the learnable band. On the right, adaptive dynamic sampling as in DAPO: every step the groups are resampled and the dead ones discarded — g1 all minus one and g3 all plus one point five are thrown away, while g2 and g4, which have a spread, are kept — and sampling refills until B groups survive, so the band follows the policy upward.">
+  <rect x="0" y="0" width="1060" height="288" fill="#eef2f6"/>
+  <rect x="14" y="10" width="500" height="240" rx="14" ry="14" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="32" y="36" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#334155">STATIC</text>
+  <rect x="360" y="20" width="138" height="20" rx="10" ry="10" fill="#ffedd5" stroke="#ea580c" stroke-width="1.6"/>
+  <text x="429" y="33.78" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#9a3412">fixed up front</text>
+  <text x="32" y="56" font-family="Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#64748b">difficulty mixing  (TritonRL)</text>
+  <text x="32" y="74" font-family="Helvetica, Arial, sans-serif" font-size="10" font-style="italic" fill="#64748b">fix the mix once, then never touch it</text>
+  <text x="46" y="112" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="bold" fill="#64748b">easy</text>
+  <rect x="120" y="100" width="88" height="16" rx="4" ry="4" fill="#64748b" stroke="#64748b" stroke-width="1.2"/>
+  <text x="216" y="113" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" fill="#64748b">22%</text>
+  <text x="46" y="146" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="bold" fill="#64748b">medium</text>
+  <rect x="120" y="134" width="220" height="16" rx="4" ry="4" fill="#64748b" stroke="#64748b" stroke-width="1.2"/>
+  <text x="348" y="147" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" fill="#64748b">55%</text>
+  <text x="46" y="180" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="bold" fill="#64748b">hard</text>
+  <rect x="120" y="168" width="88" height="16" rx="4" ry="4" fill="#64748b" stroke="#64748b" stroke-width="1.2"/>
+  <text x="216" y="181" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" fill="#64748b">22%</text>
+  <rect x="30" y="196" width="468" height="42" rx="9" ry="9" fill="#fff7ed" stroke="#ea580c" stroke-width="1.8"/>
+  <text x="46" y="214" font-family="Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#9a3412">the ratio never moves, even as the policy improves</text>
+  <text x="46" y="230" font-family="Helvetica, Arial, sans-serif" font-size="10" font-style="italic" fill="#c2410c">what was medium becomes easy — the mix drifts out of the band</text>
+  <rect x="534" y="10" width="512" height="240" rx="14" ry="14" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="552" y="36" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#334155">ADAPTIVE</text>
+  <rect x="898" y="20" width="134" height="20" rx="10" ry="10" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.6"/>
+  <text x="965" y="33.78" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#0f766e">resampled</text>
+  <text x="552" y="56" font-family="Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#64748b">dynamic sampling  (DAPO)</text>
+  <text x="552" y="74" font-family="Helvetica, Arial, sans-serif" font-size="10" font-style="italic" fill="#64748b">resample each step, drop the dead groups</text>
+  <rect x="552" y="88" width="480" height="22" rx="7" ry="7" fill="#fff7ed" stroke="#ea580c" stroke-width="1.4"/>
+  <text x="566" y="103" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" font-weight="bold" fill="#9a3412">g1</text>
+  <text x="600" y="103" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" fill="#334155">-1.0</text>
+  <text x="652" y="103" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" fill="#334155">-1.0</text>
+  <text x="704" y="103" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" fill="#334155">-1.0</text>
+  <text x="756" y="103" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" fill="#334155">-1.0</text>
+  <rect x="824" y="90" width="60" height="18" rx="9" ry="9" fill="#ffedd5" stroke="#ea580c" stroke-width="1.4"/>
+  <text x="854" y="102.325" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" font-weight="bold" fill="#9a3412">DISCARD</text>
+  <text x="896" y="103" font-family="Helvetica, Arial, sans-serif" font-size="9.5" font-style="italic" fill="#c2410c">std = 0</text>
+  <rect x="552" y="114" width="480" height="22" rx="7" ry="7" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.4"/>
+  <text x="566" y="129" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" font-weight="bold" fill="#0f766e">g2</text>
+  <text x="600" y="129" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" fill="#334155">-1.0</text>
+  <text x="652" y="129" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" fill="#334155">-0.5</text>
+  <text x="704" y="129" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" fill="#334155">+1.0</text>
+  <text x="756" y="129" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" fill="#334155">+1.5</text>
+  <rect x="824" y="116" width="60" height="18" rx="9" ry="9" fill="#0d9488" stroke="#0d9488" stroke-width="1.4"/>
+  <text x="854" y="128.325" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" font-weight="bold" fill="#ffffff">KEEP</text>
+  <text x="896" y="129" font-family="Helvetica, Arial, sans-serif" font-size="9.5" font-style="italic" fill="#0f766e">has a spread</text>
+  <rect x="552" y="140" width="480" height="22" rx="7" ry="7" fill="#fff7ed" stroke="#ea580c" stroke-width="1.4"/>
+  <text x="566" y="155" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" font-weight="bold" fill="#9a3412">g3</text>
+  <text x="600" y="155" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" fill="#334155">+1.5</text>
+  <text x="652" y="155" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" fill="#334155">+1.5</text>
+  <text x="704" y="155" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" fill="#334155">+1.5</text>
+  <text x="756" y="155" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" fill="#334155">+1.5</text>
+  <rect x="824" y="142" width="60" height="18" rx="9" ry="9" fill="#ffedd5" stroke="#ea580c" stroke-width="1.4"/>
+  <text x="854" y="154.325" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" font-weight="bold" fill="#9a3412">DISCARD</text>
+  <text x="896" y="155" font-family="Helvetica, Arial, sans-serif" font-size="9.5" font-style="italic" fill="#c2410c">std = 0</text>
+  <rect x="552" y="166" width="480" height="22" rx="7" ry="7" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.4"/>
+  <text x="566" y="181" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" font-weight="bold" fill="#0f766e">g4</text>
+  <text x="600" y="181" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" fill="#334155">-1.0</text>
+  <text x="652" y="181" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" fill="#334155">-1.0</text>
+  <text x="704" y="181" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" fill="#334155">-0.5</text>
+  <text x="756" y="181" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" fill="#334155">+1.2</text>
+  <rect x="824" y="168" width="60" height="18" rx="9" ry="9" fill="#0d9488" stroke="#0d9488" stroke-width="1.4"/>
+  <text x="854" y="180.325" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" font-weight="bold" fill="#ffffff">KEEP</text>
+  <text x="896" y="181" font-family="Helvetica, Arial, sans-serif" font-size="9.5" font-style="italic" fill="#0f766e">has a spread</text>
+  <rect x="552" y="196" width="480" height="42" rx="9" ry="9" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.8"/>
+  <text x="568" y="214" font-family="Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#0f766e">refill until B groups are kept</text>
+  <text x="568" y="230" font-family="Helvetica, Arial, sans-serif" font-size="10" font-style="italic" fill="#0f766e">so the band follows the policy up as it improves</text>
+  <text x="14" y="274" font-family="Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#64748b">same rollout budget — adaptive just refuses to spend it on groups that cannot teach</text>
+</svg>

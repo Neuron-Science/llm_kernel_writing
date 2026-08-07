@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1060" height="350" viewBox="0 0 1060 350" role="img" aria-label="Three granularities of credit assignment on the same three-turn trajectory, whose outcome rewards are 0, 0 and 1.0 — so the reward lands only on the last turn. Trajectory level: one advantage of plus 1.0 for the whole chain, so the wrong fp16 turn is reinforced exactly as much as the turn that fixed it. Turn level: the discounted reward-to-go G is 0.81, 0.90 and 1.00, standardized over the group with mean 0.34 and standard deviation 0.59 to give advantages of plus 0.8, plus 1.0 and plus 1.1 — which credits the turn that actually helped. Token level: one advantage per token, so the phrase 'in fp32' inside turn two carries 0.9 while its neighbours carry almost nothing; the most informative and the costliest, since it needs Monte Carlo rollouts or a process reward model.">
+  <rect x="0" y="0" width="1060" height="350" fill="#eef2f6"/>
+  <rect x="14" y="10" width="1032" height="34" rx="9" ry="9" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+  <text xml:space="preserve" x="30" y="32" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11.5" font-weight="bold" fill="#334155">same multi-turn trajectory.   Outcome reward:  r_1 = r_2 = 0,   r_3 = 1.0</text>
+  <rect x="884" y="15" width="148" height="24" rx="9" ry="9" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.4"/>
+  <text x="958" y="30.5" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" font-weight="bold" fill="#0f766e">reward lands on TURN 3</text>
+  <rect x="250" y="54" width="232" height="38" rx="9" ry="9" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+  <text x="264" y="72" font-family="Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#991b1b">TURN 1</text>
+  <text xml:space="preserve" x="264" y="87" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" fill="#b91c1c">y_1  fp16   WRONG</text>
+  <line x1="482" y1="73" x2="510" y2="73" stroke="#64748b" stroke-width="2"/>
+  <polygon points="519.5,73 508.5,67.5 508.5,78.5" fill="#64748b"/>
+  <rect x="514" y="54" width="232" height="38" rx="9" ry="9" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/>
+  <text x="528" y="72" font-family="Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#9a3412">TURN 2</text>
+  <text xml:space="preserve" x="528" y="87" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" fill="#c2410c">y_2  fp32   0.8x</text>
+  <line x1="746" y1="73" x2="774" y2="73" stroke="#64748b" stroke-width="2"/>
+  <polygon points="783.5,73 772.5,67.5 772.5,78.5" fill="#64748b"/>
+  <rect x="778" y="54" width="232" height="38" rx="9" ry="9" fill="#ccfbf1" stroke="#0d9488" stroke-width="2"/>
+  <text x="792" y="72" font-family="Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#0f766e">TURN 3</text>
+  <text xml:space="preserve" x="792" y="87" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" fill="#0f766e">y_3  BLOCK_N  1.8x</text>
+  <rect x="14" y="104" width="1032" height="66" rx="12" ry="12" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+  <circle cx="42" cy="124" r="12" fill="#64748b"/>
+  <text x="42" y="128.32" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#ffffff">1</text>
+  <text x="60" y="128" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#334155">TRAJECTORY</text>
+  <text x="30" y="144" font-family="Helvetica, Arial, sans-serif" font-size="9" font-style="italic" fill="#64748b">one A for the whole chain</text>
+  <rect x="250" y="116" width="232" height="28" rx="7" ry="7" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+  <text x="366" y="135" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#334155">A = +1.0</text>
+  <line x1="482" y1="130" x2="510" y2="130" stroke="#94a3b8" stroke-width="1.6"/>
+  <polygon points="519.5,130 508.5,124.5 508.5,135.5" fill="#94a3b8"/>
+  <rect x="514" y="116" width="232" height="28" rx="7" ry="7" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+  <text x="630" y="135" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#334155">A = +1.0</text>
+  <line x1="746" y1="130" x2="774" y2="130" stroke="#94a3b8" stroke-width="1.6"/>
+  <polygon points="783.5,130 772.5,124.5 772.5,135.5" fill="#94a3b8"/>
+  <rect x="778" y="116" width="232" height="28" rx="7" ry="7" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+  <text x="894" y="135" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#334155">A = +1.0</text>
+  <text x="250" y="161" font-family="Helvetica, Arial, sans-serif" font-size="10" font-weight="bold" fill="#334155">the WRONG turn gets +1.0 too</text>
+  <rect x="914.839" y="148" width="117.161" height="19" rx="9.5" ry="9.5" fill="#ffedd5" stroke="#ea580c" stroke-width="1.6"/>
+  <text x="973.419" y="160.92" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" font-weight="bold" fill="#9a3412">cheapest, blindest</text>
+  <rect x="14" y="178" width="1032" height="66" rx="12" ry="12" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+  <circle cx="42" cy="198" r="12" fill="#0d9488"/>
+  <text x="42" y="202.32" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#ffffff">2</text>
+  <text x="60" y="202" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#334155">TURN</text>
+  <text x="30" y="218" font-family="Helvetica, Arial, sans-serif" font-size="9" font-style="italic" fill="#64748b">G_t = discounted reward-to-go,</text>
+  <text x="30" y="230" font-family="Helvetica, Arial, sans-serif" font-size="9" font-style="italic" fill="#64748b">A_t standardized over the group</text>
+  <text x="30" y="242" font-family="Helvetica, Arial, sans-serif" font-size="9" font-style="italic" fill="#64748b">mean 0.34,  std 0.59</text>
+  <rect x="250" y="190" width="232" height="28" rx="7" ry="7" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+  <text xml:space="preserve" x="366" y="209" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#334155">G = .81   A = +0.8</text>
+  <line x1="482" y1="204" x2="510" y2="204" stroke="#94a3b8" stroke-width="1.6"/>
+  <polygon points="519.5,204 508.5,198.5 508.5,209.5" fill="#94a3b8"/>
+  <rect x="514" y="190" width="232" height="28" rx="7" ry="7" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+  <text xml:space="preserve" x="630" y="209" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#334155">G = .90   A = +1.0</text>
+  <line x1="746" y1="204" x2="774" y2="204" stroke="#94a3b8" stroke-width="1.6"/>
+  <polygon points="783.5,204 772.5,198.5 772.5,209.5" fill="#94a3b8"/>
+  <rect x="778" y="190" width="232" height="28" rx="7" ry="7" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+  <text xml:space="preserve" x="894" y="209" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#334155">G = 1.00   A = +1.1</text>
+  <text x="250" y="235" font-family="Helvetica, Arial, sans-serif" font-size="10" font-weight="bold" fill="#0f766e">credits the turn that helped</text>
+  <rect x="906.168" y="222" width="125.832" height="19" rx="9.5" ry="9.5" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.6"/>
+  <text x="969.084" y="234.92" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" font-weight="bold" fill="#0f766e">one scalar per turn</text>
+  <rect x="14" y="252" width="1032" height="66" rx="12" ry="12" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+  <circle cx="42" cy="272" r="12" fill="#0d9488"/>
+  <text x="42" y="276.32" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#ffffff">3</text>
+  <text x="60" y="276" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#334155">TOKEN</text>
+  <text x="30" y="292" font-family="Helvetica, Arial, sans-serif" font-size="9" font-style="italic" fill="#64748b">one A per token</text>
+  <rect x="250" y="264" width="232" height="28" rx="7" ry="7" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+  <text xml:space="preserve" x="366" y="283" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#334155">.0  .1  .0  .1</text>
+  <line x1="482" y1="278" x2="510" y2="278" stroke="#94a3b8" stroke-width="1.6"/>
+  <polygon points="519.5,278 508.5,272.5 508.5,283.5" fill="#94a3b8"/>
+  <rect x="514" y="264" width="232" height="28" rx="7" ry="7" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+  <text xml:space="preserve" x="630" y="283" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#334155">.0  .9  .1  .0</text>
+  <line x1="746" y1="278" x2="774" y2="278" stroke="#94a3b8" stroke-width="1.6"/>
+  <polygon points="783.5,278 772.5,272.5 772.5,283.5" fill="#94a3b8"/>
+  <rect x="778" y="264" width="232" height="28" rx="7" ry="7" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>
+  <text xml:space="preserve" x="894" y="283" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" fill="#334155">.2  .1  .8  .0</text>
+  <text x="250" y="309" font-family="Helvetica, Arial, sans-serif" font-size="10" font-weight="bold" fill="#0f766e">needs MC rollouts or a PRM</text>
+  <rect x="867.046" y="296" width="164.954" height="19" rx="9.5" ry="9.5" fill="#ffedd5" stroke="#ea580c" stroke-width="1.6"/>
+  <text x="949.523" y="308.92" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9.5" font-weight="bold" fill="#9a3412">most informative, costliest</text>
+  <text x="630" y="332" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" font-style="italic" fill="#0f766e">↑  "in fp32"  —  the token that actually earned it</text>
+</svg>

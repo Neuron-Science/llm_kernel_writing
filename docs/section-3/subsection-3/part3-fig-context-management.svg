@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1060" height="320" viewBox="0 0 1060 320" role="img" aria-label="The context bill across four turns, before and after compression. Before, every turn is kept in full, four equal blocks that total about 40 thousand tokens. After compressing, windowing or summarizing the older turns, turns one through three shrink to stubs while the newest turn is kept at full fidelity, for a total of about 13 thousand tokens — roughly a third, with the detail retained exactly where the policy is about to act.">
+  <rect x="0" y="0" width="1060" height="320" fill="#eef2f6"/>
+  <rect x="14" y="10" width="460" height="250" rx="14" ry="14" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="32" y="42" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" fill="#334155">BEFORE</text>
+  <rect x="329.69" y="24" width="130.31" height="22" rx="11" ry="11" fill="#f8fafc" stroke="#64748b" stroke-width="1.6"/>
+  <text x="394.845" y="38.96" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="bold" fill="#334155">every turn in full</text>
+  <text x="34" y="86" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="bold" fill="#64748b">t1</text>
+  <rect x="70" y="71" width="200" height="24" rx="5" ry="5" fill="#64748b" stroke="#64748b" stroke-width="1.2"/>
+  <text x="280" y="88" font-family="Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#334155">full</text>
+  <text x="34" y="128" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="bold" fill="#64748b">t2</text>
+  <rect x="70" y="113" width="200" height="24" rx="5" ry="5" fill="#64748b" stroke="#64748b" stroke-width="1.2"/>
+  <text x="280" y="130" font-family="Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#334155">full</text>
+  <text x="34" y="170" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="bold" fill="#64748b">t3</text>
+  <rect x="70" y="155" width="200" height="24" rx="5" ry="5" fill="#64748b" stroke="#64748b" stroke-width="1.2"/>
+  <text x="280" y="172" font-family="Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#334155">full</text>
+  <text x="34" y="212" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="bold" fill="#64748b">t4</text>
+  <rect x="70" y="197" width="200" height="24" rx="5" ry="5" fill="#64748b" stroke="#64748b" stroke-width="1.2"/>
+  <text x="280" y="214" font-family="Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#334155">full</text>
+  <text x="34" y="244" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="bold" fill="#334155">≈ 40k tokens</text>
+  <text x="150" y="244" font-family="Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#64748b">linear growth, every turn kept verbatim</text>
+  <line x1="492" y1="132" x2="546" y2="132" stroke="#64748b" stroke-width="2.5"/>
+  <polygon points="557.5,132 546.5,126.5 546.5,137.5" fill="#64748b"/>
+  <text x="522" y="104" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#64748b">compress /</text>
+  <text x="522" y="120" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#64748b">window /</text>
+  <text x="522" y="158" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#64748b">summarize</text>
+  <rect x="586" y="10" width="460" height="250" rx="14" ry="14" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="604" y="42" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" fill="#334155">AFTER</text>
+  <rect x="889.936" y="24" width="142.064" height="22" rx="11" ry="11" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.6"/>
+  <text x="960.968" y="38.96" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="bold" fill="#0f766e">older turns shrunk</text>
+  <text x="606" y="86" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="bold" fill="#64748b">t1</text>
+  <rect x="642" y="71" width="20" height="24" rx="5" ry="5" fill="#94a3b8" stroke="#94a3b8" stroke-width="1.2"/>
+  <text x="672" y="88" font-family="Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#94a3b8">stub</text>
+  <text x="606" y="128" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="bold" fill="#64748b">t2</text>
+  <rect x="642" y="113" width="20" height="24" rx="5" ry="5" fill="#94a3b8" stroke="#94a3b8" stroke-width="1.2"/>
+  <text x="672" y="130" font-family="Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#94a3b8">stub</text>
+  <text x="606" y="170" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="bold" fill="#64748b">t3</text>
+  <rect x="642" y="155" width="20" height="24" rx="5" ry="5" fill="#94a3b8" stroke="#94a3b8" stroke-width="1.2"/>
+  <text x="672" y="172" font-family="Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#94a3b8">stub</text>
+  <text x="606" y="212" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="bold" fill="#64748b">t4</text>
+  <rect x="642" y="197" width="200" height="24" rx="5" ry="5" fill="#0d9488" stroke="#0d9488" stroke-width="1.2"/>
+  <text x="852" y="214" font-family="Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#0f766e">full</text>
+  <text x="606" y="244" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="bold" fill="#334155">≈ 13k tokens</text>
+  <text x="722" y="244" font-family="Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#64748b">the newest turn stays at full fidelity</text>
+  <rect x="14" y="272" width="1032" height="38" rx="9" ry="9" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.8"/>
+  <text x="30" y="297" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#0f766e">≈ 3× less context, and the detail is kept exactly where the policy is about to act</text>
+</svg>

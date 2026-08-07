@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1060" height="350" viewBox="0 0 1060 350" role="img" aria-label="What single-turn RL throws away. On the left one kernel of about 400 tokens, seven lines, of which exactly one is a bug: the variance is summed in fp16 instead of fp32. In the middle everything the environment measured — compile ok, correctness failed with max absolute error 3e-1 at row 4095, runtime 41 microseconds against a 74 microsecond reference, memory bandwidth utilization 63 percent, model flops utilization 21 percent, DMA stall 12 percent, occupancy 50 percent, 8 register spills, launched with BLOCK_N 1024 and 4 warps, x in fp16 with an fp16 accumulator. On the right all of that collapses into a single scalar, r = minus 0.5, which is then pushed back identically into every one of the 400 tokens. One bad line out of seven, all seven get the same score; the rich line-level diagnostics are dropped the moment r is computed.">
+  <rect x="0" y="0" width="1060" height="350" fill="#eef2f6"/>
+  <rect x="14" y="10" width="380" height="268" rx="14" ry="14" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="30" y="34" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#334155">ONE KERNEL</text>
+  <text x="132" y="34" font-family="Helvetica, Arial, sans-serif" font-size="10" font-style="italic" fill="#64748b">~400 tokens, 7 lines</text>
+  <text x="40" y="63" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" fill="#334155">@triton.jit</text>
+  <text x="40" y="89" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" fill="#334155">def rmsnorm(X, Y, N, eps):</text>
+  <text xml:space="preserve" x="40" y="115" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" fill="#334155">  off = tl.arange(0, BLOCK_N)</text>
+  <rect x="326" y="101" width="44" height="18" rx="9" ry="9" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.4"/>
+  <text x="348" y="113.15" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" font-weight="bold" fill="#0f766e">ok</text>
+  <text xml:space="preserve" x="40" y="141" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" fill="#334155">  x   = tl.load(X+row*N+off)</text>
+  <rect x="326" y="127" width="44" height="18" rx="9" ry="9" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.4"/>
+  <text x="348" y="139.15" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" font-weight="bold" fill="#0f766e">ok</text>
+  <rect x="30" y="150" width="348" height="24" rx="6" ry="6" fill="#fee2e2" stroke="#dc2626" stroke-width="1.6"/>
+  <text xml:space="preserve" x="40" y="167" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" font-weight="bold" fill="#991b1b">  var = tl.sum(x * x) / N</text>
+  <rect x="326" y="153" width="44" height="18" rx="9" ry="9" fill="#dc2626" stroke="#dc2626" stroke-width="1.4"/>
+  <text x="348" y="165.15" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" font-weight="bold" fill="#ffffff">BUG</text>
+  <text xml:space="preserve" x="40" y="193" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" fill="#334155">  rms = tl.rsqrt(var + eps)</text>
+  <rect x="326" y="179" width="44" height="18" rx="9" ry="9" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.4"/>
+  <text x="348" y="191.15" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" font-weight="bold" fill="#0f766e">ok</text>
+  <text xml:space="preserve" x="40" y="219" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" fill="#334155">  tl.store(Y+row*N+off, x*rms)</text>
+  <rect x="326" y="205" width="44" height="18" rx="9" ry="9" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.4"/>
+  <text x="348" y="217.15" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" font-weight="bold" fill="#0f766e">ok</text>
+  <text x="30" y="262" font-family="Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#b91c1c">one bad line out of seven</text>
+  <rect x="414" y="10" width="386" height="268" rx="14" ry="14" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="430" y="34" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#334155">WHAT THE ENVIRONMENT MEASURED</text>
+  <text x="430" y="64" font-family="Helvetica, Arial, sans-serif" font-size="10" font-weight="bold" fill="#64748b">compile</text>
+  <text x="512" y="64" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" fill="#0f766e">ok</text>
+  <text x="430" y="90" font-family="Helvetica, Arial, sans-serif" font-size="10" font-weight="bold" fill="#64748b">correctness</text>
+  <text xml:space="preserve" x="512" y="90" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" font-weight="bold" fill="#991b1b">FAIL   max|dy| 3e-1  at row 4095</text>
+  <text x="430" y="116" font-family="Helvetica, Arial, sans-serif" font-size="10" font-weight="bold" fill="#64748b">runtime</text>
+  <text xml:space="preserve" x="512" y="116" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" fill="#334155">41 us   vs  74 us reference</text>
+  <text x="430" y="142" font-family="Helvetica, Arial, sans-serif" font-size="10" font-weight="bold" fill="#64748b">mbu / mfu</text>
+  <text xml:space="preserve" x="512" y="142" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" fill="#334155">63%  /  21%</text>
+  <text x="430" y="168" font-family="Helvetica, Arial, sans-serif" font-size="10" font-weight="bold" fill="#64748b">DMA stall</text>
+  <text x="512" y="168" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" fill="#334155">12%</text>
+  <text x="430" y="194" font-family="Helvetica, Arial, sans-serif" font-size="10" font-weight="bold" fill="#64748b">occupancy</text>
+  <text xml:space="preserve" x="512" y="194" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" fill="#334155">50%,   8 register spills</text>
+  <text x="430" y="220" font-family="Helvetica, Arial, sans-serif" font-size="10" font-weight="bold" fill="#64748b">launch</text>
+  <text xml:space="preserve" x="512" y="220" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" fill="#334155">BLOCK_N = 1024,   4 warps</text>
+  <text x="430" y="246" font-family="Helvetica, Arial, sans-serif" font-size="10" font-weight="bold" fill="#64748b">dtype</text>
+  <text xml:space="preserve" x="512" y="246" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" fill="#9a3412">x fp16,  accumulator fp16</text>
+  <text x="430" y="262" font-family="Helvetica, Arial, sans-serif" font-size="10.5" font-style="italic" fill="#64748b">rich, line-level, actionable</text>
+  <line x1="806" y1="140" x2="832" y2="140" stroke="#ea580c" stroke-width="2.5"/>
+  <polygon points="843.5,140 832.5,134.5 832.5,145.5" fill="#ea580c"/>
+  <rect x="846" y="10" width="200" height="268" rx="14" ry="14" fill="#fff7ed" stroke="#ea580c" stroke-width="2.2"/>
+  <text x="946" y="40" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#9a3412">ONE SCALAR</text>
+  <rect x="896" y="56" width="100" height="30" rx="9" ry="9" fill="#ffedd5" stroke="#ea580c" stroke-width="1.4"/>
+  <text x="946" y="76.25" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#9a3412">r = −0.5</text>
+  <text x="946" y="112" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" font-style="italic" fill="#c2410c">pushed back into</text>
+  <text x="946" y="127" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" font-style="italic" fill="#c2410c">EVERY token, identically</text>
+  <rect x="866" y="142" width="38" height="20" rx="5" ry="5" fill="#ffedd5" stroke="#ea580c" stroke-width="1.3"/>
+  <text x="885" y="156" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="8.5" fill="#9a3412">−0.5</text>
+  <rect x="910" y="142" width="38" height="20" rx="5" ry="5" fill="#ffedd5" stroke="#ea580c" stroke-width="1.3"/>
+  <text x="929" y="156" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="8.5" fill="#9a3412">−0.5</text>
+  <rect x="954" y="142" width="38" height="20" rx="5" ry="5" fill="#ffedd5" stroke="#ea580c" stroke-width="1.3"/>
+  <text x="973" y="156" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="8.5" fill="#9a3412">−0.5</text>
+  <rect x="998" y="142" width="38" height="20" rx="5" ry="5" fill="#ffedd5" stroke="#ea580c" stroke-width="1.3"/>
+  <text x="1017" y="156" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="8.5" fill="#9a3412">−0.5</text>
+  <rect x="866" y="168" width="38" height="20" rx="5" ry="5" fill="#ffedd5" stroke="#ea580c" stroke-width="1.3"/>
+  <text x="885" y="182" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="8.5" fill="#9a3412">−0.5</text>
+  <rect x="910" y="168" width="38" height="20" rx="5" ry="5" fill="#ffedd5" stroke="#ea580c" stroke-width="1.3"/>
+  <text x="929" y="182" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="8.5" fill="#9a3412">−0.5</text>
+  <rect x="954" y="168" width="38" height="20" rx="5" ry="5" fill="#ffedd5" stroke="#ea580c" stroke-width="1.3"/>
+  <text x="973" y="182" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="8.5" fill="#9a3412">−0.5</text>
+  <rect x="998" y="168" width="38" height="20" rx="5" ry="5" fill="#ffedd5" stroke="#ea580c" stroke-width="1.3"/>
+  <text x="1017" y="182" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="8.5" fill="#9a3412">−0.5</text>
+  <text x="946" y="212" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#9a3412">×400</text>
+  <text x="946" y="240" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" font-style="italic" fill="#c2410c">which line</text>
+  <text x="946" y="255" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" font-style="italic" fill="#c2410c">earned it?</text>
+  <rect x="14" y="292" width="1032" height="44" rx="10" ry="10" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+  <text x="30" y="312" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#991b1b">everything in the middle panel is dropped the moment r is computed</text>
+  <text x="30" y="329" font-family="Helvetica, Arial, sans-serif" font-size="10.5" font-style="italic" fill="#b91c1c">the environment knew which line was wrong; the reward channel cannot carry that</text>
+</svg>

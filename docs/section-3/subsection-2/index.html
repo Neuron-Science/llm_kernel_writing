@@ -26,7 +26,7 @@ Section 3.1 left us with an SFT model that is grounded in a kernel language (it 
 <link rel="canonical" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-2/">
 <link rel="stylesheet" href="/llm_kernel_writing/book.min.27cffe658670f57112663ed746a421db277c2dd6549965c27f9ad0103cccd990.css" integrity="sha256-J8/&#43;ZYZw9XESZj7XRqQh2yd8LdZUmWXCf5rQEDzM2ZA=" crossorigin="anonymous">
   <script defer src="/llm_kernel_writing/fuse.min.js"></script>
-  <script defer src="/llm_kernel_writing/en.search.min.39acd0eac4d06e0fde286fb080a38753f78a7e53cab50527a79c554472851b7d.js" integrity="sha256-OazQ6sTQbg/eKG&#43;wgKOHU/eKflPKtQUnp5xVRHKFG30=" crossorigin="anonymous"></script>
+  <script defer src="/llm_kernel_writing/en.search.min.fce3d3d5f32fa1e015f1be3781528e193ccddb4790cf95e788ad0e7d8a649036.js" integrity="sha256-/OPT1fMvoeAV8b43gVKOGTzN20eQz5XniK0OfYpkkDY=" crossorigin="anonymous"></script>
 <link rel="alternate" type="application/rss+xml" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-2/index.xml" title="Teaching LLMs to Write System Kernels" />
 <!--
 Made with Book Theme
@@ -833,6 +833,24 @@ To keep the policy on tasks in its <em>learnable zone</em>, where at least some 
   </span>
 
  and is reinforced while the failures are pushed down. Curriculum and task selection exist to keep groups in this second regime.</p>
+<div style="text-align: center; margin: 2rem 0;">
+  <img src="part3-fig-zero-variance.svg"
+       alt="Why a task can teach nothing at all under group-relative advantages. The advantage of sample i is its reward minus the group mean divided by the group standard deviation, so if the standard deviation is zero every advantage is zero and there is no gradient. A task that is too hard scores minus one on all four kernels, a task that is too easy scores plus one point five on all four; both give identical rewards, zero spread, and a dead batch. Only the just-right task, whose four kernels score minus one, minus zero point five, plus one and plus one point five, produces a spread and therefore advantages of minus one point two, minus zero point seven, plus zero point seven and plus one point two — the only row that learns."
+       style="width: 100%; height: auto; object-fit: contain;" />
+  <p style="font-size: 0.9em; color: #666; margin-top: 0.4rem;">
+    The zero-variance failure mode, for 
+<span>
+  \( G = 4 \)
+  </span>
+
+. Both dead rows are worth noting: a task can be uninformative because it is <em>too hard</em> (every kernel fails) but equally because it is <em>too easy</em> (every kernel wins) — the normalization is blind to <em>where</em> the group sits, only to whether it spreads. Only the <em>just-right</em> row yields non-zero advantages, ranking its four kernels against each other. And the cost is symmetric: a dead group consumes exactly the same 
+<span>
+  \( G \)
+  </span>
+
+ rollouts as a live one, which is what makes the curation and adaptive-sampling machinery below worth its complexity.
+  </p>
+</div>
 <h3 id="static-curation">
   Static curation
   
@@ -847,6 +865,14 @@ To keep the policy on tasks in its <em>learnable zone</em>, where at least some 
   
 </h3>
 <p>The training distribution is instead shaped <em>continuously, from the current policy&rsquo;s own behavior</em>. The canonical instance is <strong>dynamic sampling</strong> (DAPO [6]): at each step, groups whose completions are all-pass or all-fail carry zero advantage and are discarded, keeping only prompts that still produce a learning signal, so the effective difficulty band tracks the policy as it improves. Because the selection criterion, the policy&rsquo;s success rate, is exactly the one used offline, adaptive sampling is essentially the <em>online, per-step</em> version of difficulty filtering: the same idea, recomputed every update instead of frozen into a fixed dataset. Reasoning-RL systems use this online form directly: prompts are filtered by the <em>current</em> model&rsquo;s success rate at each step [11], and prompts the current model already solves too often are dropped mid-training (AceReason-Nemotron [9], for its math stage; its code stage instead filters offline with a fixed model, the static counterpart).</p>
+<div style="text-align: center; margin: 2rem 0;">
+  <img src="part3-fig-static-vs-adaptive.svg"
+       alt="Two ways to keep the training band alive. On the left, static difficulty mixing as in TritonRL: the easy, medium and hard proportions are fixed once up front, and the ratio never moves even as the policy improves — so what was medium becomes easy and the mix silently drifts out of the learnable band. On the right, adaptive dynamic sampling as in DAPO: every step the groups are resampled and the dead ones discarded — g1 all minus one and g3 all plus one point five are thrown away, while g2 and g4, which have a spread, are kept — and sampling refills until B groups survive, so the band follows the policy upward."
+       style="width: 100%; height: auto; object-fit: contain;" />
+  <p style="font-size: 0.9em; color: #666; margin-top: 0.4rem;">
+    Static difficulty mixing fixes the easy/medium/hard proportions up front, so the mix drifts out of the learnable band as the policy improves; adaptive sampling discards the dead groups each step and refills, so the band tracks the policy.
+  </p>
+</div>
 <p>In kernel RL, this online, advantage-based filtering remains uncommon, but the setting also admits a <em>kernel-specific</em> selection signal that generic text or math RL lacks. Instead of keeping a rollout because its group still has reward variance, one can prioritize it by <strong>how much of the end-to-end runtime the target operator accounts for</strong> (Dr. Kernel [3]). The intuition is Amdahl&rsquo;s law: optimizing a kernel that consumes, say, 40% of a model&rsquo;s runtime is far more valuable than one that consumes 0.5%, no matter how large its <em>local</em> speedup, so training compute is better spent on the dominant operators. This signal is essentially free here, because the environment already profiles every rollout to compute the reward, so per-operator timing is a by-product of scoring rather than extra work. Note this is a <em>selection</em> criterion (which tasks and rollouts to learn from), orthogonal to the reward itself; it can be combined with the advantage-based filtering above rather than replacing it.</p>
 <h2 id="multi-turn-rl-and-agentic-refinement">
   Multi-turn RL and agentic refinement
