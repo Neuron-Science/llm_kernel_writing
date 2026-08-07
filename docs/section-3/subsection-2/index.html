@@ -26,7 +26,7 @@ Section 3.1 left us with an SFT model that is grounded in a kernel language (it 
 <link rel="canonical" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-2/">
 <link rel="stylesheet" href="/llm_kernel_writing/book.min.27cffe658670f57112663ed746a421db277c2dd6549965c27f9ad0103cccd990.css" integrity="sha256-J8/&#43;ZYZw9XESZj7XRqQh2yd8LdZUmWXCf5rQEDzM2ZA=" crossorigin="anonymous">
   <script defer src="/llm_kernel_writing/fuse.min.js"></script>
-  <script defer src="/llm_kernel_writing/en.search.min.fce3d3d5f32fa1e015f1be3781528e193ccddb4790cf95e788ad0e7d8a649036.js" integrity="sha256-/OPT1fMvoeAV8b43gVKOGTzN20eQz5XniK0OfYpkkDY=" crossorigin="anonymous"></script>
+  <script defer src="/llm_kernel_writing/en.search.min.291c3b699a00fdc6de0eea400cccc8579e9b68f871d08b92b3b037ca523e7b63.js" integrity="sha256-KRw7aZoA/cbeDupADMzIV56baPhx0IuSs7A3ylI&#43;e2M=" crossorigin="anonymous"></script>
 <link rel="alternate" type="application/rss+xml" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/subsection-2/index.xml" title="Teaching LLMs to Write System Kernels" />
 <!--
 Made with Book Theme
@@ -473,11 +473,11 @@ https://github.com/alex-shpak/hugo-book
 </h2>
 <p>Before diving into the pieces, here is the overall loop: RL post-training for kernels is an iterative cycle built from four ingredients: a pool of <strong>tasks</strong>, a <strong>policy</strong>, a <strong>reward</strong> computed by execution, and a policy-gradient <strong>optimizer</strong>:</p>
 <div style="text-align: center; margin: 2rem 0;">
-  <img src="execution_feedback_loop.svg"
-       alt="The RL post-training loop for kernels as a cycle: sample a task x, the policy generates candidate kernels y, the oracle executes them (compile, check, time), that produces a verifiable reward r(x, y), a policy-gradient step updates the policy, and the cycle repeats"
+  <img src="part3-fig-rl-execution-loop.svg"
+       alt="One full RLVR rollout on the running example. The spec — fused RMSNorm over the last dim, 4096 by 1024 in fp16, on an H100 — goes into a policy initialized from SFT, which samples a kernel: BLOCK_N the next power of two above N, load cast to fp32, rms from the reciprocal square root of the mean. The profiler then runs it and reports three things: it compiles, max absolute error is 4e-4 which is inside atol 2e-2, and runtime is 41 microseconds against a 74 microsecond reference. That yields reward 1.0 — correct, and a 1.8 times speedup — which feeds the PPO or GRPO step that updates theta and closes the loop back to the policy."
        style="width: 62%; height: auto; object-fit: contain;" />
   <p style="font-size: 0.9em; color: #666; margin-top: 0.4rem;">
-    The execution-feedback loop. A sampled task is turned into candidate kernels by the policy; the <em>oracle</em> (highlighted) executes each one, <em>compile · check · time</em>, into a verifiable reward; a policy-gradient step then reinforces the fast, correct kernels, and the cycle repeats. The oracle is what makes the reward objective rather than a learned proxy.
+    The execution-feedback loop. A sampled task is turned into candidate kernels by the policy; the <em>profiler</em> executes each one, <em>compile · check · time</em>, into a verifiable reward; a policy-gradient step then reinforces the fast, correct kernels, and the cycle repeats.
   </p>
 </div>
 <p>Each step of the loop: (1) sample a task from the data pool; (2) the policy (initialized from the SFT model of Section 3.1) generates one or more candidate kernels, optionally over several refinement turns; (3) each kernel is run in a sandboxed environment that returns a <em>verifiable</em> reward from compilation, correctness, and speed; (4) a policy-gradient algorithm (PPO or GRPO) nudges the policy toward the higher-reward kernels. Repeating this cycle is what drives the policy past the &ldquo;valid but not hardware-optimized&rdquo; plateau.</p>

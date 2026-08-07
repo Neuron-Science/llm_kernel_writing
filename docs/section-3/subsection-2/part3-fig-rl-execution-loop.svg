@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="544" viewBox="0 0 440 544" role="img" aria-label="One full RLVR rollout on the running example. The spec — fused RMSNorm over the last dim, 4096 by 1024 in fp16, on an H100 — goes into a policy initialized from SFT, which samples a kernel: BLOCK_N the next power of two above N, load cast to fp32, rms from the reciprocal square root of the mean. The profiler then runs it and reports three things: it compiles, max absolute error is 4e-4 which is inside atol 2e-2, and runtime is 41 microseconds against a 74 microsecond reference. That yields reward 1.0 — correct, and a 1.8 times speedup — which feeds the PPO or GRPO step that updates theta and closes the loop back to the policy.">
+  <rect x="0" y="0" width="440" height="544" fill="#eef2f6"/>
+  <rect x="14" y="10" width="288" height="52" rx="10" ry="10" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+  <text x="30" y="33" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="bold" fill="#334155">x = "fused RMSNorm, (M, N) =</text>
+  <text x="30" y="50" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#64748b">(4096, 1024) fp16, H100"</text>
+  <line x1="158" y1="62" x2="158" y2="80" stroke="#64748b" stroke-width="2.5"/>
+  <polygon points="158,85.5 152.5,74.5 163.5,74.5" fill="#64748b"/>
+  <rect x="14" y="88" width="288" height="42" rx="10" ry="10" fill="#f8fafc" stroke="#64748b" stroke-width="2.5"/>
+  <text x="30" y="114" font-family="Helvetica, Arial, sans-serif" font-size="13.5" font-weight="bold" fill="#334155">MODEL  πθ</text>
+  <rect x="174" y="97" width="118" height="24" rx="12" ry="12" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.6"/>
+  <text x="233" y="112.78" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#0f766e">init from SFT</text>
+  <line x1="158" y1="130" x2="158" y2="148" stroke="#64748b" stroke-width="2.5"/>
+  <polygon points="158,153.5 152.5,142.5 163.5,142.5" fill="#64748b"/>
+  <text x="168" y="148" font-family="Helvetica, Arial, sans-serif" font-size="10" font-style="italic" fill="#64748b">sample a kernel</text>
+  <rect x="14" y="156" width="288" height="84" rx="10" ry="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.8"/>
+  <circle cx="38" cy="172" r="13" fill="#94a3b8"/>
+  <text x="38" y="176.32" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#ffffff">k</text>
+  <text x="58" y="177" font-family="Helvetica, Arial, sans-serif" font-size="10" font-style="italic" fill="#64748b">one rollout</text>
+  <text x="30" y="200" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" fill="#334155">BLOCK_N = pow2 ≥ N</text>
+  <text xml:space="preserve" x="30" y="215" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" fill="#334155">x   = tl.load(..).to(fp32)</text>
+  <text x="30" y="230" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" fill="#334155">rms = tl.rsqrt(tl.sum(x*x)/N+eps)</text>
+  <line x1="158" y1="240" x2="158" y2="258" stroke="#64748b" stroke-width="2.5"/>
+  <polygon points="158,263.5 152.5,252.5 163.5,252.5" fill="#64748b"/>
+  <rect x="14" y="266" width="288" height="110" rx="12" ry="12" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="30" y="290" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#334155">PROFILER</text>
+  <text x="118" y="290" font-family="Helvetica, Arial, sans-serif" font-size="9.5" font-style="italic" fill="#64748b">on the real device</text>
+  <text x="30" y="317" font-family="Helvetica, Arial, sans-serif" font-size="9.5" font-weight="bold" fill="#64748b">compile</text>
+  <text x="110" y="317" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" font-weight="bold" fill="#0f766e">ok</text>
+  <rect x="246" y="305" width="42" height="15" rx="7.5" ry="7.5" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.4"/>
+  <text x="267" y="315.65" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" font-weight="bold" fill="#0f766e">pass</text>
+  <text x="30" y="340" font-family="Helvetica, Arial, sans-serif" font-size="9.5" font-weight="bold" fill="#64748b">correctness</text>
+  <text x="110" y="340" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" font-weight="bold" fill="#0f766e">max|dy| 4e-4</text>
+  <rect x="246" y="328" width="42" height="15" rx="7.5" ry="7.5" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.4"/>
+  <text x="267" y="338.65" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" font-weight="bold" fill="#0f766e">pass</text>
+  <text x="30" y="363" font-family="Helvetica, Arial, sans-serif" font-size="9.5" font-weight="bold" fill="#64748b">runtime</text>
+  <text x="110" y="363" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9.5" font-weight="bold" fill="#0f766e">41 us</text>
+  <rect x="246" y="351" width="42" height="15" rx="7.5" ry="7.5" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.4"/>
+  <text x="267" y="361.65" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="9" font-weight="bold" fill="#0f766e">pass</text>
+  <line x1="158" y1="376" x2="158" y2="394" stroke="#0d9488" stroke-width="2.5"/>
+  <polygon points="158,399.5 152.5,388.5 163.5,388.5" fill="#0d9488"/>
+  <rect x="14" y="402" width="288" height="40" rx="10" ry="10" fill="#ccfbf1" stroke="#0d9488" stroke-width="2.5"/>
+  <text x="30" y="427" font-family="Helvetica, Arial, sans-serif" font-size="13.5" font-weight="bold" fill="#0f766e">r = 1.0</text>
+  <text x="112" y="427" font-family="Helvetica, Arial, sans-serif" font-size="10.5" font-style="italic" fill="#0f766e">correct,  1.8x speedup</text>
+  <line x1="158" y1="442" x2="158" y2="460" stroke="#0d9488" stroke-width="2.5"/>
+  <polygon points="158,465.5 152.5,454.5 163.5,454.5" fill="#0d9488"/>
+  <rect x="14" y="468" width="288" height="62" rx="12" ry="12" fill="#ccfbf1" stroke="#0d9488" stroke-width="2.2"/>
+  <text x="30" y="494" font-family="Helvetica, Arial, sans-serif" font-size="13.5" font-weight="bold" fill="#0f766e">max  E[ r ]</text>
+  <text x="30" y="516" font-family="Helvetica, Arial, sans-serif" font-size="11" font-weight="bold" fill="#0f766e">→  PPO / GRPO step</text>
+  <polyline points="302,499 400,499 400,109 306,109" fill="none" stroke="#0d9488" stroke-width="2.5"/>
+  <polygon points="294.5,109 305.5,103.5 305.5,114.5" fill="#0d9488"/>
+  <text x="390" y="300" text-anchor="end" font-family="Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#0f766e">update θ</text>
+</svg>
