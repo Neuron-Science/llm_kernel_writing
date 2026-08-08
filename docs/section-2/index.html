@@ -15,25 +15,13 @@
   #
   
 
-This section studies how to get better kernels by spending more compute at generation time,
-holding the model fixed. We frame inference-time scaling along three axes, width (parallel
-best-of-N sampling), depth (sequential, feedback-conditioned refinement), and structured search
-(beam, tree, and evolutionary methods that maintain and improve populations of candidate
-kernels, including methods that search over how a kernel is decomposed into subproblems rather
-than over a monolithic artifact), plus an orthogonal reasoning-length knob. What makes all of
-this pay off for kernels is a cheap, automatic verifier: compile a candidate, check it against a
-reference, and time it, so we can always keep the best verified result. That single fact also
-makes the verifier the true bottleneck, so we devote a subsection to verification and cheating
-detection, the anti-hacking discipline that lets extra compute buy real speedups rather than
-reward hacking. The section closes with a live, follow-along demo that generates Neuron Kernel
-Interface (NKI) kernels for AWS Trainium using an agentic, training-free inference pipeline. The
-post-training machinery that produces the underlying policy is developed in Section 3.">
+Writing a good kernel, the small program that makes an AI chip run a computation as fast as possible, is hard. This section explores a surprisingly effective shortcut: instead of building a bigger or smarter model, we take one fixed model and simply let it work harder when it writes code, generating many attempts, revising them, and searching for the best one.">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#343a40">
 <meta name="color-scheme" content="light dark"><meta property="og:url" content="https://neuron-science.github.io/llm_kernel_writing/docs/section-2/">
   <meta property="og:site_name" content="Teaching LLMs to Write System Kernels">
   <meta property="og:title" content="Inference-Scaling for Kernel Generation">
-  <meta property="og:description" content="Inference-Scaling for Kernel Generation # Overview # This section studies how to get better kernels by spending more compute at generation time, holding the model fixed. We frame inference-time scaling along three axes, width (parallel best-of-N sampling), depth (sequential, feedback-conditioned refinement), and structured search (beam, tree, and evolutionary methods that maintain and improve populations of candidate kernels, including methods that search over how a kernel is decomposed into subproblems rather than over a monolithic artifact), plus an orthogonal reasoning-length knob. What makes all of this pay off for kernels is a cheap, automatic verifier: compile a candidate, check it against a reference, and time it, so we can always keep the best verified result. That single fact also makes the verifier the true bottleneck, so we devote a subsection to verification and cheating detection, the anti-hacking discipline that lets extra compute buy real speedups rather than reward hacking. The section closes with a live, follow-along demo that generates Neuron Kernel Interface (NKI) kernels for AWS Trainium using an agentic, training-free inference pipeline. The post-training machinery that produces the underlying policy is developed in Section 3.">
+  <meta property="og:description" content="Inference-Scaling for Kernel Generation # Overview # Writing a good kernel, the small program that makes an AI chip run a computation as fast as possible, is hard. This section explores a surprisingly effective shortcut: instead of building a bigger or smarter model, we take one fixed model and simply let it work harder when it writes code, generating many attempts, revising them, and searching for the best one.">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="website">
 <title>Inference-Scaling for Kernel Generation | Teaching LLMs to Write System Kernels</title>
@@ -42,7 +30,7 @@ post-training machinery that produces the underlying policy is developed in Sect
 <link rel="canonical" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-2/">
 <link rel="stylesheet" href="/llm_kernel_writing/book.min.27cffe658670f57112663ed746a421db277c2dd6549965c27f9ad0103cccd990.css" integrity="sha256-J8/&#43;ZYZw9XESZj7XRqQh2yd8LdZUmWXCf5rQEDzM2ZA=" crossorigin="anonymous">
   <script defer src="/llm_kernel_writing/fuse.min.js"></script>
-  <script defer src="/llm_kernel_writing/en.search.min.291c3b699a00fdc6de0eea400cccc8579e9b68f871d08b92b3b037ca523e7b63.js" integrity="sha256-KRw7aZoA/cbeDupADMzIV56baPhx0IuSs7A3ylI&#43;e2M=" crossorigin="anonymous"></script>
+  <script defer src="/llm_kernel_writing/en.search.min.51b22f84b36099575fe2452a1a42bdba771a92b06631a906e43ed68e6f8c1295.js" integrity="sha256-UbIvhLNgmVdf4kUqGkK9uncakrBmMakG5D7Wjm&#43;MEpU=" crossorigin="anonymous"></script>
 <link rel="alternate" type="application/rss+xml" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-2/index.xml" title="Teaching LLMs to Write System Kernels" />
 <!--
 Made with Book Theme
@@ -480,19 +468,8 @@ https://github.com/alex-shpak/hugo-book
   <a class="anchor" href="#overview">#</a>
   
 </h2>
-<p>This section studies how to get better kernels by spending more compute <em>at generation time</em>,
-holding the model fixed. We frame inference-time scaling along three axes, width (parallel
-best-of-N sampling), depth (sequential, feedback-conditioned refinement), and structured search
-(beam, tree, and evolutionary methods that maintain and improve populations of candidate
-kernels, including methods that search over how a kernel is decomposed into subproblems rather
-than over a monolithic artifact), plus an orthogonal reasoning-length knob. What makes all of
-this pay off for kernels is a cheap, automatic verifier: compile a candidate, check it against a
-reference, and time it, so we can always keep the best verified result. That single fact also
-makes the verifier the true bottleneck, so we devote a subsection to verification and cheating
-detection, the anti-hacking discipline that lets extra compute buy real speedups rather than
-reward hacking. The section closes with a live, follow-along demo that generates Neuron Kernel
-Interface (NKI) kernels for AWS Trainium using an agentic, training-free inference pipeline. The
-post-training machinery that produces the underlying policy is developed in Section 3.</p>
+<p>Writing a good kernel, the small program that makes an AI chip run a computation as fast as possible, is hard. This section explores a surprisingly effective shortcut: instead of building a bigger or smarter model, we take one fixed model and simply let it work harder when it writes code, generating many attempts, revising them, and searching for the best one.</p>
+<p>This pays off especially well for kernels because we can check every attempt automatically: compile it, confirm its answer matches a trusted reference, and time how fast it runs, then keep the winner. That automatic checker is the hero of the story, and also its weak point, since a model will happily cheat the check if it finds a way. So one subsection is devoted to making the check trustworthy, and the section closes with a hands-on demo you can follow along. The training that produces the underlying model is saved for Section 3; here the model stays fixed.</p>
 <h2 id="contents-of-this-section">
   <strong>Contents of this section</strong>
   
@@ -505,36 +482,28 @@ post-training machinery that produces the underlying policy is developed in Sect
   <a class="anchor" href="#21-inference-time-scaling-for-kernel-code-reasoning">#</a>
   
 </h3>
-<p>Frames inference-time compute scaling across three axes (width, depth, and structured search)
-plus reasoning length, develops the depth axis of feedback-conditioned sequential refinement, and
-argues that a trustworthy verifier is what lets extra compute buy real speedups.</p>
+<p>The main ways to coax better kernels out of the same model: draw many attempts and keep the best, improve one attempt over several rounds using feedback, or search cleverly among candidates. Each one pays off because every attempt can be checked automatically.</p>
 <h3 id="22-evolution-based-approaches-for-iterative-kernel-refinement">
   <a href="/llm_kernel_writing/docs/section-2/subsection-2/">2.2 Evolution-Based Approaches for Iterative Kernel Refinement</a>
   
   <a class="anchor" href="#22-evolution-based-approaches-for-iterative-kernel-refinement">#</a>
   
 </h3>
-<p>Explores the structured-search axis in depth: evolutionary and search-based methods that maintain
-and improve populations of candidate kernels over successive iterations, including approaches that
-search over the modular decomposition itself for kernels that are more token-efficient,
-transferable, and reliably verifiable.</p>
+<p>Borrowing the idea of natural selection: keep a whole pool of candidate kernels, tweak and combine the best ones, test them, and repeat, gradually breeding faster kernels over many rounds.</p>
 <h3 id="23-verification-and-cheating-detection">
   <a href="/llm_kernel_writing/docs/section-2/subsection-3/">2.3 Verification and Cheating Detection</a>
   
   <a class="anchor" href="#23-verification-and-cheating-detection">#</a>
   
 </h3>
-<p>Why scaling search scales exposure to evaluator exploits: the reward-hacking taxonomy, the
-verification pipeline (sandbox isolation, robust correctness, genuine-kernel checks, robust
-timing), and the anti-cheating benchmarks that keep measured speedups honest.</p>
+<p>The more attempts we make, the more chances a model has to pass the test without doing the real work, for instance by copying the expected answer or faking the timer. This subsection shows the common tricks and how to build a checker that cannot be fooled, so measured speedups stay honest.</p>
 <h3 id="24-nki-kernel-generation-using-llm-agents">
   <a href="/llm_kernel_writing/docs/section-2/subsection-4/">2.4 NKI Kernel Generation Using LLM Agents</a>
   
   <a class="anchor" href="#24-nki-kernel-generation-using-llm-agents">#</a>
   
 </h3>
-<p>A live, follow-along walkthrough of generating Neuron Kernel Interface (NKI) kernels for
-AWS Trainium using an agentic LLM pipeline.</p>
+<p>A follow-along demo where an AI assistant writes a real kernel for AWS Trainium chips (using NKI, the programming language for those chips), measures where it is slow, and improves it step by step, putting the section&rsquo;s ideas into practice.</p>
 </article>
  
       

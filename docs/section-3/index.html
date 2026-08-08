@@ -15,21 +15,15 @@
   #
   
 
-This section applies the post-training machinery of Section 1 to kernels. We start with
-supervised fine-tuning on kernel corpora, which grounds a base model in a kernel language but is
-capped by the demonstrations it imitates. We then turn to reinforcement learning from execution
-feedback, which lets the model learn from compiling and timing its own kernels and so surpass that
-ceiling, and develop the single-turn and multi-turn (agentic) RL that iteratively refines kernels
-across turns of feedback. We close with how the execution reward is designed from its component
-signals, since the reward is the only channel through which &ldquo;what we actually want&rdquo; enters
-training, and a poorly designed one is exactly what the verification and cheating-detection
-discipline of Section 2.3 defends against.">
+This section is about training an AI model to become good at writing kernels, the small hand-tuned programs that make AI hardware run fast. We start with a model that already writes ordinary code and improve it in stages.
+First the model learns by imitating a collection of good examples. Then it learns by actually running its own attempts and being rewarded when they turn out correct and fast, which lets it go beyond anything it was shown. Finally we look at how to design that reward carefully, since the model will chase whatever score we hand it, and a careless score invites exactly the corner-cutting that Section 2 warns about. The thread running through it all: copying examples only gets you so far, and the real gains come from letting the model try, run, and learn from the results.">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#343a40">
 <meta name="color-scheme" content="light dark"><meta property="og:url" content="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/">
   <meta property="og:site_name" content="Teaching LLMs to Write System Kernels">
   <meta property="og:title" content="Post-Training LLMs for Kernel Generation">
-  <meta property="og:description" content="Post-Training LLMs for Kernel Generation # Overview # This section applies the post-training machinery of Section 1 to kernels. We start with supervised fine-tuning on kernel corpora, which grounds a base model in a kernel language but is capped by the demonstrations it imitates. We then turn to reinforcement learning from execution feedback, which lets the model learn from compiling and timing its own kernels and so surpass that ceiling, and develop the single-turn and multi-turn (agentic) RL that iteratively refines kernels across turns of feedback. We close with how the execution reward is designed from its component signals, since the reward is the only channel through which “what we actually want” enters training, and a poorly designed one is exactly what the verification and cheating-detection discipline of Section 2.3 defends against.">
+  <meta property="og:description" content="Post-Training LLMs for Kernel Generation # Overview # This section is about training an AI model to become good at writing kernels, the small hand-tuned programs that make AI hardware run fast. We start with a model that already writes ordinary code and improve it in stages.
+First the model learns by imitating a collection of good examples. Then it learns by actually running its own attempts and being rewarded when they turn out correct and fast, which lets it go beyond anything it was shown. Finally we look at how to design that reward carefully, since the model will chase whatever score we hand it, and a careless score invites exactly the corner-cutting that Section 2 warns about. The thread running through it all: copying examples only gets you so far, and the real gains come from letting the model try, run, and learn from the results.">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="website">
 <title>Post-Training LLMs for Kernel Generation | Teaching LLMs to Write System Kernels</title>
@@ -38,7 +32,7 @@ discipline of Section 2.3 defends against.">
 <link rel="canonical" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/">
 <link rel="stylesheet" href="/llm_kernel_writing/book.min.27cffe658670f57112663ed746a421db277c2dd6549965c27f9ad0103cccd990.css" integrity="sha256-J8/&#43;ZYZw9XESZj7XRqQh2yd8LdZUmWXCf5rQEDzM2ZA=" crossorigin="anonymous">
   <script defer src="/llm_kernel_writing/fuse.min.js"></script>
-  <script defer src="/llm_kernel_writing/en.search.min.291c3b699a00fdc6de0eea400cccc8579e9b68f871d08b92b3b037ca523e7b63.js" integrity="sha256-KRw7aZoA/cbeDupADMzIV56baPhx0IuSs7A3ylI&#43;e2M=" crossorigin="anonymous"></script>
+  <script defer src="/llm_kernel_writing/en.search.min.51b22f84b36099575fe2452a1a42bdba771a92b06631a906e43ed68e6f8c1295.js" integrity="sha256-UbIvhLNgmVdf4kUqGkK9uncakrBmMakG5D7Wjm&#43;MEpU=" crossorigin="anonymous"></script>
 <link rel="alternate" type="application/rss+xml" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-3/index.xml" title="Teaching LLMs to Write System Kernels" />
 <!--
 Made with Book Theme
@@ -476,15 +470,8 @@ https://github.com/alex-shpak/hugo-book
   <a class="anchor" href="#overview">#</a>
   
 </h2>
-<p>This section applies the post-training machinery of Section 1 to kernels. We start with
-supervised fine-tuning on kernel corpora, which grounds a base model in a kernel language but is
-capped by the demonstrations it imitates. We then turn to reinforcement learning from execution
-feedback, which lets the model learn from compiling and timing its own kernels and so surpass that
-ceiling, and develop the single-turn and multi-turn (agentic) RL that iteratively refines kernels
-across turns of feedback. We close with how the execution reward is designed from its component
-signals, since the reward is the only channel through which &ldquo;what we actually want&rdquo; enters
-training, and a poorly designed one is exactly what the verification and cheating-detection
-discipline of Section 2.3 defends against.</p>
+<p>This section is about training an AI model to become good at writing kernels, the small hand-tuned programs that make AI hardware run fast. We start with a model that already writes ordinary code and improve it in stages.</p>
+<p>First the model learns by imitating a collection of good examples. Then it learns by actually running its own attempts and being rewarded when they turn out correct and fast, which lets it go beyond anything it was shown. Finally we look at how to design that reward carefully, since the model will chase whatever score we hand it, and a careless score invites exactly the corner-cutting that Section 2 warns about. The thread running through it all: copying examples only gets you so far, and the real gains come from letting the model try, run, and learn from the results.</p>
 <h2 id="contents-of-this-section">
   <strong>Contents of this section</strong>
   
@@ -497,33 +484,28 @@ discipline of Section 2.3 defends against.</p>
   <a class="anchor" href="#31-supervised-fine-tuning-on-kernel-corpora">#</a>
   
 </h3>
-<p>Building a <em>(task, kernel)</em> corpus, through sampling, filtering, and augmentation, and training a
-base model to imitate it, along with the limits of imitation.</p>
+<p>The model practices by imitating a large collection of tasks paired with good kernel solutions. Building that collection well is its own craft, and this approach teaches the model how kernels are written, but cannot push it past the quality of the examples.</p>
 <h3 id="32-reinforcement-learning-from-execution-feedback">
   <a href="/llm_kernel_writing/docs/section-3/subsection-2/">3.2 Reinforcement Learning from Execution Feedback</a>
   
   <a class="anchor" href="#32-reinforcement-learning-from-execution-feedback">#</a>
   
 </h3>
-<p>Casting kernel generation as RL: prompt-only tasks, the compile-correct-fast reward from running
-each kernel, and the curriculum that keeps training on solvable tasks.</p>
+<p>Instead of only copying, the model now writes a kernel, actually runs it on the hardware, and is rewarded when the result is correct and fast. Learning directly from what works lets it discover solutions better than any example it was given.</p>
 <h3 id="33-single-turn-and-multi-turn-rl-for-kernel-optimization">
   <a href="/llm_kernel_writing/docs/section-3/subsection-3/">3.3 Single-Turn and Multi-Turn RL for Kernel Optimization</a>
   
   <a class="anchor" href="#33-single-turn-and-multi-turn-rl-for-kernel-optimization">#</a>
   
 </h3>
-<p>Contrasts single-turn generation with multi-turn RL, where the agent iteratively refines kernels
-using execution and profiling feedback across turns, and the context-management and
-credit-assignment problems this raises.</p>
+<p>Comparing a single try per task with taking several tries in a row, reading the feedback each time to fix and improve the next attempt, much like a human debugging their own code. Letting the model work over several turns is powerful but raises new questions about what to remember and which attempt to credit.</p>
 <h3 id="34-reward-design-for-kernel-rl">
   <a href="/llm_kernel_writing/docs/section-3/subsection-4/">3.4 Reward Design for Kernel RL</a>
   
   <a class="anchor" href="#34-reward-design-for-kernel-rl">#</a>
   
 </h3>
-<p>The signals a kernel reward should carry and how to fold them into a single scalar, from linear
-weighted sums to gated and hierarchical designs, the reward whose weaknesses Section 2.3 hardens.</p>
+<p>How to design the score that guides learning, from simple weighted sums of &ldquo;does it compile, is it correct, is it fast&rdquo; to more careful designs. The aim is that being genuinely correct and fast is what gets rewarded, and the model cannot win by cutting corners.</p>
 </article>
  
       
