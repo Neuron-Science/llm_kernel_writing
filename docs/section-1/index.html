@@ -16,14 +16,14 @@
   
 
 This tutorial is about teaching AI models to write kernels: the small, low-level programs that tell an AI chip exactly how to do a piece of math as fast as possible. This first section sets the stage, and you do not need any special background to follow it.
-We build up two things. First, the target that kernels run on: what the specialized AI chips (from NVIDIA, Google, and Amazon) look like inside, how everyday Python code gets translated down into something a chip can run, and the languages people use to hand-write the fastest code. Second, the tool we will later teach: how a language model produces text, and the two main ways of training one to get good at a task, namely learning from worked examples and learning by trial and error.">
+We build up two things. First, the target that kernels run on: what the specialized AI chips look like inside, how everyday Python code gets translated down into something a chip can run, and the languages people use to hand-write the fastest code. Second, the tool we will later teach: how a language model produces text, and the two main ways of training one to get good at a task, namely learning from worked examples and learning by trial and error.">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#343a40">
 <meta name="color-scheme" content="light dark"><meta property="og:url" content="https://neuron-science.github.io/llm_kernel_writing/docs/section-1/">
   <meta property="og:site_name" content="Teaching LLMs to Write System Kernels">
   <meta property="og:title" content="Hardware, Kernels, and LLMs">
   <meta property="og:description" content="Hardware, Kernels, and LLMs # Overview # This tutorial is about teaching AI models to write kernels: the small, low-level programs that tell an AI chip exactly how to do a piece of math as fast as possible. This first section sets the stage, and you do not need any special background to follow it.
-We build up two things. First, the target that kernels run on: what the specialized AI chips (from NVIDIA, Google, and Amazon) look like inside, how everyday Python code gets translated down into something a chip can run, and the languages people use to hand-write the fastest code. Second, the tool we will later teach: how a language model produces text, and the two main ways of training one to get good at a task, namely learning from worked examples and learning by trial and error.">
+We build up two things. First, the target that kernels run on: what the specialized AI chips look like inside, how everyday Python code gets translated down into something a chip can run, and the languages people use to hand-write the fastest code. Second, the tool we will later teach: how a language model produces text, and the two main ways of training one to get good at a task, namely learning from worked examples and learning by trial and error.">
   <meta property="og:locale" content="en_us">
   <meta property="og:type" content="website">
 <title>Hardware, Kernels, and LLMs | Teaching LLMs to Write System Kernels</title>
@@ -32,7 +32,7 @@ We build up two things. First, the target that kernels run on: what the speciali
 <link rel="canonical" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-1/">
 <link rel="stylesheet" href="/llm_kernel_writing/book.min.27cffe658670f57112663ed746a421db277c2dd6549965c27f9ad0103cccd990.css" integrity="sha256-J8/&#43;ZYZw9XESZj7XRqQh2yd8LdZUmWXCf5rQEDzM2ZA=" crossorigin="anonymous">
   <script defer src="/llm_kernel_writing/fuse.min.js"></script>
-  <script defer src="/llm_kernel_writing/en.search.min.51b22f84b36099575fe2452a1a42bdba771a92b06631a906e43ed68e6f8c1295.js" integrity="sha256-UbIvhLNgmVdf4kUqGkK9uncakrBmMakG5D7Wjm&#43;MEpU=" crossorigin="anonymous"></script>
+  <script defer src="/llm_kernel_writing/en.search.min.d54a6698ca63ae95237793275a5168d0be0a207b4504b0d71cfa56583ca430a7.js" integrity="sha256-1UpmmMpjrpUjd5MnWlFo0L4KIHtFBLDXHPpWWDykMKc=" crossorigin="anonymous"></script>
 <link rel="alternate" type="application/rss+xml" href="https://neuron-science.github.io/llm_kernel_writing/docs/section-1/index.xml" title="Teaching LLMs to Write System Kernels" />
 <!--
 Made with Book Theme
@@ -473,7 +473,7 @@ https://github.com/alex-shpak/hugo-book
   
 </h2>
 <p>This tutorial is about teaching AI models to write <em>kernels</em>: the small, low-level programs that tell an AI chip exactly how to do a piece of math as fast as possible. This first section sets the stage, and you do not need any special background to follow it.</p>
-<p>We build up two things. First, the <em>target</em> that kernels run on: what the specialized AI chips (from NVIDIA, Google, and Amazon) look like inside, how everyday Python code gets translated down into something a chip can run, and the languages people use to hand-write the fastest code. Second, the <em>tool</em> we will later teach: how a language model produces text, and the two main ways of training one to get good at a task, namely learning from worked examples and learning by trial and error.</p>
+<p>We build up two things. First, the <em>target</em> that kernels run on: what the specialized AI chips look like inside, how everyday Python code gets translated down into something a chip can run, and the languages people use to hand-write the fastest code. Second, the <em>tool</em> we will later teach: how a language model produces text, and the two main ways of training one to get good at a task, namely learning from worked examples and learning by trial and error.</p>
 <p>A recurring theme is that automatic tools get you most of the way, but the last stretch of performance still comes from carefully hand-written code, which is exactly the gap we want an AI to help fill. The goal here is intuition and shared vocabulary, not depth; the later sections are where we dig in.</p>
 <h2 id="contents-of-this-section">
   <strong>Contents of this section</strong>
